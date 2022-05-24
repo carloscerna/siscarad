@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 
 class AsignaturaController extends Controller
 {
+
+        // contruir para los roles
+        function __construct(){
+            $this->middleware('permission:ver-asignatura | crear-rol | editar-rol | borrar-rol', ['only'=>['index']]);
+            $this->middleware('permission:crear-asignatura', ['only'=>['create','store']]);
+            $this->middleware('permission:editar-asignatura', ['only'=>['edit','update']]);
+            $this->middleware('permission:borrar-asignatura', ['only'=>['destroy']]);
+        }
     /**
      * Display a listing of the resource.
      *
@@ -15,6 +23,8 @@ class AsignaturaController extends Controller
     public function index()
     {
         //
+        $asignaturas = Asignatura::pagination(5);
+        return view('asignaturas.index', compact('asignatura'));
     }
 
     /**
@@ -25,6 +35,7 @@ class AsignaturaController extends Controller
     public function create()
     {
         //
+        return view('asignaturas.crear');
     }
 
     /**
@@ -36,6 +47,12 @@ class AsignaturaController extends Controller
     public function store(Request $request)
     {
         //
+        request()->validate([
+            'nombre'=>'required',
+            'codigo'=>'required'
+        ]);
+        Asignatura::create($request->all());
+        return redirect()->route('asignaturas.index');
     }
 
     /**
@@ -58,6 +75,7 @@ class AsignaturaController extends Controller
     public function edit(Asignatura $asignatura)
     {
         //
+        return view('asignaturas.editar', compact('asignatura'));
     }
 
     /**
@@ -70,6 +88,12 @@ class AsignaturaController extends Controller
     public function update(Request $request, Asignatura $asignatura)
     {
         //
+        request()->validate([
+            'nombre'=>'required',
+            'codigo'=>'required'
+        ]);
+        Asignatura::update($request->all());
+        return redirect()->route('asignaturas.index');
     }
 
     /**
@@ -81,5 +105,7 @@ class AsignaturaController extends Controller
     public function destroy(Asignatura $asignatura)
     {
         //
+        $asignatura->delete();
+        return redirect()->route('asignaturas.index');
     }
 }

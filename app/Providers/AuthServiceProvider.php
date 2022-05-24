@@ -25,6 +25,9 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        // Super Usuario de Spatie
+            Gate::before(function($user, $ability){
+                return $user->email == 'carlos.w.cerna@gmail.com' ?? null;
+            });
     }
 }
