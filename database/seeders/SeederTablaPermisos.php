@@ -27,6 +27,11 @@ class SeederTablaPermisos extends Seeder
             'crear-asignatura',
             'editar-asignatura',
             'borrar-asignatura',
+            //tabla usuarios
+            'ver-usuario',
+            'crear-usuario',
+            'editar-usuario',
+            'borrar-usuario',
         ];
         foreach ($permisos as $permiso) {
             Permission::create(['name'=>$permiso]);

@@ -10,7 +10,7 @@ class AsignaturaController extends Controller
 
         // contruir para los roles
         function __construct(){
-            $this->middleware('permission:ver-asignatura | crear-rol | editar-rol | borrar-rol', ['only'=>['index']]);
+            $this->middleware('permission:ver-asignatura | crear-asignatura | editar-asignatura | borrar-asignatura', ['only'=>['index']]);
             $this->middleware('permission:crear-asignatura', ['only'=>['create','store']]);
             $this->middleware('permission:editar-asignatura', ['only'=>['edit','update']]);
             $this->middleware('permission:borrar-asignatura', ['only'=>['destroy']]);
@@ -23,7 +23,7 @@ class AsignaturaController extends Controller
     public function index()
     {
         //
-        $asignaturas = Asignatura::pagination(5);
+        $asignatura = Asignatura::paginate(5);
         return view('asignaturas.index', compact('asignatura'));
     }
 
