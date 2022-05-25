@@ -75,7 +75,7 @@ class AsignaturaController extends Controller
     public function edit(Asignatura $asignatura)
     {
         //
-        return view('asignaturas.editar', compact('asignatura'));
+        return view('asignaturas.editar',compact('asignatura'));
     }
 
     /**

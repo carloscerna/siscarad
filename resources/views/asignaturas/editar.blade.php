@@ -3,7 +3,7 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Editar Blog</h3>
+            <h3 class="page__heading">Editar Asignatura</h3>
         </div>
         <div class="section-body">
             <div class="row">
@@ -24,21 +24,21 @@
                         @endif
 
 
-                    <form action="{{ route('blogs.update',$blog->id) }}" method="POST">
+                    <form action="{{ route('asignaturas.update',$asignatura->id_asignatura) }}" method="POST">
                         @csrf
                         @method('PUT')
                         <div class="row">
                             <div class="col-xs-12 col-sm-12 col-md-12">
                                 <div class="form-group">
-                                   <label for="titulo">Título</label>
-                                   <input type="text" name="titulo" class="form-control" value="{{ $blog->titulo }}">
+                                   <label for="nombre">Nombre</label>
+                                   <input type="text" name="nombre" class="form-control" value="{{ $asignatura->nombre }}">
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-12 col-md-12">
                                                     
                                 <div class="form-floating">
-                                <label for="contenido">Contenido</label>
-                                <textarea class="form-control" name="contenido" style="height: 100px">{{ $blog->contenido }}</textarea>                                
+                                <label for="codigo">Código</label>
+                                <textarea class="form-control" name="codigo" style="height: 100px">{{ $asignatura->codigo }}</textarea>                                
                                 
                                 </div>
                             <br>
