@@ -1,12 +1,11 @@
 <li class="side-menus {{ Request::is('*') ? 'active' : '' }}">
     <a class="nav-link" href="/home">
         <i class="fas fa-building"></i><span>Tablero</span>
-        @php
-        use Spatie\Permission\Models\Role;
-        use Spatie\Permission\Models\Permission;
-
-        $cant_asignaturas = Role::getRoleNames();
-        @endphp
+        @role('Administrador')
+            $cant_asignaturas = "Si Administrador";
+            @else
+            $cant_asignaturas = "NO Administrador";
+        @endrole
         <span>{{$cant_asignaturas}}</span>
     </a>
     <a class="nav-link" href="/usuarios">
