@@ -18,7 +18,7 @@ class SeederTablaPermisos extends Seeder
         //
         $permisos = [
             //tabla roles
-            'ver-rol',
+           /* 'ver-rol',
             'crear-rol',
             'editar-rol',
             'borrar-rol',
@@ -26,7 +26,7 @@ class SeederTablaPermisos extends Seeder
             'ver-asignatura',
             'crear-asignatura',
             'editar-asignatura',
-            'borrar-asignatura',
+            'borrar-asignatura',*/
             //tabla usuarios
             'ver-usuario',
             'crear-usuario',
