@@ -1,12 +1,8 @@
+<!-- Menu para el ADMINISTRADOR -->
+@role('Administrador')
 <li class="side-menus {{ Request::is('*') ? 'active' : '' }}">
     <a class="nav-link" href="/home">
         <i class="fas fa-building"></i><span>Tablero</span>
-        @role('Administrador')
-            $cant_asignaturas = "Si Administrador";
-            @else
-            $cant_asignaturas = "NO Administrador";
-        @endrole
-        <span>{{$cant_asignaturas}}</span>
     </a>
     <a class="nav-link" href="/usuarios">
         <i class="fas fa-users"></i><span>Usuarios</span>
@@ -36,3 +32,28 @@
         </li>
     </ul>
 </li>
+@endrole
+
+<!-- Menu para el ADMINISTRADOR -->
+@role('Docente')
+<li class="side-menus {{ Request::is('*') ? 'active' : '' }}">
+    <a class="nav-link" href="/home">
+        <i class="fas fa-building"></i><span>Tablero</span>
+    </a>
+    <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+        <i class="fas fa-users"></i><span>Estudiante</span>
+    </a>
+    <ul class="collapse list-unstyled" id="pageSubmenu">
+        <li>
+            <a href="/calificaciones"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+                <span>Calificaciones</span>
+            </a>
+        </li>
+        <li>
+            <a href="/anecdotica"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+                <span>Anecdótica</span>
+            </a>
+        </li>
+    </ul>
+</li>
+@endrole
