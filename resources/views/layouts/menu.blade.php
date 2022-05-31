@@ -45,7 +45,7 @@
     </a>
     <ul class="collapse list-unstyled" id="pageSubmenu">
         <li>
-            <a href="/calificaciones"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+            <a href="/calificacionporasignatura"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Calificaciones</span>
             </a>
         </li>

@@ -6,6 +6,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\AsignaturaController;
+use App\Http\Controllers\CalificacionesPorAsignaturaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,4 +43,5 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('asignaturas', AsignaturaController::class);
+    Route::resource('calificacionporasignatura', CalificacionesPorAsignaturaController::class);
 });

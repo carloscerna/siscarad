@@ -55,6 +55,10 @@ class CreateAlumnoTable extends Migration
             $table->char('codigo_estatus', 2)->nullable();
             $table->char('codigo_transporte', 2)->nullable()->default('04');
             $table->char('codigo_nacionalidad', 2)->nullable()->default('01');
+            $table->bigInteger('id', true);
+            $table->timeTz('timestampTz')->nullable();
+            $table->timeTz('updated_at')->nullable();
+            $table->timeTz('created_at')->nullable();
         });
     }
 
