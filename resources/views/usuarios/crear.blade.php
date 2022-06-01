@@ -56,6 +56,18 @@
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="form-group">
+                                    <label for="">Personal (Docente)</label>
+                                    {!! Form::select('codigo_personal', $personal, null, ['class' => 'form-control']) !!}
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="form-group">
+                                    <label for="">Institución (Escuela)</label>
+                                    {!! Form::select('codigo_institucion', $institucion, null, ['class' => 'form-control']) !!}
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-12 col-md-12">
                                 <button type="submit" class="btn btn-primary">Guardar</button>
                             </div>
                         </div>

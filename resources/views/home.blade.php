@@ -9,14 +9,15 @@ use App\Models\mantenimiento\asignatura\Asignatura;
     $cant_asignaturas = Asignatura::count();        
 use Illuminate\Support\Facades;
     $correo_docente = Auth::user()->email;                                        
-    $nombre_docente = Auth::user()->name;                                        
+    $nombre_docente = Auth::user()->name;
+    $codigo_personal = Auth::user()->codigo_personal;                                        
 @endphp
 
 @section('content')
 @role("Docente")
 <section class="section">
     <div class="section-header mb-1">
-        <h4 class="page__heading">{{$nombre_docente}}</h4>
+        <h4 class="page__heading">{{$nombre_docente}} - {{$codigo_personal}}</h4>
     </div>
     <div class="section-body">
         <div class="row">

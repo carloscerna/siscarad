@@ -10,6 +10,9 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Arr;
+// Agregar
+use App\Models\Tablas\Personal;
+use App\Models\Tablas\Institucion;
 
 class UsuarioController extends Controller
 {
@@ -41,7 +44,9 @@ class UsuarioController extends Controller
     {
         //
         $roles = Role::pluck('name','name')->all();
-        return view('usuarios.crear', compact('roles'));
+        $personal = Personal::pluck('nombres','id_personal')->all();
+        $institucion = Institucion::pluck('nombre_institucion','id_institucion')->all();
+        return view('usuarios.crear', compact('roles','personal','institucion'));
     }
 
     /**
@@ -57,7 +62,9 @@ class UsuarioController extends Controller
             'name' => 'required',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|same:confirm-password',
-            'roles' => 'required'
+            'roles' => 'required',
+            'codigo_personal' => 'required',
+            'codigo_institucion' => 'required'
         ]);
     
         $input = $request->all();
@@ -92,8 +99,10 @@ class UsuarioController extends Controller
         $user = User::find($id);
         $roles = Role::pluck('name', 'name')->all();
         $userRole = $user->roles->pluck('name','name')->all();
-
-        return view('usuarios.editar', compact('user','roles','userRole'));
+        //
+        $personal = Personal::pluck('nombres','id_personal')->all();
+        $institucion = Institucion::pluck('nombre_institucion','id_institucion')->all();
+        return view('usuarios.editar', compact('user','roles','userRole','personal','institucion'));
     }
 
     /**
@@ -110,7 +119,9 @@ class UsuarioController extends Controller
             'name' => 'required',
             'email' => 'required|email|unique:users,email,'.$id,
             'password' => 'same:confirm-password',
-            'roles' => 'required'
+            'roles' => 'required',
+            'codigo_personal' => 'required',
+            'codigo_institucion' => 'required'
         ]);
 
         $input = $request->all();
