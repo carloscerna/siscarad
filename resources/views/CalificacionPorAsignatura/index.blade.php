@@ -25,18 +25,39 @@ use Illuminate\Support\Facades;
 @endrole
 
 <div class="form-group">
+  {!! Form::hidden('codigo_personal', $codigo_personal,['id'=>'codigo_personal', 'class'=>'form-control']) !!}
   {{ Form::label('LblAnnLectivo', 'Año Lectivo:') }}
-  {!! Form::select('codigo_annlectivo', $annlectivo, null, ['class' => 'form-control']) !!}
+  {!! Form::select('codigo_annlectivo', $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control']) !!}
+
+  {{ Form::label('LblGradoSeccionTurno', 'Grado-Sección-Turno:') }}
+  {!! Form::select('codigo_grado_seccion_turno', $annlectivo, null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccion(this.value)', 'class' => 'form-control']) !!}
+
+  {{ Form::label('LblNombreAsignatura', 'Asignatura:') }}
+  {!! Form::select('codigo_asignatura', $annlectivo, null, ['class' => 'form-control', 'id' => 'codigo_asignatura']) !!}
+
+  {{ Form::label('LblPeriodoTrimestre', 'Período o Trimestre:') }}
+  {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
 </div>
 
-<script>
-  $(document).ready(function(){
-      $('#select2').select2();
-      $('#select2').on('change', function(e){
-          let valor = $('#select2').select2('val');
-          let text = $('#select2 option:selected').text();
-          @this.set('seleccionado', text);
-      })
-  })
-</script>
 @endsection
+@section('scripts')
+    <script type="text/javascript">
+        $('#codigo_asignatura1').select2();
+            $('#codigo_asignatura1').on('change', function(e){
+                let valor = $('#codigo_asignatura1').select2('val');
+                let text = $('#codigo_asignatura1 option:selected').text();
+                //@this.set('seleccionado', text);
+            })
+  
+        // funcion onchange
+        function BuscarPorAnnLectivo(AnnLectivo) {
+            codigo_personal = $('#codigo_personal').val();
+            alert(AnnLectivo + ' ' + codigo_personal);
+        }
+       // funcion onchange
+        function BuscarPorGradoSeccion(GradoSeccion) {
+            alert(GradoSeccion);
+        }
+    </script>
+@endsection
+        
