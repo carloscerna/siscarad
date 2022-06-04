@@ -52,7 +52,13 @@ use Illuminate\Support\Facades;
         // funcion onchange
         function BuscarPorAnnLectivo(AnnLectivo) {
             codigo_personal = $('#codigo_personal').val();
-            alert(AnnLectivo + ' ' + codigo_personal);
+            //alert(AnnLectivo + ' ' + codigo_personal);
+
+            $.get('calificacionporasignatura.buscarGradoSeccion',{codigo_personal: codigo_personal, codigo_ann_lectivo: AnnLectivo}, function(data){
+
+            
+                console.log(data);
+            });
         }
        // funcion onchange
         function BuscarPorGradoSeccion(GradoSeccion) {
