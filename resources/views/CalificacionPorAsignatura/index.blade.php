@@ -27,13 +27,13 @@ use Illuminate\Support\Facades;
 <div class="form-group">
   {!! Form::hidden('codigo_personal', $codigo_personal,['id'=>'codigo_personal', 'class'=>'form-control']) !!}
   {{ Form::label('LblAnnLectivo', 'Año Lectivo:') }}
-  {!! Form::select('codigo_annlectivo', $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control']) !!}
+  {!! Form::select('codigo_annlectivo', ['placeholder'=>'Selecciona'] + $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control']) !!}
 
   {{ Form::label('LblGradoSeccionTurno', 'Grado-Sección-Turno:') }}
-  {!! Form::select('codigo_grado_seccion_turno', $annlectivo, null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccion(this.value)', 'class' => 'form-control']) !!}
+  {!! Form::select('codigo_grado_seccion_turno', ['placeholder'=>'Selecciona'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccion(this.value)', 'class' => 'form-control']) !!}
 
   {{ Form::label('LblNombreAsignatura', 'Asignatura:') }}
-  {!! Form::select('codigo_asignatura', $annlectivo, null, ['class' => 'form-control', 'id' => 'codigo_asignatura']) !!}
+  {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control', 'id' => 'codigo_asignatura']) !!}
 
   {{ Form::label('LblPeriodoTrimestre', 'Período o Trimestre:') }}
   {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
@@ -51,13 +51,27 @@ use Illuminate\Support\Facades;
   
         // funcion onchange
         function BuscarPorAnnLectivo(AnnLectivo) {
+
+        url_ajax = '{{url("getGradoSeccion")}}' 
+        csrf_token = '{{csrf_token()}}' 
+
             codigo_personal = $('#codigo_personal').val();
+            codigo_annlectivo = $('#codigo_annlectivo').val();
             //alert(AnnLectivo + ' ' + codigo_personal);
 
-            $.get('calificacionporasignatura.buscarGradoSeccion',{codigo_personal: codigo_personal, codigo_ann_lectivo: AnnLectivo}, function(data){
+            $.ajax({
+                type: "post",
+                url: url_ajax,
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id": codigo_personal, 
+                    codigo_annlectivo: codigo_annlectivo
+                },
+                dataType: 'json',
+                success:function(data) {
 
-            
-                console.log(data);
+                    alert("FUNCIONO" + data);
+                } 
             });
         }
        // funcion onchange

@@ -53,6 +53,14 @@ class CalificacionesPorAsignaturaController extends Controller
     public function show($id)
     {
         //
+        $CargaDocente = CargaDocente::join('bachillerato_ciclo', 'bachillerato_ciclo.codigo', '=', 'carga_docente.codigo_bachillerato')
+            ->join('grado_ano', 'grado_ano.codigo', '=', 'carga_docente.codigo')
+            ->join('seccion', 'seccion.turno', '=', 'carga_docente.codigo')
+            ->join('turno','turno.codigo', '=', 'carga_docente.codigo')
+            ->select('carga_docente.codigo_bachillerato','carga_docente.codigo_grado','carga_docente.codigo_seccion','carga_docente.codigo_turno','carga_docente.codigo_ann_lectivo',
+            'bachillerato.nombre as nombre_modalidad','grado_ano.nombre as nombre_grado','seccion.nombre as nombre_seccion','turno.nombre as nombre_turno')
+            ->get();
+
     }
 
     /**
@@ -88,9 +96,16 @@ class CalificacionesPorAsignaturaController extends Controller
     {
         //
     }
-
-    public function buscarGradoSeccion()
+    /**
+    * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function getGradoSeccion()
     {
+        $codigo_personal = $_POST['id'];
+            $CargaDocente = "Hola: " . $codigo_personal;
      /*   select DISTINCT cd.codigo_bachillerato, cd.codigo_grado, cd.codigo_seccion, cd.codigo_turno, cd.codigo_ann_lectivo,
             bach.nombre as nombre_modalidad, gr.nombre as nombre_grado, sec.nombre as nombre_seccion, tur.nombre as nombre_turno
             from carga_docente cd
@@ -101,11 +116,14 @@ class CalificacionesPorAsignaturaController extends Controller
             where cd.codigo_ann_lectivo = '22' and cd.codigo_docente = '19'*/
 
             $CargaDocente = CargaDocente::join('bachillerato_ciclo', 'bachillerato_ciclo.codigo', '=', 'carga_docente.codigo_bachillerato')
-            ->join('grado_ano', 'grado_ano.codigo', '=', 'carga_docente.codigo')
-            ->join('seccion', 'seccion.turno', '=', 'carga_docente.codigo')
-            ->join('turno','turno.codigo', '=', 'carga_docente.codigo')
+            ->join('grado_ano', 'grado_ano.codigo', '=', 'carga_docente.codigo_grado')
+            ->join('seccion', 'seccion.turno', '=', 'carga_docente.codigo_seccion')
+            ->join('turno','turno.codigo', '=', 'carga_docente.codigo_turno')
             ->select('carga_docente.codigo_bachillerato','carga_docente.codigo_grado','carga_docente.codigo_seccion','carga_docente.codigo_turno','carga_docente.codigo_ann_lectivo',
-            'bachillerato.nombre as nombre_modalidad','grado_ano.nombre as nombre_grado','seccion.nombre as nombre_seccion','turno.nombre as nombre_turno')
+            'bachillerato_ciclo.nombre as nombre_modalidad','grado_ano.nombre as nombre_grado','seccion.nombre as nombre_seccion','turno.nombre as nombre_turno')
             ->get();
+
+                print $CargaDocente;
+            return $CargaDocente;
     }
 }

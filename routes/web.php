@@ -44,4 +44,8 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('asignaturas', AsignaturaController::class);
     Route::resource('calificacionporasignatura', CalificacionesPorAsignaturaController::class);
+    //Route::get('gradoseccion/{id}', 'CalificacionesPorAsignaturaController@getGradoSeccion');
+    //Route::get('buscarGradoSeccion','AsignaturaController@getGradoSeccion');
+    Route::post("getGradoSeccion", "App\Http\Controllers\CalificacionesPorAsignaturaController@getGradoSeccion")->name('getGradoSeccion');
+
 });
