@@ -193,51 +193,24 @@ class CalificacionesPorAsignaturaController extends Controller
         $codigo_seccion = substr($codigo_gradoseccionturno,2,2);
         $codigo_turno = substr($codigo_gradoseccionturno,4,2);
         $codigo_modalidad = substr($codigo_gradoseccionturno,6,2);
-        $BuscarMatricula = array(); $BuscarCalificaciones = array(); $BuscarCalificacionesF = array();
            
-            $EstudiantesMatricula = DB::table('alumno_matricula')
-                ->select('id_alumno_matricula as codigo_matricula','codigo_alumno')
+        $periodo = 'nota_p_p_1';
+        $EstudiantesMatricula = DB::table('alumno as a')
+                ->join('alumno_matricula as am','a.id_alumno','=','am.codigo_alumno')
+                ->join('nota as n','am.id_alumno_matricula','=','n.codigo_matricula')
+                ->select('a.id_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno','am.id_alumno_matricula','n.id_notas', "$periodo as nota_p_p",
+                        DB::raw("TRIM(CONCAT(BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno), CAST(' ' AS VARCHAR), BTRIM(a.nombre_completo))) as full_name"))
                 ->where([
-                    ['codigo_bach_o_ciclo', '=', $codigo_modalidad],
-                    ['codigo_ann_lectivo', '=', $codigo_annlectivo],
-                    ['codigo_grado', '=', $codigo_grado],
-                    ['codigo_seccion', '=', $codigo_seccion],
-                    ['codigo_turno', '=', $codigo_turno],
+                    ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
+                    ['am.codigo_ann_lectivo', '=', $codigo_annlectivo],
+                    ['am.codigo_grado', '=', $codigo_grado],
+                    ['am.codigo_seccion', '=', $codigo_seccion],
+                    ['am.codigo_turno', '=', $codigo_turno],
+                    ['n.codigo_asignatura', '=', $codigo_asignatura],
                     ])
+                ->orderBy('full_name','asc')
                 ->get();
-                
-                $fila_array = 0;
-                foreach($EstudiantesMatricula as $response){  //Llenar el arreglo con datos
-                    $codigo_matricula = $response->codigo_matricula;
-                    $codigo_alumno = $response->codigo_alumno;
 
-                    $BuscarCalificaciones = DB::table('nota')
-                    ->join('alumno','nota.codigo_alumno','=','alumno.id_alumno')
-                    ->join('asignatura','nota.codigo_asignatura','=','asignatura.codigo')
-                    ->select('id_notas as codigo_calificacion','asignatura.nombre as nombre_asignatura','nombre_completo','apellido_paterno','apellido_materno')
-                    ->where([
-                        ['codigo_matricula', '=', $codigo_matricula],
-                        ['codigo_alumno', '=', $codigo_alumno],
-                        ['codigo_asignatura', '=', $codigo_asignatura],
-                        ])
-                    ->get();
-
-                    foreach($BuscarCalificaciones as $response){  //Llenar el arreglo con dato
-                        $codigo_calificacion = $response->codigo_calificacion;
-                        $nombre_asignatura = $response->nombre_asignatura;
-                        $nombre_completo = trim($response->nombre_completo) . " " . trim($response->apellido_paterno) . " " . trim($response->apellido_materno);
-                            // recorrer matriz
-                            $BuscarCalificaciones[$fila_array] = array ( 
-                                "codigo_calificacion" => $codigo_calificacion,
-                                "nombre_asignatura" => $nombre_asignatura,
-                                "nombre_completo" => $nombre_completo
-                            ); 
-                            array_push($BuscarCalificacionesF,$BuscarCalificaciones);
-                        // aumentar fila
-                            $fila_array++;
-                        }
-                }
-
-            return $BuscarCalificacionesF;
+                        return $EstudiantesMatricula;
     }
 }

@@ -36,7 +36,7 @@ use Illuminate\Support\Facades;
   {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control', 'id' => 'codigo_asignatura']) !!}
 
   {{ Form::label('LblPeriodoTrimestre', 'Período o Trimestre:') }}
-  {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
+  {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','nota_p_p_1'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
 
   {{ Form::label('LblActividadPorcentaje', 'Actividades (%):') }}
   {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control']) !!}
@@ -191,24 +191,29 @@ use Illuminate\Support\Facades;
                 },
                 dataType: 'json',
                 success:function(data) {
-                    var linea = 0;
+                    var linea = 0; var html= "";
+                    $('#contenido').empty();
+                    $('#contenido').append(data);
                     $.each( data, function( key, value ) {
                         linea = linea + 1;
-                        console.log(value.codigo_calificacion);
-                        console.log(value.codigo_nombre_asignatura);
-                        console.log(value.nombre_completo);
-
+                        
                         html += '<tr>' +
                         '<td>' + linea + '</td>' +
-                        '<td>' + value.codigo_calificacion + '</td>' +
-                        '<td>' + value.codigo_nombre_asignatura + '</td>' +
-                        '<td>' + value.nombre_completo + '</td>' +
+                        '<td>' + value.codigo_nie + '</td>' +
+                        '<td>' + value.id_notas + '</td>' +
+                        '<td>' + value.full_name + '</td>' +
+                        '{{ Form::input("number", "name", "value", ["class" => "number", "id" => "numberField"]) }}' +
+                        '<td><input type=number class=form-control onblur=VerificarNumero(this.value) value=' + value.nota_p_p + '></td>' +
                         '</tr>';
 
                     });
-                        $('#TablaNominaEstudiantes').html(html);
+                    $('#TablaNominaEstudiantes').html(html);
                 } 
             });
+        }
+
+        function VerificarNumero(valor) {
+            console.log(valor);
         }
     </script>
 @endsection
