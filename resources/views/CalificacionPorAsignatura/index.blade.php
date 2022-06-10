@@ -202,8 +202,7 @@ use Illuminate\Support\Facades;
                         '<td>' + value.codigo_nie + '</td>' +
                         '<td>' + value.id_notas + '</td>' +
                         '<td>' + value.full_name + '</td>' +
-                        '{{ Form::input("number", "name", "value", ["class" => "number", "id" => "numberField"]) }}' +
-                        '<td><input type=number class=form-control onblur=VerificarNumero(this.value) value=' + value.nota_p_p + '></td>' +
+                        "<td><input type=number step=0.1 class=form-control name="+value.id_notas+" id="+value.id_notas+" value=" + value.nota_p_p + " max=10.0 min=0.1 maxlength=4 oninput='maxLengthNumber(this)'></td>" +
                         '</tr>';
 
                     });
@@ -212,8 +211,14 @@ use Illuminate\Support\Facades;
             });
         }
 
-        function VerificarNumero(valor) {
-            console.log(valor);
+        function maxLengthNumber(obj) {
+            console.log(obj.value);
+            if (obj.value.length > obj.maxLength) {
+                obj.value = obj.value.slice(0, obj.maxLength);
+            }else if(obj.value > 10){
+                obj.value = obj.value.slice(0, obj.maxLength);
+            }
+
         }
     </script>
 @endsection
