@@ -211,14 +211,28 @@ use Illuminate\Support\Facades;
             });
         }
 
-        function maxLengthNumber(obj) {
-            console.log(obj.value);
-            if (obj.value.length > obj.maxLength) {
-                obj.value = obj.value.slice(0, obj.maxLength);
-            }else if(obj.value > 10){
-                obj.value = obj.value.slice(0, obj.maxLength);
-            }
-
+        function maxLengthNumber(valor) {
+            console.log(valor.value);
+            {
+		    var amount = valor.value;
+		    console.log(amount);
+                   //d+ permite caracteres enteros
+                   //si hay un caracter que no es dígito entonces evalua lo que está en paréntesis (?) significa opcional
+		    var patron = /^(\d+(.{1}\d{1})?)$/;     		    
+                    if (!patron.test(amount))
+		   		 	{
+		       	 		console.log('cantidad ingresada incorrectamente');
+		        		valor.value = "";
+		        		return false;
+        			}
+		   			 else if(amount > 10){
+                     console.log('cantidad ingresada incorrectamente');
+                     valor.value = "";
+                     return false;
+                     }
+                     else{
+		        		return true;}
+		  }
         }
     </script>
 @endsection
