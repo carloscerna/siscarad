@@ -36,10 +36,10 @@ use Illuminate\Support\Facades;
   {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control', 'id' => 'codigo_asignatura']) !!}
 
   {{ Form::label('LblPeriodoTrimestre', 'Período o Trimestre:') }}
-  {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','nota_p_p_1'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
+  {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
 
   {{ Form::label('LblActividadPorcentaje', 'Actividades (%):') }}
-  {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control']) !!}
+  {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)'], null, ['id' => 'codigo_actividad_porcentaje','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control']) !!}
 </div>
 
 
@@ -66,19 +66,19 @@ use Illuminate\Support\Facades;
                       </tr>
                   </tbody>
                   <tfoot>
-                      <tr>
-                          <td colspan = "4" style="text-align: right;">
-                                    <button type="button" class="btn btn-success" id = "goCalificacionGuardar">
-                                        Guardar
-                                    </button>
-                          </td>
-                      </tr>
+                      
                   </tfoot>
                 </table>
               </div>
         </div>
         <div class="card-footer">
-
+            <tr>
+                <td colspan = "4" style="text-align: right;">
+                          <button type="button" class="btn btn-success" id = "goCalificacionGuardar" onclick="GuardarRegistros()">
+                              Guardar
+                          </button>
+                </td>
+            </tr>
         </div>
       </div>
 </div>
@@ -200,16 +200,84 @@ use Illuminate\Support\Facades;
                         html += '<tr>' +
                         '<td>' + linea + '</td>' +
                         '<td>' + value.codigo_nie + '</td>' +
+                        '<td>' + value.full_name + '</td>' +
+                        "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.1 maxlength=4 oninput='maxLengthNumber(this)'>" +
+                            "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+"</td>" +
+                        "<td><input type=hidden name=_method value=PUT>"+
+                        '</tr>';
+
+                    });
+                    $('#contenido').html(html);
+                } 
+            });
+        }
+        // funcionar para guardar las calificaciones.
+        function GuardarRegistros() {
+            
+            url_ajax = '{{url("getActualizarCalificacion")}}' 
+            csrf_token = '{{csrf_token()}}' 
+
+            alert(url_ajax);
+            codigo_personal = $('#codigo_personal').val();
+            codigo_annlectivo = $('#codigo_annlectivo').val();
+            codigo_asignatura = $("#codigo_asignatura").val();
+            codigo_actividad = $("#codigo_actividad_porcentaje").val();
+            codigo_periodo = $("#codigo_periodo").val();
+            codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
+            // leer tabla de datos con ID y calificaciòn.
+            var $objCuerpoTabla=$("#TablaNominaEstudiantes").children().prev().parent();
+                var codigo_calificacion_ = []; var calificacion_ = [];               
+                var fila = 0;
+                // recorre el contenido de la tabla.
+                $objCuerpoTabla.find("tbody tr").each(function(){
+                                var codigo_calificacion =$(this).find('td').eq(3).find("input[name='codigo_calificacion']").val();
+                                var calificacion =$(this).find('td').eq(3).find("input[name='calificacion']").val();
+                        // dar valor a las arrays.
+                        codigo_calificacion_[fila] = codigo_calificacion;
+                        calificacion_[fila] = calificacion;
+                        fila = fila + 1;
+                });
+
+            //////
+            $.ajax({
+                type: "get",
+                url: url_ajax,
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    codigo_annlectivo: codigo_annlectivo,
+                    codigo_gradoseccionturno: codigo_gradoseccionturno,
+                    codigo_asignatura: codigo_asignatura,
+                    codigo_actividad: codigo_actividad,
+                    codigo_periodo: codigo_periodo,
+                    codigo_calificacion: codigo_calificacion_,
+                    calificacion: calificacion_,
+                    fila: fila
+                },
+                dataType: 'json',
+                success:function(data) {
+                    alert(data);
+                    /*
+                    var linea = 0; var html= "";
+                    $('#contenido').empty();
+                    $('#contenido').append(data);
+                    $.each( data, function( key, value ) {
+                        linea = linea + 1;
+                        
+                        html += '<tr>' +
+                        '<td>' + linea + '</td>' +
+                        '<td>' + value.codigo_nie + '</td>' +
                         '<td>' + value.id_notas + '</td>' +
                         '<td>' + value.full_name + '</td>' +
-                        "<td><input type=number step=0.1 class=form-control name="+value.id_notas+" id="+value.id_notas+" value=" + value.nota_p_p + " max=10.0 min=0.1 maxlength=4 oninput='maxLengthNumber(this)'></td>" +
+                        "<td><input type=number step=0.1 class=form-control name="+value.id_notas+" id="+value.id_notas+" value=" + value.nota_actividad + " max=10.0 min=0.1 maxlength=4 oninput='maxLengthNumber(this)'></td>" +
                         '</tr>';
 
                     });
                     $('#TablaNominaEstudiantes').html(html);
+                    */
                 } 
             });
         }
+
 
         function maxLengthNumber(valor) {
             console.log(valor.value);

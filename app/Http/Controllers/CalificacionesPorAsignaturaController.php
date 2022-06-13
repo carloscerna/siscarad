@@ -193,12 +193,53 @@ class CalificacionesPorAsignaturaController extends Controller
         $codigo_seccion = substr($codigo_gradoseccionturno,2,2);
         $codigo_turno = substr($codigo_gradoseccionturno,4,2);
         $codigo_modalidad = substr($codigo_gradoseccionturno,6,2);
-           
-        $periodo = 'nota_p_p_1';
+         // CAMBIAR EL VALOR DE LA VARIABLE "ACTIVIDAD PORCENTAJE" DEPENDIENDO DEL PERIODO
+         // 01 - PERIODO 1 ... 05 - PERIODO 5
+         // CODIGO ACTIVIDAD
+         // 01- NOTA_A1_1 ... 03 - NOTA_A2_1
+
+            $nombre_periodos = array('nota_p_p_');
+            $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
+            $numero_periodo = 0;
+            switch ($codigo_periodo) {
+                case '01':
+                    $nombre_periodo = $nombre_periodos[0] . '1';
+                    $numero_periodo = '1';
+                break;
+                case '02':
+                    $nombre_periodo = $nombre_periodos[0] . '2';
+                    $numero_periodo = '2';
+                break;
+                case '03':
+                    $nombre_periodo = $nombre_periodos[0] . '3';
+                    $numero_periodo = '3';
+                break;
+                case '04':
+                    $nombre_periodo = $nombre_periodos[0] . '4';
+                    $numero_periodo = '4';
+                break;
+                case '05':
+                    $nombre_periodo = $nombre_periodos[0] . '5';
+                    $numero_periodo = '5';
+                break;
+            }
+            // ACTIVIDADES
+            switch ($codigo_actividad) {
+                case '01':
+                    $nombre_actividad = $nombre_actividades[0] .  $numero_periodo;
+                break;
+                case '02':
+                    $nombre_actividad = $nombre_actividades[1] . $numero_periodo;
+                break;
+                case '03':
+                    $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
+                break;
+            }
+
         $EstudiantesMatricula = DB::table('alumno as a')
                 ->join('alumno_matricula as am','a.id_alumno','=','am.codigo_alumno')
                 ->join('nota as n','am.id_alumno_matricula','=','n.codigo_matricula')
-                ->select('a.id_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno','am.id_alumno_matricula','n.id_notas', "$periodo as nota_p_p",
+                ->select('a.id_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno','am.id_alumno_matricula','n.id_notas', "$nombre_actividad as nota_actividad",
                         DB::raw("TRIM(CONCAT(BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno), CAST(' ' AS VARCHAR), BTRIM(a.nombre_completo))) as full_name"))
                 ->where([
                     ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
@@ -213,4 +254,25 @@ class CalificacionesPorAsignaturaController extends Controller
 
                         return $EstudiantesMatricula;
     }
+
+    function getActualizarCalificacion(){
+        $fila = $_REQUEST['fila'];
+        $codigo_calificacion[] = $_REQUEST['codigo_calificacion'];
+        $calificacion[] = $_REQUEST['calificacion'];
+        $nombre_campo_actividad = 'nota_a1_1';
+        print_r($calificacion);
+
+
+        //print $fila . " hola....";
+        for ($i=0; $i < $fila -1; $i++) { 
+            $id_notas_ = $codigo_calificacion[0][$i];
+            $calificacion_ = $calificacion[0][$i];
+            //$actual = DB::update(DB::RAW('update nota set nota_a1_1 = '  .$calificacion_. ' where id_notas = ?' ,[$id_notas_]));
+            $actual = DB::update('update nota set nota_a1_1 = ? where id_notas = ?', [$calificacion_ , $id_notas_]);
+           //$User_Update = Calificaciones::where("id_notas", $id_notas_)->update(["nota_a1_1" => $calificacion_]);
+        }
+
+        return $actual;
+    }
+
 }
