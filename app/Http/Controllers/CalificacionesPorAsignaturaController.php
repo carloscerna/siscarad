@@ -85,7 +85,7 @@ class CalificacionesPorAsignaturaController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
         //
     }
@@ -183,7 +183,6 @@ class CalificacionesPorAsignaturaController extends Controller
 
     public function getGradoSeccionCalificacionesAsignaturas()
     {
-        $codigo_personal = $_POST['id'];
         $codigo_annlectivo = $_POST['codigo_annlectivo'];
         $codigo_gradoseccionturno = $_POST['codigo_gradoseccionturno'];
         $codigo_asignatura = $_POST['codigo_asignatura'];
@@ -255,22 +254,19 @@ class CalificacionesPorAsignaturaController extends Controller
                         return $EstudiantesMatricula;
     }
 
-    function getActualizarCalificacion(){
-        $fila = $_REQUEST['fila'];
-        $codigo_calificacion[] = $_REQUEST['codigo_calificacion'];
-        $calificacion[] = $_REQUEST['calificacion'];
+    function getActualizarCalificacion(Request $request){
+        $fila = $request->fila;
+        $codigo_calificacion['codigo_calificacion'] = $request->codigo_calificacion;
+        $calificacion['calificacion'] = $request->calificacion;
         $nombre_campo_actividad = 'nota_a1_1';
-        print_r($calificacion);
 
-
-        //print $fila . " hola....";
-        for ($i=0; $i < $fila -1; $i++) { 
-            $id_notas_ = $codigo_calificacion[0][$i];
-            $calificacion_ = $calificacion[0][$i];
-            //$actual = DB::update(DB::RAW('update nota set nota_a1_1 = '  .$calificacion_. ' where id_notas = ?' ,[$id_notas_]));
-            $actual = DB::update('update nota set nota_a1_1 = ? where id_notas = ?', [$calificacion_ , $id_notas_]);
-           //$User_Update = Calificaciones::where("id_notas", $id_notas_)->update(["nota_a1_1" => $calificacion_]);
-        }
+            for ($i=0; $i < $fila; $i++) { 
+                $id_notas_ = $codigo_calificacion['codigo_calificacion'][$i];
+                $calificacion_ = $calificacion['calificacion'][$i];
+                    //$actual = DB::update(DB::RAW('update nota set nota_a1_1 = '  .$calificacion_. ' where id_notas = ?' ,[$id_notas_]));
+                    $actual = DB::update('update nota set nota_a1_1 = ? where id_notas = ?', [$calificacion_ , $id_notas_]);
+                //$User_Update = Calificaciones::where("id_notas", $id_notas_)->update(["nota_a1_1" => $calificacion_]);
+            }
 
         return $actual;
     }

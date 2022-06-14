@@ -9,10 +9,10 @@ use Illuminate\Support\Facades;
 @section('content')
 @role("Docente")
 <section class="section">
-    <div class="section-header mb-1">
+    <div class="section-header mb-0">
         <h4 class="page__heading">{{$nombre_docente}} - {{$codigo_personal}}</h4>
     </div>
-    <div class="section-body">
+    <div class="section-body mb-0">
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
@@ -44,6 +44,8 @@ use Illuminate\Support\Facades;
 
 
 <div class="bg-light" id="NominaEstudiantes" style="display: none;">
+    {{-- {{ csrf_field() }}
+    {{ method_field('PATCH') }} --}}
     <div class="card">
         <div class="card-header bg-success">Estudiantes</div>
         <div class="card-body">
@@ -157,9 +159,9 @@ use Illuminate\Support\Facades;
         }
         // funcion onchange
         function BuscarPorPeriodo(Periodo) {
-        // Botón Otro... visible.
+            // Botón Otro... visible.
             $("#NominaEstudiantes").css("display","none");
-        // 	lIMPIAR SECTION QUE CONTIENE EL PORTAFOLIO.
+            // 	lIMPIAR SECTION QUE CONTIENE EL PORTAFOLIO.
 		    $('#ListarPortafolio').empty();
         }
 
@@ -168,8 +170,8 @@ use Illuminate\Support\Facades;
 			// Botón Otro... visible.
 				$("#NominaEstudiantes").css("display","block");
             //
-            url_ajax = '{{url("getGradoSeccionCalificacionesAsignaturas")}}' 
-            csrf_token = '{{csrf_token()}}' 
+            url_ajax = '{{url("getGradoSeccionCalificacionesAsignaturas")}}'; 
+            csrf_token = '{{csrf_token()}}'; 
 
             codigo_personal = $('#codigo_personal').val();
             codigo_annlectivo = $('#codigo_annlectivo').val();
@@ -182,7 +184,6 @@ use Illuminate\Support\Facades;
                 url: url_ajax,
                 data: {
                     "_token": "{{ csrf_token() }}",
-                    "id": codigo_personal, 
                     codigo_annlectivo: codigo_annlectivo,
                     codigo_gradoseccionturno: codigo_gradoseccionturno,
                     codigo_asignatura: codigo_asignatura,
@@ -201,7 +202,7 @@ use Illuminate\Support\Facades;
                         '<td>' + linea + '</td>' +
                         '<td>' + value.codigo_nie + '</td>' +
                         '<td>' + value.full_name + '</td>' +
-                        "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.1 maxlength=4 oninput='maxLengthNumber(this)'>" +
+                        "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 oninput='maxLengthNumber(this)'>" +
                             "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+"</td>" +
                         "<td><input type=hidden name=_method value=PUT>"+
                         '</tr>';
@@ -213,11 +214,8 @@ use Illuminate\Support\Facades;
         }
         // funcionar para guardar las calificaciones.
         function GuardarRegistros() {
-            
-            url_ajax = '{{url("getActualizarCalificacion")}}' 
-            csrf_token = '{{csrf_token()}}' 
+            csrf_token = '{{csrf_token()}}';
 
-            alert(url_ajax);
             codigo_personal = $('#codigo_personal').val();
             codigo_annlectivo = $('#codigo_annlectivo').val();
             codigo_asignatura = $("#codigo_asignatura").val();
@@ -237,13 +235,13 @@ use Illuminate\Support\Facades;
                         calificacion_[fila] = calificacion;
                         fila = fila + 1;
                 });
-
+                url_ajax = "{{ URL('/getActualizarCalificacion') }}"; 
             //////
             $.ajax({
-                type: "get",
+                type: "PUT",
                 url: url_ajax,
                 data: {
-                    "_token": "{{ csrf_token() }}",
+                    _token:'{{ csrf_token() }}',
                     codigo_annlectivo: codigo_annlectivo,
                     codigo_gradoseccionturno: codigo_gradoseccionturno,
                     codigo_asignatura: codigo_asignatura,
@@ -255,7 +253,7 @@ use Illuminate\Support\Facades;
                 },
                 dataType: 'json',
                 success:function(data) {
-                    alert(data);
+                    //alert(data);
                     /*
                     var linea = 0; var html= "";
                     $('#contenido').empty();
