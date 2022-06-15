@@ -258,14 +258,57 @@ class CalificacionesPorAsignaturaController extends Controller
         $fila = $request->fila;
         $codigo_calificacion['codigo_calificacion'] = $request->codigo_calificacion;
         $calificacion['calificacion'] = $request->calificacion;
-        $nombre_campo_actividad = 'nota_a1_1';
+        $codigo_actividad = $request->codigo_actividad;
+        $codigo_periodo = $request->codigo_periodo;
+        // CAMBIAR EL VALOR DE LA VARIABLE "ACTIVIDAD PORCENTAJE" DEPENDIENDO DEL PERIODO
+        // 01 - PERIODO 1 ... 05 - PERIODO 5
+        // CODIGO ACTIVIDAD
+        // 01- NOTA_A1_1 ... 03 - NOTA_A2_1
 
+                $nombre_periodos = array('nota_p_p_');
+                $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
+                $numero_periodo = 0;
+                switch ($codigo_periodo) {
+                    case '01':
+                        $nombre_periodo = $nombre_periodos[0] . '1';
+                        $numero_periodo = '1';
+                    break;
+                    case '02':
+                        $nombre_periodo = $nombre_periodos[0] . '2';
+                        $numero_periodo = '2';
+                    break;
+                    case '03':
+                        $nombre_periodo = $nombre_periodos[0] . '3';
+                        $numero_periodo = '3';
+                    break;
+                    case '04':
+                        $nombre_periodo = $nombre_periodos[0] . '4';
+                        $numero_periodo = '4';
+                    break;
+                    case '05':
+                        $nombre_periodo = $nombre_periodos[0] . '5';
+                        $numero_periodo = '5';
+                    break;
+                }
+                // ACTIVIDADES
+                switch ($codigo_actividad) {
+                    case '01':
+                        $nombre_actividad = $nombre_actividades[0] .  $numero_periodo;
+                    break;
+                    case '02':
+                        $nombre_actividad = $nombre_actividades[1] . $numero_periodo;
+                    break;
+                    case '03':
+                        $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
+                    break;
+                }
+                // FORMAR EL STRING DE EL UPDATE.
+                    $actual = array();
             for ($i=0; $i < $fila; $i++) { 
                 $id_notas_ = $codigo_calificacion['codigo_calificacion'][$i];
                 $calificacion_ = $calificacion['calificacion'][$i];
-                    //$actual = DB::update(DB::RAW('update nota set nota_a1_1 = '  .$calificacion_. ' where id_notas = ?' ,[$id_notas_]));
-                    $actual = DB::update('update nota set nota_a1_1 = ? where id_notas = ?', [$calificacion_ , $id_notas_]);
-                //$User_Update = Calificaciones::where("id_notas", $id_notas_)->update(["nota_a1_1" => $calificacion_]);
+                // QUERY DB ACTUALIZAR.
+                    $actual['update'] = DB::update("update nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
             }
 
         return $actual;

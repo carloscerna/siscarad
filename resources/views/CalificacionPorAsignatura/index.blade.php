@@ -33,7 +33,7 @@ use Illuminate\Support\Facades;
   {!! Form::select('codigo_grado_seccion_turno', ['placeholder'=>'Selecciona'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionAsignaturas(this.value)', 'class' => 'form-control']) !!}
 
   {{ Form::label('LblNombreAsignatura', 'Asignatura:') }}
-  {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control', 'id' => 'codigo_asignatura']) !!}
+  {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control', 'id' => 'codigo_asignatura', 'onchange' => 'BuscarPorAsignatura(this.value)']) !!}
 
   {{ Form::label('LblPeriodoTrimestre', 'Período o Trimestre:') }}
   {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
@@ -127,6 +127,13 @@ use Illuminate\Support\Facades;
                 } 
             });
         }
+        // function onchange
+        function BuscarPorAsignatura(CodigoAsignatura) {
+            // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
+                $('#codigo_periodo').val('00');
+                $('#codigo_actividad_porcentaje').val('00');
+                $('#contenido').empty();
+        }
        // funcion onchange
         function BuscarPorGradoSeccionAsignaturas(GradoSeccion) {
             url_ajax = '{{url("getGradoSeccionAsignaturas")}}' 
@@ -153,6 +160,11 @@ use Illuminate\Support\Facades;
                                         console.log(value.codigo_asignatura);
                                         console.log(value.nombre_asignatura);
                                             miselect.append('<option value="' + value.codigo_asignatura + '">' + value.nombre_asignatura + '</option>'); 
+                                    // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
+                                        $('#codigo_asignatura option:nth-child(1)').val();
+                                        $('#codigo_periodo').val('00');
+                                        $('#codigo_actividad_porcentaje').val('00');
+                                        $('#contenido').empty();
                                 });
                 } 
             });
@@ -163,6 +175,9 @@ use Illuminate\Support\Facades;
             $("#NominaEstudiantes").css("display","none");
             // 	lIMPIAR SECTION QUE CONTIENE EL PORTAFOLIO.
 		    $('#ListarPortafolio').empty();
+            // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
+                $('#codigo_actividad_porcentaje').val('00');
+                $('#contenido').empty();
         }
 
         // funcion onchange
@@ -209,6 +224,7 @@ use Illuminate\Support\Facades;
 
                     });
                     $('#contenido').html(html);
+                    
                 } 
             });
         }
@@ -253,25 +269,8 @@ use Illuminate\Support\Facades;
                 },
                 dataType: 'json',
                 success:function(data) {
-                    //alert(data);
-                    /*
-                    var linea = 0; var html= "";
-                    $('#contenido').empty();
-                    $('#contenido').append(data);
-                    $.each( data, function( key, value ) {
-                        linea = linea + 1;
-                        
-                        html += '<tr>' +
-                        '<td>' + linea + '</td>' +
-                        '<td>' + value.codigo_nie + '</td>' +
-                        '<td>' + value.id_notas + '</td>' +
-                        '<td>' + value.full_name + '</td>' +
-                        "<td><input type=number step=0.1 class=form-control name="+value.id_notas+" id="+value.id_notas+" value=" + value.nota_actividad + " max=10.0 min=0.1 maxlength=4 oninput='maxLengthNumber(this)'></td>" +
-                        '</tr>';
-
-                    });
-                    $('#TablaNominaEstudiantes').html(html);
-                    */
+                   $('#codigo_annlectivo').focus();
+                    toastr["success"]("Guardado", "HI");
                 } 
             });
         }
