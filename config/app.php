@@ -177,7 +177,8 @@ return [
         // ... Spatie
         Spatie\Permission\PermissionServiceProvider::class,
         Brian2694\Toastr\ToastrServiceProvider::class,
-
+        // ... toaster
+        Brian2694\Toastr\ToastrServiceProvider::class,
     ],
 
     /*
