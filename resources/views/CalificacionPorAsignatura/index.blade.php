@@ -34,6 +34,7 @@ use Illuminate\Support\Facades;
 
   {{ Form::label('LblNombreAsignatura', 'Asignatura:') }}
   {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control', 'id' => 'codigo_asignatura', 'onchange' => 'BuscarPorAsignatura(this.value)']) !!}
+  {!! Form::hidden('codigo_area', '00',['id'=>'codigo_area', 'class'=>'form-control']) !!}
 
   {{ Form::label('LblPeriodoTrimestre', 'Período o Trimestre:') }}
   {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
@@ -127,14 +128,15 @@ use Illuminate\Support\Facades;
                 } 
             });
         }
-        // function onchange
+        // function onchange- CUANDO SELECCIONO LA ASIGNATURA.
         function BuscarPorAsignatura(CodigoAsignatura) {
             // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
                 $('#codigo_periodo').val('00');
                 $('#codigo_actividad_porcentaje').val('00');
+                $('#codigo_area').val(CodigoAsignatura);
                 $('#contenido').empty();
         }
-       // funcion onchange
+       // funcion onchange. CUANDO SELECCIONO EL GRADO Y SECCION
         function BuscarPorGradoSeccionAsignaturas(GradoSeccion) {
             url_ajax = '{{url("getGradoSeccionAsignaturas")}}' 
             csrf_token = '{{csrf_token()}}' 
@@ -157,9 +159,10 @@ use Illuminate\Support\Facades;
                              miselect.empty();
                              miselect.append('<option value="">Seleccionar...</option>');
                                  $.each( data, function( key, value ) {
-                                        console.log(value.codigo_asignatura);
-                                        console.log(value.nombre_asignatura);
-                                            miselect.append('<option value="' + value.codigo_asignatura + '">' + value.nombre_asignatura + '</option>'); 
+                                        console.log("codigo_asignatura: " + value.codigo_asignatura + " codigo area: " + value.codigo_area + " Nombre: " + value.nombre_asignatura);
+                                            miselect.append('<option value="' + value.codigo_asignatura + value.codigo_area + '">' + value.nombre_asignatura + '</option>'); 
+                                    // rellenar hidden
+                                        $("#codigo_area").val(value.codigo_area);
                                     // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
                                         $('#codigo_asignatura option:nth-child(1)').val();
                                         $('#codigo_periodo').val('00');
@@ -169,8 +172,36 @@ use Illuminate\Support\Facades;
                 } 
             });
         }
+
         // funcion onchange
         function BuscarPorPeriodo(Periodo) {
+            codigo_asignatura_area = $("#codigo_asignatura").val();
+            conteo_codigo_asignatura = codigo_asignatura_area.length;
+
+            if(conteo_codigo_asignatura == 4){
+                codigo_asignatura = codigo_asignatura_area.substring(0,2);
+                codigo_area = codigo_asignatura_area.substring(2,4);
+            }else{
+                codigo_asignatura = codigo_asignatura_area.substring(0,3);
+                codigo_area = codigo_asignatura_area.substring(3,5);
+            }
+            if(codigo_area == '01' || codigo_area == '02' || codigo_area == '03' || codigo_area == '08'){
+                miselect = $("#codigo_actividad_porcentaje");
+                miselect.empty();
+                miselect.append('<option value=00>Seleccionar...</option>'); 
+                miselect.append('<option value=01>Actividad 1 (35%)</option>'); 
+                miselect.append('<option value=02>Actividad 2 (35%)</option>'); 
+                miselect.append('<option value=03>Examen o Prueba Objetiva (30%)</option>'); 
+            }else{
+                miselect = $("#codigo_actividad_porcentaje");
+                miselect.empty();
+                miselect.append('<option value=00>Seleccionar...</option>'); 
+                miselect.append('<option value=01>Periodo 1</option>'); 
+                miselect.append('<option value=02>Periodo 2</option>'); 
+                miselect.append('<option value=03>Periodo 3</option>'); 
+                    // Llamar a la funciond e busqueda
+                    BuscarPorActividadPorcentaje(Periodo);
+            }
             // Botón Otro... visible.
             $("#NominaEstudiantes").css("display","none");
             // 	lIMPIAR SECTION QUE CONTIENE EL PORTAFOLIO.
@@ -180,7 +211,7 @@ use Illuminate\Support\Facades;
                 $('#contenido').empty();
         }
 
-        // funcion onchange
+        // funcion onchange. CUANDO SELECCIONO EL PERIODO
         function BuscarPorActividadPorcentaje(ActividadPorcentaje) {
 			// Botón Otro... visible.
 				$("#NominaEstudiantes").css("display","block");
@@ -190,7 +221,16 @@ use Illuminate\Support\Facades;
 
             codigo_personal = $('#codigo_personal').val();
             codigo_annlectivo = $('#codigo_annlectivo').val();
-            codigo_asignatura = $("#codigo_asignatura").val();
+            codigo_asignatura_area = $("#codigo_asignatura").val();
+            conteo_codigo_asignatura = codigo_asignatura_area.length;
+            if(conteo_codigo_asignatura == 4){
+                codigo_asignatura = codigo_asignatura_area.substring(0,2);
+                codigo_area = codigo_asignatura_area.substring(2,4);
+            }else{
+                codigo_asignatura = codigo_asignatura_area.substring(0,3);
+                codigo_area = codigo_asignatura_area.substring(3,5);
+            }
+            
             codigo_periodo = $("#codigo_periodo").val();
             codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
 
@@ -202,6 +242,7 @@ use Illuminate\Support\Facades;
                     codigo_annlectivo: codigo_annlectivo,
                     codigo_gradoseccionturno: codigo_gradoseccionturno,
                     codigo_asignatura: codigo_asignatura,
+                    codigo_area: codigo_area,
                     codigo_actividad: ActividadPorcentaje,
                     codigo_periodo: codigo_periodo
                 },
@@ -234,7 +275,15 @@ use Illuminate\Support\Facades;
 
             codigo_personal = $('#codigo_personal').val();
             codigo_annlectivo = $('#codigo_annlectivo').val();
-            codigo_asignatura = $("#codigo_asignatura").val();
+            codigo_asignatura_area = $("#codigo_asignatura").val();
+            conteo_codigo_asignatura = codigo_asignatura_area.length;
+            if(conteo_codigo_asignatura == 4){
+                codigo_asignatura = codigo_asignatura_area.substring(0,2);
+                codigo_area = codigo_asignatura_area.substring(2,4);
+            }else{
+                codigo_asignatura = codigo_asignatura_area.substring(0,3);
+                codigo_area = codigo_asignatura_area.substring(3,5);
+            }
             codigo_actividad = $("#codigo_actividad_porcentaje").val();
             codigo_periodo = $("#codigo_periodo").val();
             codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
@@ -261,6 +310,7 @@ use Illuminate\Support\Facades;
                     codigo_annlectivo: codigo_annlectivo,
                     codigo_gradoseccionturno: codigo_gradoseccionturno,
                     codigo_asignatura: codigo_asignatura,
+                    codigo_area: codigo_area,
                     codigo_actividad: codigo_actividad,
                     codigo_periodo: codigo_periodo,
                     codigo_calificacion: codigo_calificacion_,

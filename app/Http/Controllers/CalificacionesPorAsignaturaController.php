@@ -157,7 +157,7 @@ class CalificacionesPorAsignaturaController extends Controller
                 ->join('turno','carga_docente.codigo_turno', '=', 'turno.codigo')
                 ->join('asignatura','carga_docente.codigo_asignatura','=','asignatura.codigo')
                 ->select('codigo_bachillerato', 'codigo_grado','codigo_seccion', 'codigo_turno', 'codigo_docente','bachillerato_ciclo.nombre as nombre_bachillerato', 'grado_ano.nombre as nombre_grado'
-                ,'seccion.nombre as nombre_seccion', 'turno.nombre as nombre_turno','codigo_asignatura','asignatura.nombre as nombre_asignatura')
+                ,'seccion.nombre as nombre_seccion', 'turno.nombre as nombre_turno','codigo_asignatura','asignatura.nombre as nombre_asignatura','asignatura.codigo_area')
                 ->where('codigo_docente', '=', $codigo_personal)
                 ->where([
                     ['codigo_docente', '=', $codigo_personal],
@@ -170,11 +170,13 @@ class CalificacionesPorAsignaturaController extends Controller
                 
                 $fila_array = 0;
                 foreach($CargaDocente as $response){  //Llenar el arreglo con datos
-                    $codigos_ = $response->codigo_asignatura;
+                    $codigos_ = trim($response->codigo_asignatura);
                     $nombres_ = trim($response->nombre_asignatura);
+                    $codigo_area_ = trim($response->codigo_area);
                     $GradoSeccionTurnoAsignaturas[$fila_array] = array ( 
                         "codigo_asignatura" => $codigos_,
-                        "nombre_asignatura" => $nombres_
+                        "nombre_asignatura" => $nombres_,
+                        "codigo_area" => $codigo_area_
                     ); 
                     $fila_array++;
                 }
@@ -186,6 +188,7 @@ class CalificacionesPorAsignaturaController extends Controller
         $codigo_annlectivo = $_POST['codigo_annlectivo'];
         $codigo_gradoseccionturno = $_POST['codigo_gradoseccionturno'];
         $codigo_asignatura = $_POST['codigo_asignatura'];
+        $codigo_area = $_POST['codigo_area'];
         $codigo_actividad = $_POST['codigo_actividad'];
         $codigo_periodo = $_POST['codigo_periodo'];
         $codigo_grado = substr($codigo_gradoseccionturno,0,2);
@@ -196,6 +199,15 @@ class CalificacionesPorAsignaturaController extends Controller
          // 01 - PERIODO 1 ... 05 - PERIODO 5
          // CODIGO ACTIVIDAD
          // 01- NOTA_A1_1 ... 03 - NOTA_A2_1
+
+         // LOS CODIGOS DE AREA SON 
+            /*
+                ESTAS MOSTRARAN LOS PORCENTAJES DE CADA PERIODO 35% 35% 30%
+                01 - BASICA , 02 - FORMATIVA, 03 - TECNICA, 08 - COMPLEMENTARIA
+
+                ESTAS MOSTRARAN SOLO EL PERIODO OSEA NOTA_P_P_1...
+                04 - 05 - 06 - 07 - 09
+            */
 
             $nombre_periodos = array('nota_p_p_');
             $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
@@ -223,17 +235,25 @@ class CalificacionesPorAsignaturaController extends Controller
                 break;
             }
             // ACTIVIDADES
-            switch ($codigo_actividad) {
-                case '01':
-                    $nombre_actividad = $nombre_actividades[0] .  $numero_periodo;
-                break;
-                case '02':
-                    $nombre_actividad = $nombre_actividades[1] . $numero_periodo;
-                break;
-                case '03':
-                    $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
-                break;
+            // EVALUAR EL AREA DE LA ASIGNATURA
+            if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08')
+            {
+                switch ($codigo_actividad) {
+                    case '01':
+                        $nombre_actividad = $nombre_actividades[0] .  $numero_periodo;
+                    break;
+                    case '02':
+                        $nombre_actividad = $nombre_actividades[1] . $numero_periodo;
+                    break;
+                    case '03':
+                        $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
+                    break;
+                }
+            }else{
+                // cambiar el nombre de actividad por el nombre del periodo
+                    $nombre_actividad = $nombre_periodo;
             }
+            
 
         $EstudiantesMatricula = DB::table('alumno as a')
                 ->join('alumno_matricula as am','a.id_alumno','=','am.codigo_alumno')
@@ -260,6 +280,7 @@ class CalificacionesPorAsignaturaController extends Controller
         $calificacion['calificacion'] = $request->calificacion;
         $codigo_actividad = $request->codigo_actividad;
         $codigo_periodo = $request->codigo_periodo;
+        $codigo_area = $request->codigo_area;
         // CAMBIAR EL VALOR DE LA VARIABLE "ACTIVIDAD PORCENTAJE" DEPENDIENDO DEL PERIODO
         // 01 - PERIODO 1 ... 05 - PERIODO 5
         // CODIGO ACTIVIDAD
@@ -268,49 +289,72 @@ class CalificacionesPorAsignaturaController extends Controller
                 $nombre_periodos = array('nota_p_p_');
                 $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
                 $numero_periodo = 0;
-                switch ($codigo_periodo) {
-                    case '01':
-                        $nombre_periodo = $nombre_periodos[0] . '1';
-                        $numero_periodo = '1';
-                    break;
-                    case '02':
-                        $nombre_periodo = $nombre_periodos[0] . '2';
-                        $numero_periodo = '2';
-                    break;
-                    case '03':
-                        $nombre_periodo = $nombre_periodos[0] . '3';
-                        $numero_periodo = '3';
-                    break;
-                    case '04':
-                        $nombre_periodo = $nombre_periodos[0] . '4';
-                        $numero_periodo = '4';
-                    break;
-                    case '05':
-                        $nombre_periodo = $nombre_periodos[0] . '5';
-                        $numero_periodo = '5';
-                    break;
+
+                    switch ($codigo_periodo) {
+                        case '01':
+                            $nombre_periodo = $nombre_periodos[0] . '1';
+                            $numero_periodo = '1';
+                        break;
+                        case '02':
+                            $nombre_periodo = $nombre_periodos[0] . '2';
+                            $numero_periodo = '2';
+                        break;
+                        case '03':
+                            $nombre_periodo = $nombre_periodos[0] . '3';
+                            $numero_periodo = '3';
+                        break;
+                        case '04':
+                            $nombre_periodo = $nombre_periodos[0] . '4';
+                            $numero_periodo = '4';
+                        break;
+                        case '05':
+                            $nombre_periodo = $nombre_periodos[0] . '5';
+                            $numero_periodo = '5';
+                        break;
+                    }
+                // EVALUAR EL AREA DE LA ASIGNATURA
+                    $calcular_promedio = false;
+                if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08')
+                {
+                    // ACTIVIDADES
+                    switch ($codigo_actividad) {
+                        case '01':
+                            $nombre_actividad = $nombre_actividades[0] .  $numero_periodo;
+                        break;
+                        case '02':
+                            $nombre_actividad = $nombre_actividades[1] . $numero_periodo;
+                        break;
+                        case '03':
+                            $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
+                        break;
+                    }
+                }else{
+                        // cambiar el nombre de actividad por el nombre del periodo
+                        $nombre_actividad = $nombre_periodo;
                 }
-                // ACTIVIDADES
-                switch ($codigo_actividad) {
-                    case '01':
-                        $nombre_actividad = $nombre_actividades[0] .  $numero_periodo;
-                    break;
-                    case '02':
-                        $nombre_actividad = $nombre_actividades[1] . $numero_periodo;
-                    break;
-                    case '03':
-                        $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
-                    break;
-                }
+                $nombre_actividad_1 = $nombre_actividades[0] .  $numero_periodo;
+                $nombre_actividad_2 = $nombre_actividades[1] .  $numero_periodo;
+                $nombre_actividad_3 = $nombre_actividades[2] .  $numero_periodo;
                 // FORMAR EL STRING DE EL UPDATE.
                     $actual = array();
-            for ($i=0; $i < $fila; $i++) { 
-                $id_notas_ = $codigo_calificacion['codigo_calificacion'][$i];
-                $calificacion_ = $calificacion['calificacion'][$i];
-                // QUERY DB ACTUALIZAR.
-                    $actual['update'] = DB::update("update nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
-            }
-
+                        for ($i=0; $i < $fila; $i++) { 
+                            $id_notas_ = $codigo_calificacion['codigo_calificacion'][$i];
+                            $calificacion_ = $calificacion['calificacion'][$i];
+                            // QUERY DB ACTUALIZAR.
+                                $actual['update'] = DB::update("update nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
+                                DB::update("update nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+                            }
+                
+                    /*
+                        // CALCULO DEL PERIODO, PERO CUANDO SEA EL ULTIMO PORCIENTO INGRESADO.
+                        if($calcular_promedio == true){
+                            for ($i=0; $i < $fila; $i++) { 
+                                $id_notas_ = $codigo_calificacion['codigo_calificacion'][$i];
+                                // QUERY DB ACTUALIZAR.
+                                    $actual['update'] = DB::update("update nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+                            }   
+                        }
+                    */
         return $actual;
     }
 
