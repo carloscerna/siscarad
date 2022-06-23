@@ -48,16 +48,16 @@ use Illuminate\Support\Facades;
     {{-- {{ csrf_field() }}
     {{ method_field('PATCH') }} --}}
     <div class="card">
-        <div class="card-header bg-success">Estudiantes</div>
+        <div class="card-header">Estudiantes</div>
         <div class="card-body">
             <div class="table-responsive-sm">
                 <table class="table" id="TablaNominaEstudiantes">
                   <thead>
-                      <tr>
-                        <th>N.ª</th>
+                      <tr class="bg-secondary">
+                        <th>N.°</th>
+                        <th>NIE</th>
                         <th>Nombre del Estudiante</th>
                         <th>Calificación</th>
-                        <th>Nota Promedio</th>
                       </tr>
                   </thead>
                   <tbody id="contenido">
@@ -253,14 +253,18 @@ use Illuminate\Support\Facades;
                     $('#contenido').append(data);
                     $.each( data, function( key, value ) {
                         linea = linea + 1;
-                        
-                        html += '<tr>' +
+                        if (linea % 2 === 0) {
+                            fila_color = '<tr style=background:#A5FFA5; text-color:black;>';
+                        }else{
+                            fila_color = '<tr style=background: #FFFFFF; text-color:black;>';
+                        }
+                        html += fila_color +
                         '<td>' + linea + '</td>' +
                         '<td>' + value.codigo_nie + '</td>' +
                         '<td>' + value.full_name + '</td>' +
                         "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 oninput='maxLengthNumber(this)'>" +
-                            "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+"</td>" +
-                        "<td><input type=hidden name=_method value=PUT>"+
+                            "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
+                            "<input type=hidden name=_method value=PUT>"+"</td>" +
                         '</tr>';
 
                     });
