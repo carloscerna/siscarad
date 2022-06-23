@@ -16,7 +16,7 @@
     </a>
     <ul class="collapse list-unstyled" id="pageSubmenu">
         <li>
-            <a href="/asignaturas"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+            <a href="asignaturas"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Asignatura</span>
             </a>
         </li>
@@ -45,12 +45,12 @@
     </a>
     <ul class="collapse list-unstyled" id="pageSubmenu">
         <li>
-            <a href="/calificacionporasignatura"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+            <a href="calificacionporasignatura"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Calificaciones</span>
             </a>
         </li>
         <li>
-            <a href="/anecdotica"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+            <a href="anecdotica"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Anecdótica</span>
             </a>
         </li>

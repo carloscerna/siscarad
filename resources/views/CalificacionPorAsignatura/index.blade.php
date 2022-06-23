@@ -24,6 +24,7 @@ use Illuminate\Support\Facades;
 </section>
 @endrole
 
+<<<<<<< HEAD
 <div class="form-group">
   {!! Form::hidden('codigo_personal', $codigo_personal,['id'=>'codigo_personal', 'class'=>'form-control']) !!}
   {{ Form::label('LblAnnLectivo', 'Año Lectivo:') }}
@@ -43,6 +44,25 @@ use Illuminate\Support\Facades;
   {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)'], null, ['id' => 'codigo_actividad_porcentaje','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control']) !!}
 </div>
 
+=======
+        <div class="form-group">
+            {!! Form::hidden('codigo_personal', $codigo_personal,['id'=>'codigo_personal', 'class'=>'form-control']) !!}
+            {{ Form::label('LblAnnLectivo', 'Año Lectivo:') }}
+            {!! Form::select('codigo_annlectivo', ['placeholder'=>'Selecciona'] + $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control']) !!}
+        
+            {{ Form::label('LblGradoSeccionTurno', 'Grado-Sección-Turno:') }}
+            {!! Form::select('codigo_grado_seccion_turno', ['placeholder'=>'Selecciona'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionAsignaturas(this.value)', 'class' => 'form-control']) !!}
+        
+            {{ Form::label('LblNombreAsignatura', 'Asignatura:') }}
+            {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control', 'id' => 'codigo_asignatura', 'onchange' => 'BuscarPorAsignatura(this.value)']) !!}
+        
+            {{ Form::label('LblPeriodoTrimestre', 'Período o Trimestre:') }}
+            {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
+        
+            {{ Form::label('LblActividadPorcentaje', 'Actividades (%):') }}
+            {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)'], null, ['id' => 'codigo_actividad_porcentaje','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control']) !!}
+        </div>
+>>>>>>> 68c18c0111cfb0d80aa54bc3bc94ab5d77df6d06
 
 <div class="bg-light" id="NominaEstudiantes" style="display: none;">
     {{-- {{ csrf_field() }}
@@ -265,7 +285,8 @@ use Illuminate\Support\Facades;
 
                     });
                     $('#contenido').html(html);
-                    
+                    toastr.error('{{ Session::get('error') }}');
+
                 } 
             });
         }
