@@ -91,6 +91,7 @@ use Illuminate\Support\Facades;
 
 
 @section('scripts')
+
     <script type="text/javascript">
         $('#codigo_asignatura1').select2();
             $('#codigo_asignatura1').on('change', function(e){
@@ -269,7 +270,8 @@ use Illuminate\Support\Facades;
 
                     });
                     $('#contenido').html(html);
-                    toastr.error('{{ Session::get('error') }}');
+                        // Display an info toast with no title
+                        toastr.success("Registros Encontrados... " + linea, "Sistema");
 
                 } 
             });
@@ -325,7 +327,6 @@ use Illuminate\Support\Facades;
                 dataType: 'json',
                 success:function(data) {
                    $('#codigo_annlectivo').focus();
-                    toastr["success"]("Guardado", "HI");
                 } 
             });
         }

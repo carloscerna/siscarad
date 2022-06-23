@@ -11,6 +11,8 @@ use App\Models\Tablas\EstudianteMatricula;
 use App\Models\Tablas\Institucion;
 use Illuminate\Support\Facades\DB;
 
+use Brian2694\Toastr\Facades\Toastr;
+
 class CalificacionesPorAsignaturaController extends Controller
 {
     /**
@@ -130,10 +132,10 @@ class CalificacionesPorAsignaturaController extends Controller
                 $fila_array = 0;
                 foreach($CargaDocente as $response){  //Llenar el arreglo con datos
                     $codigos_ = $response->codigo_grado . $response->codigo_seccion . $response->codigo_turno . $response->codigo_bachillerato; 
-                    $nombres_ = trim($response->nombre_grado) . ' ' . trim($response->nombre_seccion) . ' ' . trim($response->nombre_turno);
+                    $nombres_ = trim($response->nombre_grado) . ' ' . trim($response->nombre_seccion) . ' - ' . trim($response->nombre_turno) . ' - ' . trim($response->nombre_bachillerato);
                     $GradoSeccionTurno[$fila_array] = array ( 
                         "codigo_gradoseccionturno" => $codigos_,
-                        "nombre_gradoseccionturno" => $nombres_
+                        "nombre_gradoseccionturno" => $nombres_,
                     ); 
                     $fila_array++;
                 }
@@ -147,6 +149,7 @@ class CalificacionesPorAsignaturaController extends Controller
         $codigo_grado = substr($codigo_gradoseccionturno,0,2);
         $codigo_seccion = substr($codigo_gradoseccionturno,2,2);
         $codigo_turno = substr($codigo_gradoseccionturno,4,2);
+        $codigo_modalidad = substr($codigo_gradoseccionturno,6,2);
 
         $GradoSeccionTurnoAsignaturas = array();
            
@@ -165,7 +168,9 @@ class CalificacionesPorAsignaturaController extends Controller
                     ['codigo_grado', '=', $codigo_grado],
                     ['codigo_seccion', '=', $codigo_seccion],
                     ['codigo_turno', '=', $codigo_turno],
+                    ['codigo_bachillerato', '=', $codigo_modalidad],
                     ])
+                ->orderBy('codigo_asignatura','asc')
                 ->get();
                 
                 $fila_array = 0;
@@ -253,8 +258,6 @@ class CalificacionesPorAsignaturaController extends Controller
                 // cambiar el nombre de actividad por el nombre del periodo
                     $nombre_actividad = $nombre_periodo;
             }
-            
-
         $EstudiantesMatricula = DB::table('alumno as a')
                 ->join('alumno_matricula as am','a.id_alumno','=','am.codigo_alumno')
                 ->join('nota as n','am.id_alumno_matricula','=','n.codigo_matricula')
@@ -271,7 +274,8 @@ class CalificacionesPorAsignaturaController extends Controller
                 ->orderBy('full_name','asc')
                 ->get();
 
-                        return $EstudiantesMatricula;
+             //   Toastr::success('Messages in here', 'Title', ["positionClass" => "toast-top-center"]);
+                    return $EstudiantesMatricula;
     }
 
     function getActualizarCalificacion(Request $request){
