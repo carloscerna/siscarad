@@ -10,10 +10,10 @@ use Illuminate\Support\Facades;
 @section('content')
 @role("Docente")
 <section class="section">
-    <div class="section-header mb-0">
+    <div class="section-header">
         <h4 class="page__heading">{{$nombre_docente}} - {{$codigo_personal}}</h4>
     </div>
-    <div class="section-body mb-0">
+    <div class="section-body mb-0 h-0">
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
@@ -25,25 +25,24 @@ use Illuminate\Support\Facades;
 </section>
 @endrole
 
-<div class="form-group">
-  {!! Form::hidden('codigo_personal', $codigo_personal,['id'=>'codigo_personal', 'class'=>'form-control']) !!}
-  {{ Form::label('LblAnnLectivo', 'Año Lectivo:') }}
-  {!! Form::select('codigo_annlectivo', ['placeholder'=>'Selecciona'] + $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control']) !!}
+    <div class="form-group">
+        {!! Form::hidden('codigo_personal', $codigo_personal,['id'=>'codigo_personal', 'class'=>'form-control']) !!}
+        {{ Form::label('LblAnnLectivo', 'Año Lectivo:') }}
+        {!! Form::select('codigo_annlectivo', ['placeholder'=>'Selecciona'] + $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control']) !!}
 
-  {{ Form::label('LblGradoSeccionTurno', 'Grado-Sección-Turno:') }}
-  {!! Form::select('codigo_grado_seccion_turno', ['placeholder'=>'Selecciona'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionAsignaturas(this.value)', 'class' => 'form-control']) !!}
+        {{ Form::label('LblGradoSeccionTurno', 'Grado-Sección-Turno:') }}
+        {!! Form::select('codigo_grado_seccion_turno', ['placeholder'=>'Selecciona'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionAsignaturas(this.value)', 'class' => 'form-control']) !!}
 
-  {{ Form::label('LblNombreAsignatura', 'Asignatura:') }}
-  {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control', 'id' => 'codigo_asignatura', 'onchange' => 'BuscarPorAsignatura(this.value)']) !!}
-  {!! Form::hidden('codigo_area', '00',['id'=>'codigo_area', 'class'=>'form-control']) !!}
+        {{ Form::label('LblNombreAsignatura', 'Asignatura:') }}
+        {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control', 'id' => 'codigo_asignatura', 'onchange' => 'BuscarPorAsignatura(this.value)']) !!}
+        {!! Form::hidden('codigo_area', '00',['id'=>'codigo_area', 'class'=>'form-control']) !!}
 
-  {{ Form::label('LblPeriodoTrimestre', 'Período o Trimestre:') }}
-  {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
+        {{ Form::label('LblPeriodoTrimestre', 'Período o Trimestre:') }}
+        {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
 
-  {{ Form::label('LblActividadPorcentaje', 'Actividades (%):') }}
-  {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)'], null, ['id' => 'codigo_actividad_porcentaje','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control']) !!}
-</div>
-
+        {{ Form::label('LblActividadPorcentaje', 'Actividades (%):') }}
+        {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)'], null, ['id' => 'codigo_actividad_porcentaje','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control']) !!}
+    </div>
 
 <div class="bg-light" id="NominaEstudiantes" style="display: none;">
     {{-- {{ csrf_field() }}

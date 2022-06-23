@@ -3239,14 +3239,15 @@ pre {
 .section .section-header {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
-    background-color: #fff;
+    background-color : #D2D4D5;
     border-radius: 3px;
     border: none;
     position: relative;
-    margin-bottom: 30px;
-    padding: 20px;
+    margin-bottom: 5px;
+    padding: 5px;
     display: flex;
     align-items: center;
+    color: black;
 }
 
 .section .section-header h1 {

@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Sistema De Registro'),
 
     /*
     |--------------------------------------------------------------------------
@@ -176,7 +176,6 @@ return [
         App\Providers\RouteServiceProvider::class,
         // ... Spatie
         Spatie\Permission\PermissionServiceProvider::class,
-        Brian2694\Toastr\ToastrServiceProvider::class,
         // ... toaster
         Brian2694\Toastr\ToastrServiceProvider::class,
     ],

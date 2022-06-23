@@ -1,5 +1,5 @@
-<form class="form-inline mr-auto mb-1" action="#">
-    <ul class="navbar-nav mr-3">
+<form class="form-inline mr-auto mb-0" action="#">
+    <ul class="navbar-nav mr-0">
         <li><a href="#" data-toggle="sidebar" class="nav-link nav-link-lg"><i class="fas fa-bars"></i></a></li>
     </ul>
 </form>
@@ -12,12 +12,12 @@
                 <img alt="image" src="{{ asset('img/logo.png') }}"
                      class="rounded-circle mr-1 thumbnail-rounded user-thumbnail ">
                 <div class="d-sm-none d-lg-inline-block">
-                    Hi, {{\Illuminate\Support\Facades\Auth::user()->first_name}}</div>
+                    Hola, {{\Illuminate\Support\Facades\Auth::user()->first_name}}</div>
             </a>
 
             <div class="dropdown-menu dropdown-menu-right">
                 <div class="dropdown-title">
-                    Welcome, {{\Illuminate\Support\Facades\Auth::user()->name}}</div>
+                    Bienvenido(a), {{\Illuminate\Support\Facades\Auth::user()->name}}</div>
                 <a class="dropdown-item has-icon edit-profile" href="#" data-id="{{ \Auth::id() }}">
                     <i class="fa fa-user"></i>Edit Profile</a>
                 <a class="dropdown-item has-icon" data-toggle="modal" data-target="#changePasswordModal" href="#" data-id="{{ \Auth::id() }}"><i

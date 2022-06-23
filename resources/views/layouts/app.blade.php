@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="{{ asset('assets/css/iziToast.min.css') }}">
     <link href="{{ asset('assets/css/sweetalert.css') }}" rel="stylesheet" type="text/css"/>
     <link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" type="text/css"/>
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
 @yield('page_css')
 <!-- Template CSS -->
@@ -32,14 +31,22 @@
             @include('layouts.header')
 
         </nav>
-        <div class="main-sidebar main-sidebar-postion">
+        <div class="main-sidebar main-sidebar-postion" style="/* RGB Gradient */
+            background: -moz-linear-gradient(top, #5F98D6 0%, #1B2B3D 100%);
+            background: -webkit-linear-gradient(top, #5F98D6 0%, #1B2B3D 100%);
+            background: linear-gradient(to bottom, #5F98D6 0%, #1B2B3D 100%);"
+        >
             @include('layouts.sidebar')
         </div>
         <!-- Main Content -->
-        <div class="main-content">
+        <div class="main-content" style="  background: -moz-linear-gradient(top, #0099FF 0%, #B6E1FF 100%);
+        background: -webkit-linear-gradient(top, #0099FF 0%, #B6E1FF 100%);
+        background: linear-gradient(to bottom, #0099FF 0%, #B6E1FF 100%);">
             @yield('content')
         </div>
-        <footer class="main-footer">
+        <footer class="main-footer" style="    background: -moz-linear-gradient(top, #010203 0%, #042637 100%);
+        background: -webkit-linear-gradient(top, #010203 0%, #042637 100%);
+        background: linear-gradient(to bottom, #010203 0%, #042637 100%);">
             @include('layouts.footer')
         </footer>
     </div>
@@ -56,7 +63,6 @@
 <script src="{{ asset('assets/js/iziToast.min.js') }}"></script>
 <script src="{{ asset('assets/js/select2.min.js') }}"></script>
 <script src="{{ asset('assets/js/jquery.nicescroll.js') }}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
 
 
 <!-- Template JS File -->

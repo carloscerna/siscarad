@@ -680,8 +680,8 @@ div.code-toolbar > .toolbar span:focus {
 body {
     font-family: "Merriweather", sans-serif;
     font-weight: 400;
-    color: #757575;
-    background-color: #f5f8f9;
+    color: #5e0404;
+    background-color: #20b0db;
 }
 
 .pull-right {
@@ -1045,11 +1045,11 @@ a.dark-link:hover {
 
 /*-------------------------------------- 1.3 Forms --------------------------------------*/
 .form-control {
-    border: none;
-    border-bottom: 1px solid #a6a9ac;
-    border-radius: 0;
-    font-size: 15px;
-    color: #a6a9ac;
+    border: black;
+    border-bottom: 2px solid #a6a9ac;
+    border-radius: 2;
+    font-size: 13px;
+    color: #78b2ec;
     padding: 12px 0;
     line-height: 24px;
     transition: all 0.2s ease-in-out;
