@@ -216,7 +216,11 @@ use Illuminate\Support\Facades;
         function BuscarPorActividadPorcentaje(ActividadPorcentaje) {
 			// Botón Otro... visible.
 				$("#NominaEstudiantes").css("display","block");
-            //
+            // Evaluar si es 00
+                if(ActividadPorcentaje == '00'){
+                    $("#contenido").empty();
+                    return;
+                }
             url_ajax = '{{url("getGradoSeccionCalificacionesAsignaturas")}}'; 
             csrf_token = '{{csrf_token()}}'; 
 
@@ -254,16 +258,24 @@ use Illuminate\Support\Facades;
                     $('#contenido').append(data);
                     $.each( data, function( key, value ) {
                         linea = linea + 1;
+                        // validar para cambiar de color la l{inea}
                         if (linea % 2 === 0) {
                             fila_color = '<tr style=background:#A5FFA5; text-color:black;>';
                         }else{
                             fila_color = '<tr style=background: #FFFFFF; text-color:black;>';
                         }
+                        // validar si es cero la calificación
+                        if(parseFloat(value.nota_actividad) == 0){
+                            style = " style='background: #FFC5C5; color: #FA4646;'";
+                        }else{
+                            style = " style='background: #FAFAFA; color: black;'";
+                        } 
+                        // armar el thml de la tabla.
                         html += fila_color +
                         '<td>' + linea + '</td>' +
                         '<td>' + value.codigo_nie + '</td>' +
                         '<td>' + value.full_name + '</td>' +
-                        "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 oninput='maxLengthNumber(this)'>" +
+                        "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
                             "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
                             "<input type=hidden name=_method value=PUT>"+"</td>" +
                         '</tr>';
