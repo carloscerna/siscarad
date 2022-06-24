@@ -282,6 +282,7 @@ use Illuminate\Support\Facades;
 
                     });
                     $('#contenido').html(html);
+                    $('#contenido').focus();
                         // Display an info toast with no title
                         toastr.success("Registros Encontrados... " + linea, "Sistema");
 
