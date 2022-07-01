@@ -11,7 +11,7 @@ use Illuminate\Support\Facades;
 @role("Docente")
 <section class="section">
     <div class="section-header">
-        <h4 class="page__heading">{{$nombre_docente}} - {{$codigo_personal}}</h4>
+        <h5 class="page__heading">{{$nombre_docente}} - Ingreso de Calificaciones</h5>
     </div>
     <div class="section-body mb-0 h-0">
         <div class="row">
