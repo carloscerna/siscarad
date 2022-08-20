@@ -1,5 +1,5 @@
 @extends('layouts.app')
-/* llamada de valores
+Cargando...
 @php
 use App\Models\User;
     $cant_usuarios = User::count();                                                
@@ -10,7 +10,7 @@ use App\Models\mantenimiento\asignatura\Asignatura;
 use Illuminate\Support\Facades;
     $correo_docente = Auth::user()->email;                                        
     $nombre_docente = Auth::user()->name;
-    $codigo_personal = Auth::user()->codigo_personal;                                        
+    $codigo_personal = Auth::user()->codigo_personal;                                                                     
 @endphp
 
 @section('content')

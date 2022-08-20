@@ -5,7 +5,8 @@
 use Illuminate\Support\Facades;
     $correo_docente = Auth::user()->email;                                        
     $nombre_docente = Auth::user()->name;
-    $codigo_personal = Auth::user()->codigo_personal;                                        
+    $codigo_personal = Auth::user()->codigo_personal;   
+    $codigo_institucion = Auth::user()->codigo_institucion;                                                
 @endphp
 @section('content')
 @role("Docente")
@@ -27,6 +28,7 @@ use Illuminate\Support\Facades;
 
     <div class="form-group">
         {!! Form::hidden('codigo_personal', $codigo_personal,['id'=>'codigo_personal', 'class'=>'form-control']) !!}
+        {!! Form::hidden('codigo_institucion', $codigo_institucion,['id'=>'codigo_institucion', 'class'=>'form-control']) !!}
         {{ Form::label('LblAnnLectivo', 'Año Lectivo:') }}
         {!! Form::select('codigo_annlectivo', ['placeholder'=>'Selecciona'] + $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control']) !!}
 
@@ -225,8 +227,9 @@ use Illuminate\Support\Facades;
             csrf_token = '{{csrf_token()}}'; 
 
             codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
+            var codigo_annlectivo = $('#codigo_annlectivo').val();
             codigo_asignatura_area = $("#codigo_asignatura").val();
+
             conteo_codigo_asignatura = codigo_asignatura_area.length;
             if(conteo_codigo_asignatura == 4){
                 codigo_asignatura = codigo_asignatura_area.substring(0,2);
@@ -235,9 +238,10 @@ use Illuminate\Support\Facades;
                 codigo_asignatura = codigo_asignatura_area.substring(0,3);
                 codigo_area = codigo_asignatura_area.substring(3,5);
             }
-            
+            // CDIGO PRERIO, GRADOSECCIONTURNO - CODIGO INSTTIUCION
             codigo_periodo = $("#codigo_periodo").val();
             codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
+            codigo_institucion = $("#codigo_institucion").val();
 
             $.ajax({
                 type: "post",
@@ -270,6 +274,16 @@ use Illuminate\Support\Facades;
                         }else{
                             style = " style='background: #FAFAFA; color: black;'";
                         } 
+                        // ARMAR VARIABLE QUE CONTENGA LOS DATOS PARA PODER OBTENER LA INFORMACION DE LA BOLETA DE CALIFICACIONES
+                        //
+                            var codigo_nie = value.codigo_nie;
+                            var codigo_alumno = value.codigo_alumno;
+
+                            var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim();
+                        // ARMAR URL
+                            var url = '{{ url("/pdf", "id") }}';
+                            url = url.replace('id', datos_estudiantes);
+                        //
                         // armar el thml de la tabla.
                         html += fila_color +
                         '<td>' + linea + '</td>' +
@@ -278,8 +292,9 @@ use Illuminate\Support\Facades;
                         "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
                             "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
                             "<input type=hidden name=_method value=PUT>"+"</td>" +
+                            '<td><a class="btn btn-info" target="_blank" href="'+url+'"><i class="fas fa-file"></i></td>'+
                         '</tr>';
-
+                        // "<td><a class='btn btn-info' target='_blank' href='{{ url('pdf/id->value.codigo_nie') }}'"+"><i class='fas fa-file'></i></td>"+
                     });
                     $('#contenido').html(html);
                     $('#contenido').focus();
@@ -368,6 +383,12 @@ use Illuminate\Support\Facades;
 		        		return true;}
 		  }
         }
+
+        function AbrirVentana(url)
+            {
+                window.open(url, '_blank');
+                return false;
+            }
     </script>
 @endsection
         
