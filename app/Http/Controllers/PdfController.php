@@ -240,6 +240,7 @@ class PdfController extends Controller
                         $this->fpdf->SetFont('Times','B',12);
     
                         //print_r($catalogo_area_asignatura_codigo);
+                        //$encabezado_ = EncabezadoCatalogoAreaAsignatura($catalogo_area_asignatura_codigo, $codigo_area);
                     //	print $descripcion_area;
                         //exit;
                         // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
@@ -249,6 +250,7 @@ class PdfController extends Controller
                                 $catalogo_area_basica = false;
                             }
                         }
+                        //$this->fpdf->Cell(203,6,strtoupper(utf8_decode($encabezado_)),1,1,'L',true);
                         // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
                         if($catalogo_area_asignatura_codigo[1] == $codigo_area){
                             if($catalogo_area_formativa == true){
@@ -348,12 +350,12 @@ class PdfController extends Controller
                     //	print $descripcion_area;
                         //exit;
                         // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
-                        if($catalogo_area_asignatura_codigo[0] == $codigo_area){
+                      /* if($catalogo_area_asignatura_codigo[0] == $codigo_area){
                             if($catalogo_area_basica == true){
                                 $this->fpdf->Cell(203,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[0])),1,1,'L',true);
                                 $catalogo_area_basica = false;
                             }
-                        }
+                        }*/
                         // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
                         if($catalogo_area_asignatura_codigo[1] == $codigo_area){
                             if($catalogo_area_formativa == true){

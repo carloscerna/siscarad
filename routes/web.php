@@ -55,4 +55,7 @@ Route::group(['middleware'=> ['auth']], function(){
 
     // REPORTES
     Route::get('pdf/{id}', [PdfController::class, 'index']);
+
+    // helpers
+    Route::resource('funcion','PdfController');
 });
