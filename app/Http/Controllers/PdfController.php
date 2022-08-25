@@ -171,7 +171,17 @@ class PdfController extends Controller
                 // MATRICES
                 $periodos_a = array('PERIODO 1', 'PERIODO 2', 'PERIODO 3', 'PERIODO 4', 'PERIODO 5', 'PROMEDIO FINAL');
                 $actividad_periodo = array('A1','A2','PO','PP','PF');
-                $valor_periodo = 2; $valor_actividades = 12;
+                // VALIDAR VARIABGLES PARA MOSTRAR CABECERA Y CALIFICACIONES.
+                if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
+                    $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 86;
+                }else if($codigo_modalidad >= '06' && $codigo_modalidad <= '09'){   // EDUCACION MEDIA
+                    $valor_periodo = 3; $valor_actividades = 16; $ancho_area_asignatura = 90;
+                }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
+                    $valor_periodo = 4; $valor_actividades = 20; $ancho_area_asignatura = 86;
+                }else{
+                    $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 86;    // DEFAULT PUEDE SER PARVULARIA
+                }
+
                 if($fila == 1){
                     // LLAMAR A LA FUNCION QUE POSEE EL ENCAVEZADO DE CADA REA DE LA ASIGNTURA
                        // EncabezadoCatalogoAreaAsignatura($codigo_area);
