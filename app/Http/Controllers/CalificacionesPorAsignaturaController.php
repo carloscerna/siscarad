@@ -272,6 +272,7 @@ class CalificacionesPorAsignaturaController extends Controller
                     ['am.codigo_seccion', '=', $codigo_seccion],
                     ['am.codigo_turno', '=', $codigo_turno],
                     ['n.codigo_asignatura', '=', $codigo_asignatura],
+                    ['am.retirado', '=', 'f'],
                     ])
                 ->orderBy('full_name','asc')
                 ->get();
@@ -348,7 +349,10 @@ class CalificacionesPorAsignaturaController extends Controller
                             $calificacion_ = $calificacion['calificacion'][$i];
                             // QUERY DB ACTUALIZAR.
                                 $actual['update'] = DB::update("update nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
-                                DB::update("update nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+                                if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08')
+                                {
+                                    DB::update("update nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+                                }
                             }
                 
                     /*

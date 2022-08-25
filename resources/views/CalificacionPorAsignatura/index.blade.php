@@ -355,6 +355,8 @@ use Illuminate\Support\Facades;
                 dataType: 'json',
                 success:function(data) {
                    $('#codigo_annlectivo').focus();
+                    // Display an info toast with no title
+                    toastr.info("Registros Actualizados... ", "Sistema");
                 } 
             });
         }
