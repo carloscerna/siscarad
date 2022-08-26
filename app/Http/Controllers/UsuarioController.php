@@ -44,9 +44,22 @@ class UsuarioController extends Controller
     {
         //
         $roles = Role::pluck('name','name')->all();
-        $personal = Personal::pluck('nombres','id_personal')->all();
+        //$personal = Personal::pluck('nombres','id_personal')->all();
         $institucion = Institucion::pluck('nombre_institucion','id_institucion')->all();
+        //
+        $DatosPersonal = DB::table('personal')
+        ->select('id_personal', DB::raw("TRIM(CONCAT(BTRIM(nombres), CAST(' ' AS VARCHAR), BTRIM(apellidos))) as full_name"))
+        ->get();
+        
+        $fila_array = 0; $personal = array();
+        foreach($DatosPersonal as $response){  //Llenar el arreglo con datos
+            $codigos_ = $response->id_personal; 
+            $nombres_ = $response->full_name; 
+            $personal[$codigos_] = ($nombres_); 
+        }
+
         return view('usuarios.crear', compact('roles','personal','institucion'));
+
     }
 
     /**
@@ -100,8 +113,19 @@ class UsuarioController extends Controller
         $roles = Role::pluck('name', 'name')->all();
         $userRole = $user->roles->pluck('name','name')->all();
         //
-        $personal = Personal::pluck('nombres','id_personal')->all();
+        //$personal = Personal::pluck('nombres','id_personal')->all();
         $institucion = Institucion::pluck('nombre_institucion','id_institucion')->all();
+        //
+        $DatosPersonal = DB::table('personal')
+        ->select('id_personal', DB::raw("TRIM(CONCAT(BTRIM(nombres), CAST(' ' AS VARCHAR), BTRIM(apellidos))) as full_name"))
+        ->get();
+        
+        $fila_array = 0; $personal = array();
+        foreach($DatosPersonal as $response){  //Llenar el arreglo con datos
+            $codigos_ = $response->id_personal; 
+            $nombres_ = $response->full_name; 
+            $personal[$codigos_] = ($nombres_); 
+        }
         return view('usuarios.editar', compact('user','roles','userRole','personal','institucion'));
     }
 

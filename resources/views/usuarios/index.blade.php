@@ -3,8 +3,13 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Usuarios {{$usuarios}}</h3>
+                <h5 class="page__heading">Usuarios</h5>
         </div>
+        <div class="row">
+          <div class="col-12">
+            {{$usuarios}}  
+          </div>
+      </div>
         <div class="section-body">
             <div class="row">
                 <div class="col-lg-12">

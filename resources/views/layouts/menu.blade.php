@@ -4,10 +4,10 @@
     <a class="nav-link" href="/home">
         <i class="fas fa-building"></i><span>Tablero</span>
     </a>
-    <a class="nav-link" href="usuarios">
+    <a class="nav-link" href="/usuarios">
         <i class="fas fa-users"></i><span>Usuarios</span>
     </a>
-    <a class="nav-link" href="roles">
+    <a class="nav-link" href="/roles">
         <i class="fas fa-user-lock"></i><span>Roles</span>
     </a>
 
@@ -16,7 +16,7 @@
     </a>
     <ul class="collapse list-unstyled" id="pageSubmenu">
         <li>
-            <a href="asignaturas"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+            <a href="/asignaturas"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Asignatura</span>
             </a>
         </li>
