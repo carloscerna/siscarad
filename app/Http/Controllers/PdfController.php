@@ -115,7 +115,7 @@ class PdfController extends Controller
             ->orderBy('id_institucion','asc')
             ->get();
             // extgraer datos para el encabezado
-            $alto_cell = array('5'); $ancho_cell = array('60','6','24');
+            $alto_cell = array('5'); $ancho_cell = array('60','6','24','30');
             foreach($EstudianteInformacionInstitucion as $response_i){  //Llenar el arreglo con datos
                 $nombre_institucion = utf8_decode(trim($response_i->nombre_institucion));
                 $codigo_institucion = utf8_decode(trim($response_i->codigo_institucion));
@@ -175,18 +175,18 @@ class PdfController extends Controller
                 $actividad_periodo = array('A1','A2','PO','PP','PF');
                 // VALIDAR VARIABGLES PARA MOSTRAR CABECERA Y CALIFICACIONES.
                 if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
-                    $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 138;
+                    $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 162;
                 }else if($codigo_modalidad >= '06' && $codigo_modalidad <= '09'){   // EDUCACION MEDIA
-                    $valor_periodo = 3; $valor_actividades = 16; $ancho_area_asignatura = 162;
+                    $valor_periodo = 3; $valor_actividades = 16; $ancho_area_asignatura = 186;
                 }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
-                    $valor_periodo = 4; $valor_actividades = 20; $ancho_area_asignatura = 186;
+                    $valor_periodo = 4; $valor_actividades = 20; $ancho_area_asignatura = 210;
                 }else{
-                    $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 86;    // DEFAULT PUEDE SER PARVULARIA
+                    $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 162;    // DEFAULT PUEDE SER PARVULARIA
                 }
 
                 if($fila == 1){
                     // LLAMAR A LA FUNCION QUE POSEE EL ENCAVEZADO DE CADA REA DE LA ASIGNTURA
-                       // EncabezadoCatalogoAreaAsignatura($codigo_area);
+                    // EncabezadoCatalogoAreaAsignatura($codigo_area);
                     //
                     $this->fpdf->Cell(40,$alto_cell[0],"Estudiante",1,0,'L');       
                     $this->fpdf->Cell(135,$alto_cell[0],$codigo_nie . " - " . $nombre_completo,1,1,'L');       
@@ -206,11 +206,19 @@ class PdfController extends Controller
 
                     $this->fpdf->SetX(30); 
                     $this->fpdf->SetFont('Arial', 'B', '7');
+                    // fila de información
                     $this->fpdf->Cell(27,$alto_cell[0],"A1->Actividad 1 (35%)",'LR',0,'L');       
                     $this->fpdf->Cell(27,$alto_cell[0],"A2->Actividad 2 (35%)",'LR',0,'L');       
                     $this->fpdf->Cell(35,$alto_cell[0],"PO->Prueba Objetiva (30%)",'LR',0,'L'); 
-                    $this->fpdf->Cell(35,$alto_cell[0],"PP->Promedio Periodo",'LR',0,'L');             
-                    $this->fpdf->Cell(30,$alto_cell[0],"PF->Promedio Final",'LR',1,'L');             
+                    $this->fpdf->Cell(35,$alto_cell[0],"PP->Promedio Periodo",'LR',0,'L');      
+                    $this->fpdf->Cell(30,$alto_cell[0],"PF->Promedio Final",'LR',1,'L');          
+                    // fila de información 
+                    $this->fpdf->SetX(30);       
+                    $this->fpdf->Cell(35,$alto_cell[0],utf8_decode("NR1->Nota Recuperación 1"),'LR',0,'L');             
+                    $this->fpdf->Cell(35,$alto_cell[0],utf8_decode("NR2->Nota Recuperación 2"),'LR',0,'L');                
+                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("A->Aprobado"),'LR',0,'L');                
+                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("R->Reprobado"),'LR',0,'L');                
+                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("NF->Nota Final"),'LR',1,'L');                
                     $this->fpdf->ln();
                     // cabecera de la tabla de calificaicone4s por periodo
                     $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"",1,0,'L');
@@ -232,9 +240,11 @@ class PdfController extends Controller
                             $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$actividad_periodo[4],1,0,'C');
                         }
                     }
-                        // colocar celda NR
-                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR',1,0,'C');
-                        // colocar celda NR
+                        // colocar celda NR1
+                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR1',1,0,'C');
+                        // colocar celda NR2
+                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR2',1,0,'C');
+                        // colocar celda NF
                         $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NF',1,0,'C');
                         // COLOCAR CELDA RESULTADO.
                         $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$periodos_a[6],1,1,'C');
@@ -262,7 +272,7 @@ class PdfController extends Controller
                         //$encabezado_ = EncabezadoCatalogoAreaAsignatura($catalogo_area_asignatura_codigo, $codigo_area);
                     //	print $descripcion_area;
                         //exit;
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
+                    // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
                         if($catalogo_area_asignatura_codigo[0] == $codigo_area){
                             if($catalogo_area_basica == true){
                                 $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[0])),1,1,'L',true);
@@ -340,12 +350,39 @@ class PdfController extends Controller
                                 }
                             }
                         }
+                        // NOTA PROMEDIO FINAL.
                         $this->fpdf->SetFont('Arial', 'B', '7');
-                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[23],1,1,'C');
+                            // NOTA PROMEDIO FINAL
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[23],1,0,'C');
+                            // NOTA RECUPERACION  1
+                                if($nota_actividades_0[21] == 0){
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                }
+                                else{
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[21],1,0,'C');
+                                }
+                            // NOTA RECUPERACION  2
+                                if($nota_actividades_0[22] == 0){
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                }
+                                else{
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[22],1,0,'C');
+                                }
+                            // NOTA PROMEDIO FINAL.
+                            if($nota_actividades_0[23] == 0){
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                            }
+                            else{
+                                // CALCULAR SI ES APROBADO O REPROBRADO
+                                $result = resultado_final($codigo_modalidad, $nota_actividades_0[21],$nota_actividades_0[22],$nota_actividades_0[23]);
+                                $result_nota_final = resultado_nota_final($codigo_modalidad, $nota_actividades_0[21],$nota_actividades_0[22],$nota_actividades_0[23]);
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[23],1,0,'C');
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result[0],1,1,'C');
+                            }
                         $this->fpdf->SetFont('Arial', '', '7');
                 }else{
                     //Mostrar solamente una vez.
-///////////////////////////////////////////////////////////////////////////////////////////////////
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
                     /////VERIFICAR ENCABEZADO de AREA DE ASIGNATURAS///////////////////////////////////////////////////
                     ///////////////////////////////////////////////////////////////////////////////////////////////////		
                     /*	"01"	"Básica                                                                     " 0
@@ -437,17 +474,53 @@ class PdfController extends Controller
                                 $this->fpdf->SetFillColor(255,255,255);
                                 // Cerificar si la calicación es igual a 0
                                 if($nota_actividades_0[$na] == 0){
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
+                                        if($codigo_area == '07'){
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','TB',0,'C',true);
+                                        }else{
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
+                                        }
+                                    
                                 }else{
                                     $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
                                 }
                             }
                                 
                         }
-                        // PROMERIO DE LOS PERIODOS PF
-                        $this->fpdf->SetFont('Arial', 'B', '7');
-                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[23],1,1,'C');
-                        $this->fpdf->SetFont('Arial', '', '7');
+                            // NOTA PROMEDIO FINAL.
+                            $this->fpdf->SetFont('Arial', 'B', '7');
+                            // NOTA PROMEDIO FINAL
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[23],1,0,'C');
+                            // NOTA RECUPERACION  1
+                                if($nota_actividades_0[21] == 0){
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                }
+                                else{
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[21],1,0,'C');
+                                }
+                            // NOTA RECUPERACION  2
+                                if($nota_actividades_0[22] == 0){
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                }
+                                else{
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[22],1,0,'C');
+                                }
+                            // NOTA PROMEDIO FINAL.
+                            if($nota_actividades_0[23] == 0){
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                            }
+                            else{
+                                // CALCULAR SI ES APROBADO O REPROBRADO
+                                    $result = resultado_final($codigo_modalidad, $nota_actividades_0[21],$nota_actividades_0[22],$nota_actividades_0[23]);
+                                    $result_nota_final = resultado_nota_final($codigo_modalidad, $nota_actividades_0[21],$nota_actividades_0[22],$nota_actividades_0[23]);
+                                        if($result[0] == "R"){
+                                            $this->fpdf->SetTextColor(255,0,0);
+                                        } 
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[23],1,0,'C');
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result[0],1,1,'C');
+                                    
+                                    $this->fpdf->SetTextColor(0);
+                                    $this->fpdf->SetFillColor(255,255,255);
+                            }
                 }
                 
                 // incremento de variable que controla la fila
