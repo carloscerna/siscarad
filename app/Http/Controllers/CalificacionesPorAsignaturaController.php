@@ -288,6 +288,7 @@ class CalificacionesPorAsignaturaController extends Controller
         $codigo_actividad = $request->codigo_actividad;
         $codigo_periodo = $request->codigo_periodo;
         $codigo_area = $request->codigo_area;
+        $codigo_modalidad = substr($request->codigo_gradoseccionturno,6,2);
         // CAMBIAR EL VALOR DE LA VARIABLE "ACTIVIDAD PORCENTAJE" DEPENDIENDO DEL PERIODO
         // 01 - PERIODO 1 ... 05 - PERIODO 5
         // CODIGO ACTIVIDAD
@@ -352,6 +353,32 @@ class CalificacionesPorAsignaturaController extends Controller
                                 if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08')
                                 {
                                     DB::update("update nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+                                }
+                            // CODIGO MODALIDAD PARA REALIZAR LA ACUTILZIACION PROMEDIO FINAL
+                                /// VALIDAR PRIMERO A QUE MODALIDAD PERTENECE
+                                // 03 -> PRIMER CICLO
+                                // 04 -> SEGUNDO CICLO
+                                // 05 -> TERCER CICLO
+                                // 06 -> BACHILLERATO GENERAL
+                                // 07 -> BACHILLERATO TECNICO
+                                // 08 -> BACHILLERATO TECNICO VOCACIONAL SECRETARIADO
+                                // 09 -> BACHILLERATO TECNICO VOCACIONAL CONTADUR
+                                // 10 -> TERCER CICLO NOCTURNA
+                                // 11 -> BACHILLERATO GENERAL NOCTURNA
+                                // 12 -> EDUCACION BASDICA DE ADULTOS NOCTURNA
+                                switch ($codigo_modalidad) {
+                                    case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
+                                        DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3)/3,0) where id_notas = ?", [$id_notas_]);                                        
+                                    break;
+                                    case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
+                                        DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4)/4,0) where id_notas = ?", [$id_notas_]);                                                                                
+                                    break;
+                                    case ($codigo_modalidad >= '10' && $codigo_modalidad <= '12'):
+                                        DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4 + nota_p_p_4)/5,0) where id_notas = ?", [$id_notas_]);
+                                    break;
+                                    default:
+                                    DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3)/3,0) where id_notas = ?", [$id_notas_]);                                        
+                                        break;
                                 }
                             }
                 

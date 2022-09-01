@@ -120,7 +120,7 @@ class PdfController extends Controller
                 $nombre_institucion = utf8_decode(trim($response_i->nombre_institucion));
                 $codigo_institucion = utf8_decode(trim($response_i->codigo_institucion));
                 $logo_uno = "/img/".utf8_decode(trim($response_i->logo_uno));
-
+                // LOGO DE LA INSTITUCIÓN
                     $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
                     $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
                     $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,1,1,'L');       
@@ -134,8 +134,9 @@ class PdfController extends Controller
             ->join('seccion AS sec', 'sec.codigo','=','am.codigo_seccion')
             ->join('turno AS tur', 'tur.codigo','=','am.codigo_turno')
             ->join('asignatura AS asig','asig.codigo','=','n.codigo_asignatura')
-            ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno','am.id_alumno_matricula as codigo_matricula','n.id_notas','n.codigo_asignatura',
-                     'bach.nombre AS nombre_modalidad', 'gr.nombre as nombre_grado', 'sec.nombre as nombre_seccion','tur.nombre as nombre_turno',
+            ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno', 'a.foto', 'a.codigo_genero',
+                        'am.id_alumno_matricula as codigo_matricula','n.id_notas','n.codigo_asignatura',
+                        'bach.nombre AS nombre_modalidad', 'gr.nombre as nombre_grado', 'sec.nombre as nombre_seccion','tur.nombre as nombre_turno',
                         'n.nota_a1_1', 'n.nota_a2_1', 'n.nota_a3_1', 'n.nota_p_p_1', 'n.nota_a1_2', 'n.nota_a2_2', 'n.nota_a3_2', 'n.nota_p_p_2',
                         'n.nota_a1_3', 'n.nota_a2_3', 'n.nota_a3_3', 'n.nota_p_p_3', 'n.nota_a1_4', 'n.nota_a2_4', 'n.nota_a3_4', 'n.nota_p_p_4',
                         'n.nota_a1_5', 'n.nota_a2_5', 'n.nota_a3_5', 'n.nota_p_p_5', 'n.nota_final', 'n.recuperacion', 'n.nota_recuperacion_2',
@@ -162,6 +163,8 @@ class PdfController extends Controller
                 $codigo_asignatura = utf8_decode(trim($response->codigo_asignatura));
                 $codigo_area = utf8_decode(trim($response->codigo_area));
                 $nota_final = utf8_decode(trim($response->nota_final));
+                $nombre_foto = (trim($response->foto));
+                $codigo_genero = (trim($response->codigo_genero));
                 // NOTA ACTIVIDAD 1, 2 Y PO, NOTA PERIODO 1
                 $nota_actividades_0 = array('',
                             $response->nota_a1_1,$response->nota_a2_1,$response->nota_a3_1,$response->nota_p_p_1, // 1
@@ -195,13 +198,29 @@ class PdfController extends Controller
                     $this->fpdf->Cell(135,$alto_cell[0],$nombre_modalidad,1,1,'L');       
                     $this->fpdf->SetX(30); 
                     $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L');       
-                    $this->fpdf->Cell(95,$alto_cell[0],$nombre_grado,1,0,'L');       
+                    $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado,1,0,'L');       
 
                     $this->fpdf->Cell(15,$alto_cell[0],utf8_decode("Sección"),1,0,'L');       
                     $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion,1,0,'C');       
                     
                     $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L');       
                     $this->fpdf->Cell(20,$alto_cell[0],$nombre_turno,1,1,'C');       
+                    // FOTO DEL ESTUDIANTE.
+                        if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
+                            {
+                                $img = 'c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
+                                $this->fpdf->image($img,180,5,25,30);
+                            }else if($codigo_genero == '01'){
+                                    $fotos = 'avatar_masculino.png';
+                                    $img = '/img/'.$fotos;
+                                    $this->fpdf->image(URL::to($img),180,5,25,30);
+                                }
+                                else{
+                                    $fotos = 'avatar_femenino.png';
+                                    $img = '/img/'.$fotos;
+                                    $this->fpdf->image(URL::to($img),180,5,25,30);
+                                }
+                    //
                     $this->fpdf->ln();
 
                     $this->fpdf->SetX(30); 
@@ -376,8 +395,14 @@ class PdfController extends Controller
                                 // CALCULAR SI ES APROBADO O REPROBRADO
                                 $result = resultado_final($codigo_modalidad, $nota_actividades_0[21],$nota_actividades_0[22],$nota_actividades_0[23]);
                                 $result_nota_final = resultado_nota_final($codigo_modalidad, $nota_actividades_0[21],$nota_actividades_0[22],$nota_actividades_0[23]);
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[23],1,0,'C');
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result[0],1,1,'C');
+                                    if($result[0] == "R"){
+                                        $this->fpdf->SetTextColor(255,0,0);
+                                    } 
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[23],1,0,'C');
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result[0],1,1,'C');
+                                        // restaurar el color
+                                        $this->fpdf->SetTextColor(0);
+                                        $this->fpdf->SetFillColor(255,255,255);
                             }
                         $this->fpdf->SetFont('Arial', '', '7');
                 }else{
@@ -531,8 +556,4 @@ class PdfController extends Controller
             $this->fpdf->Output();
                 exit;
     }    //
-    function EncabezadoCatalogoAreaAsignatura($codigo_area)
-    {
-
-    }   
 }
