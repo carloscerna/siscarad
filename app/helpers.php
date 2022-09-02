@@ -42,7 +42,7 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
                     if($nota_promedio_final < 5){$resultado_por_asignatura[0] ="R";}
             break;
             default:
-                # code...
+                $resultado_por_asignatura[0] ="R";
                 break;
         }
     return $resultado_por_asignatura;

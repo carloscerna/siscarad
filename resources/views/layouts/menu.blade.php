@@ -37,7 +37,7 @@
 <!-- Menu para el ADMINISTRADOR -->
 @role('Docente')
 <li class="side-menus {{ Request::is('*') ? 'active' : '' }}">
-    <a class="nav-link" href="/home">
+    <a class="nav-link" href="{{ url('/home') }}">
         <i class="fas fa-building"></i><span>Tablero</span>
     </a>
     <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
