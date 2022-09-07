@@ -106,8 +106,10 @@ class PdfController extends Controller
         
             echo 'Mi amigo ' . $Nombre. ' tiene ' . $Edad . ' años y vinve en ' . $Ciudad;*/
         // Cabecera - INFORMACION GENERAL DE LA INSTITUCION
-            $EstudianteInformacionInstitucion = DB::table('informacion_institucion')
-            ->select('id_institucion','codigo_institucion','nombre_institucion','telefono_uno','logo_uno','direccion_institucion'
+            $EstudianteInformacionInstitucion = DB::table('informacion_institucion as inf')
+            ->join('personal as p','p.codigo_cargo','=','inf.nombre_director')
+            ->select('inf.id_institucion','inf.codigo_institucion','inf.nombre_institucion','inf.telefono_uno','inf.logo_uno','inf.direccion_institucion','inf.nombre_director',
+                    DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
                     )
             ->where([
                 ['id_institucion', '=', $codigo_institucion],
@@ -118,6 +120,7 @@ class PdfController extends Controller
             $alto_cell = array('5'); $ancho_cell = array('60','6','24','30');
             foreach($EstudianteInformacionInstitucion as $response_i){  //Llenar el arreglo con datos
                 $nombre_institucion = utf8_decode(trim($response_i->nombre_institucion));
+                $nombre_director = utf8_decode(trim($response_i->full_name));
                 $codigo_institucion = utf8_decode(trim($response_i->codigo_institucion));
                 $logo_uno = "/img/".utf8_decode(trim($response_i->logo_uno));
                 // LOGO DE LA INSTITUCIÓN
@@ -147,7 +150,7 @@ class PdfController extends Controller
             ->where([
                 ['codigo_matricula', '=', $codigo_matricula],
                 ])
-            ->orderBy('n.id_notas','asc')
+            ->orderBy('n.orden','asc')
             ->get();
 
             // variales de entorno para mostrar la información.
@@ -394,7 +397,7 @@ class PdfController extends Controller
                             else{
                                 // CALCULAR SI ES APROBADO O REPROBRADO
                                 $result = resultado_final($codigo_modalidad, $nota_actividades_0[21],$nota_actividades_0[22],$nota_actividades_0[23]);
-                                $result_nota_final = resultado_nota_final($codigo_modalidad, $nota_actividades_0[21],$nota_actividades_0[22],$nota_actividades_0[23]);
+                                
                                     if($result[0] == "R"){
                                         $this->fpdf->SetTextColor(255,0,0);
                                     } 
@@ -490,7 +493,18 @@ class PdfController extends Controller
                                     if($nota_actividades_0[$na] == 0){
                                         $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
                                     }else{
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                        //
+                                        // ASIGNATUR ACOMPETENCIA CIUDADNA
+                                        //
+                                        if($codigo_area == '07'){
+                                            $result_concepto = resultado_concepto($codigo_modalidad, $nota_actividades_0[$na]);
+                                            // $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                            //$this->fpdf->SetX
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result_concepto,1,'TB','R',true);                                     
+                                        }else{
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                        }
+                                        
                                     }
                                 $this->fpdf->SetFont('Arial', '', '7');
                                 $this->fpdf->SetFillColor(255,255,255);
@@ -498,6 +512,8 @@ class PdfController extends Controller
                                 $this->fpdf->SetFont('Arial', '', '7');
                                 $this->fpdf->SetFillColor(255,255,255);
                                 // Cerificar si la calicación es igual a 0
+                                // VALIDAR CUANDO LA ASIGNATURA ES COMPETENCIA CIUDADANA
+                                // BUENO, MUY BUENO, EXCELENTE O VACIO
                                 if($nota_actividades_0[$na] == 0){
                                         if($codigo_area == '07'){
                                             $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','TB',0,'C',true);
@@ -506,7 +522,7 @@ class PdfController extends Controller
                                         }
                                     
                                 }else{
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
                                 }
                             }
                                 
@@ -536,7 +552,6 @@ class PdfController extends Controller
                             else{
                                 // CALCULAR SI ES APROBADO O REPROBRADO
                                     $result = resultado_final($codigo_modalidad, $nota_actividades_0[21],$nota_actividades_0[22],$nota_actividades_0[23]);
-                                    $result_nota_final = resultado_nota_final($codigo_modalidad, $nota_actividades_0[21],$nota_actividades_0[22],$nota_actividades_0[23]);
                                         if($result[0] == "R"){
                                             $this->fpdf->SetTextColor(255,0,0);
                                         } 
@@ -551,7 +566,13 @@ class PdfController extends Controller
                 // incremento de variable que controla la fila
                     $fila++;
             } // FIN DEL FOREACH
-        
+        //
+        //  DATOS AL FINAL DE LAS CALIFICACIONES
+        //
+            $ultima_linea = $this->fpdf->GetY();
+            $this->fpdf->SetY($ultima_linea+10);
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,1,'L');
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,1,'L');
         // FIN DEL FPDF
             $this->fpdf->Output();
                 exit;

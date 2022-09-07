@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 use Brian2694\Toastr\Facades\Toastr;
 use App\Http\Controllers\PdfController;
 
+use Carbon\Carbon;
+
 class CalificacionesPorAsignaturaController extends Controller
 {
     /**
@@ -187,6 +189,65 @@ class CalificacionesPorAsignaturaController extends Controller
                     $fila_array++;
                 }
             return $GradoSeccionTurnoAsignaturas;
+    }
+
+    public function getPeriodo()
+    {
+        $codigo_personal = $_POST['id'];
+        $codigo_annlectivo = $_POST['codigo_annlectivo'];
+        $codigo_gradoseccionturno = $_POST['codigo_gradoseccionturno'];
+        $codigo_grado = substr($codigo_gradoseccionturno,0,2);
+        $codigo_seccion = substr($codigo_gradoseccionturno,2,2);
+        $codigo_turno = substr($codigo_gradoseccionturno,4,2);
+        $codigo_modalidad = substr($codigo_gradoseccionturno,6,2);
+        // Evaluar el codigo modalidad.
+        // VALIDAR VARIABGLES PARA MOSTRAR CABECERA Y CALIFICACIONES.
+        if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
+            $codigo_modalidad = '03';
+        }else if($codigo_modalidad >= '06' && $codigo_modalidad <= '09'){   // EDUCACION MEDIA
+            $codigo_modalidad = '06';
+        }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
+            $codigo_modalidad = '10';
+        }else{
+            $codigo_modalidad = '03';;    // DEFAULT PUEDE SER PARVULARIA
+        }
+        // Array
+        $Periodo = array();
+        // Variable fecha.
+            $hoy = Carbon::now();
+            $date = $hoy->format('Y-m-d');
+            $PeriodoCalendario = DB::table('periodo_calendario')
+                ->join('catalogo_periodo','catalogo_periodo.id_','=','periodo_calendario.codigo_periodo')
+                ->select('catalogo_periodo.codigo','catalogo_periodo.descripcion','periodo_calendario.codigo_modalidad','periodo_calendario.codigo_annlectivo',
+                'periodo_calendario.fecha_desde','periodo_calendario.fecha_registro_academico','periodo_calendario.estatus')
+                ->where([
+                    ['codigo_annlectivo', '=', $codigo_annlectivo],
+                    ['codigo_modalidad', '=', $codigo_modalidad],
+                    //['estatus', '=', 'true'],
+                    //['fecha_desde', '>=', $date],
+                    //['fecha_registro_academico', '<=', $date],
+                    ])
+                //->whereBetween('fecha_desde',[$date])
+                ->whereDate('fecha_desde','<=',$date)
+                ->whereDate('fecha_registro_academico','>=',$date)
+                //->whereDate('fecha_registro_academico','<=',$date)
+                ->orderBy('codigo','asc')
+                ->get();
+                
+                $fila_array = 0;
+                foreach($PeriodoCalendario as $response){  //Llenar el arreglo con datos
+                    $codigos_ = trim($response->codigo);
+                    $nombres_ = trim($response->descripcion);
+                    $fecha_desde_ = trim($response->fecha_desde);
+                    $Periodo[$fila_array] = array ( 
+                        "codigo_periodo" => $codigos_,
+                        "nombre_periodo" => $nombres_,
+                        "fecha"=> $date,
+                        "fecha_desde"=> $fecha_desde_,
+                    ); 
+                    $fila_array++;
+                }
+            return $Periodo;
     }
 
     public function getGradoSeccionCalificacionesAsignaturas()

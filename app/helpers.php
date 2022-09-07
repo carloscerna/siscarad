@@ -49,9 +49,40 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
     
 }
 
-function resultado_nota_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_promedio_final){
-    $resultado_nota = 0;
-
-    return $resultado_nota;
+function resultado_concepto($codigo_modalidad, $nota_promedio){
+    $resultado_concepto = "";
+    switch ($codigo_modalidad) {
+        case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
+            if($nota_promedio >= 5 && $nota_promedio <= 6 ){
+                $resultado_concepto = "B";
+            }elseif ($nota_promedio >= 7 && $nota_promedio <= 8 ){
+                $resultado_concepto = "MB";
+            }elseif ($nota_promedio >= 9 && $nota_promedio <= 10 ){
+                $resultado_concepto = "E";
+            }
+        break;
+        case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
+            if($nota_promedio >= 5 && $nota_promedio <= 6 ){
+                $resultado_concepto = "B";
+            }elseif ($nota_promedio >= 7 && $nota_promedio <= 8 ){
+                $resultado_concepto = "MB";
+            }elseif ($nota_promedio >= 9 && $nota_promedio <= 10 ){
+                $resultado_concepto = "E";
+            }
+        break;
+        case ($codigo_modalidad >= '10' && $codigo_modalidad <= '12'):
+            if($nota_promedio >= 5 && $nota_promedio <= 6 ){
+                $resultado_concepto = "B";
+            }elseif ($nota_promedio >= 7 && $nota_promedio <= 8 ){
+                $resultado_concepto = "MB";
+            }elseif ($nota_promedio >= 9 && $nota_promedio <= 10 ){
+                $resultado_concepto = "E";
+            }
+        break;
+        default:
+            
+            break;
+    }
+    return $resultado_concepto;
     
 }

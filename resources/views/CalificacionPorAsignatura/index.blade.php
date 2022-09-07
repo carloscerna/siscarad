@@ -146,7 +146,7 @@ use Illuminate\Support\Facades;
 
             codigo_personal = $('#codigo_personal').val();
             codigo_annlectivo = $('#codigo_annlectivo').val();
-
+            // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
             $.ajax({
                 type: "post",
                 url: url_ajax,
@@ -160,7 +160,7 @@ use Illuminate\Support\Facades;
                 success:function(data) {
                      var miselect=$("#codigo_asignatura");
                              miselect.empty();
-                             miselect.append('<option value="">Seleccionar...</option>');
+                             miselect.append('<option value="00">Seleccionar...</option>');
                                  $.each( data, function( key, value ) {
                                         console.log("codigo_asignatura: " + value.codigo_asignatura + " codigo area: " + value.codigo_area + " Nombre: " + value.nombre_asignatura);
                                             miselect.append('<option value="' + value.codigo_asignatura + value.codigo_area + '">' + value.nombre_asignatura + '</option>'); 
@@ -168,6 +168,41 @@ use Illuminate\Support\Facades;
                                         $("#codigo_area").val(value.codigo_area);
                                     // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
                                         $('#codigo_asignatura option:nth-child(1)').val();
+                                        $('#codigo_periodo').val('00');
+                                        $('#codigo_actividad_porcentaje').val('00');
+                                        $('#contenido').empty();
+                                });
+                } 
+            });
+            // BUSCAR DEPENDIENDO DE LA FECHA EL PERIODO PARA HABILITAR.
+            //
+            url_ajax = '{{url("getPeriodo")}}' 
+            csrf_token = '{{csrf_token()}}' 
+
+            codigo_personal = $('#codigo_personal').val();
+            codigo_annlectivo = $('#codigo_annlectivo').val();
+            // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
+            $.ajax({
+                type: "post",
+                url: url_ajax,
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id": codigo_personal, 
+                    codigo_annlectivo: codigo_annlectivo,
+                    codigo_gradoseccionturno: GradoSeccion
+                },
+                dataType: 'json',
+                success:function(data) {
+                     var miselect=$("#codigo_periodo");
+                             miselect.empty();
+                             miselect.append('<option value="">Seleccionar...</option>');
+                                 $.each( data, function( key, value ) {
+                                        console.log("codigo_periodo: " + value.codigo_periodo + " Nombre: " + value.nombre_periodo + " Fecha: " + value.fecha + " Fecha desde: " + value.fecha_desde);
+                                            miselect.append('<option value="' + value.codigo_periodo + '">' + value.nombre_periodo + '</option>'); 
+                                    // rellenar hidden
+                                        //$("#codigo_area").val(value.codigo_area);
+                                    // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
+                                        $('#codigo_periodo option:nth-child(1)').val();
                                         $('#codigo_periodo').val('00');
                                         $('#codigo_actividad_porcentaje').val('00');
                                         $('#contenido').empty();
