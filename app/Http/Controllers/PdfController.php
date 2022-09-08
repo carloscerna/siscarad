@@ -32,6 +32,7 @@ class PdfController extends Controller
             $codigo_matricula = $EstudianteMatricula[2];
             $codigo_gradoseccionturnomodalidad = $EstudianteMatricula[3];
             $codigo_modalidad = substr($codigo_gradoseccionturnomodalidad,6,2);
+            $codigo_turno = substr($codigo_gradoseccionturnomodalidad,4,2);
             $codigo_grado = substr($codigo_gradoseccionturnomodalidad,0,2);
             $codigo_annlectivo = $EstudianteMatricula[4];
             $codigo_institucion = $EstudianteMatricula[5];
@@ -94,6 +95,19 @@ class PdfController extends Controller
                 //* incrementar valor de la fila para la array asociativa
                 $fila_array_asignatura++;
             } // FIN DEL FOREACH para los datos de la insitucion.
+
+            // Cabecera - DOCENE ENCARGADO DE LA SECCION
+            $AsignacionAsignatura = DB::table('encargado_grado as eg')
+            ->join('personal as p','p.id_personal','=','eg.codigo_docente')
+            ->select('p.id_personal'
+                    )
+            ->where([
+                ['codigo_bachillerato', '=', $codigo_modalidad],
+                ['codigo_grado', '=', $codigo_grado],
+                ['codigo_ann_lectivo', '=', $codigo_annlectivo],
+                ])
+            ->orderBy('p.id_personal','asc')
+            ->get();
         /*
         print_r($datos_asignatura);
         $buscar = array_search("02", $datos_asignatura['codigo']);
@@ -107,14 +121,16 @@ class PdfController extends Controller
             echo 'Mi amigo ' . $Nombre. ' tiene ' . $Edad . ' años y vinve en ' . $Ciudad;*/
         // Cabecera - INFORMACION GENERAL DE LA INSTITUCION
             $EstudianteInformacionInstitucion = DB::table('informacion_institucion as inf')
-            ->join('personal as p','p.codigo_cargo','=','inf.nombre_director')
+            ->leftjoin('personal as p','p.codigo_cargo','=','inf.nombre_director')
             ->select('inf.id_institucion','inf.codigo_institucion','inf.nombre_institucion','inf.telefono_uno','inf.logo_uno','inf.direccion_institucion','inf.nombre_director',
+                        'inf.logo_dos','inf.logo_tres',
                     DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
                     )
             ->where([
                 ['id_institucion', '=', $codigo_institucion],
                 ])
             ->orderBy('id_institucion','asc')
+            ->limit(1)
             ->get();
             // extgraer datos para el encabezado
             $alto_cell = array('5'); $ancho_cell = array('60','6','24','30');
@@ -123,6 +139,8 @@ class PdfController extends Controller
                 $nombre_director = utf8_decode(trim($response_i->full_name));
                 $codigo_institucion = utf8_decode(trim($response_i->codigo_institucion));
                 $logo_uno = "/img/".utf8_decode(trim($response_i->logo_uno));
+                $firma_director = "/img/".utf8_decode(trim($response_i->logo_dos));
+                $sello_direccion = "/img/".utf8_decode(trim($response_i->logo_tres));
                 // LOGO DE LA INSTITUCIÓN
                     $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
                     $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
@@ -570,9 +588,20 @@ class PdfController extends Controller
         //  DATOS AL FINAL DE LAS CALIFICACIONES
         //
             $ultima_linea = $this->fpdf->GetY();
-            $this->fpdf->SetY($ultima_linea+10);
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,1,'L');
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,1,'L');
+            $this->fpdf->SetY($ultima_linea+40);
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
+            $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente',0,1,'L');
+            
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
+            $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,1,'L');
+        //  Información del docente responsable de la sección.
+
+            
+        // agregar firma y sello
+            $this->fpdf->image(URL::to($firma_director),15,$ultima_linea+25,40,15);
+            $this->fpdf->image(URL::to($sello_direccion),40,$ultima_linea+20,25,25);
         // FIN DEL FPDF
             $this->fpdf->Output();
                 exit;
