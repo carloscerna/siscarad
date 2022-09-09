@@ -11,19 +11,48 @@ use Illuminate\Support\Facades;
     $correo_docente = Auth::user()->email;                                        
     $nombre_docente = Auth::user()->name;
     $codigo_personal = Auth::user()->codigo_personal; 
+    
 @endphp
 
 @section('content')
 @role("Docente")
 <section class="section">
     <div class="section-header mb-1">
-        <h4 class="page__heading">{{$nombre_docente}}</h4>
+        <h4 class="page__heading">{{$nombre_docente}}{{$codigo_personal}} </h4>
     </div>
     <div class="section-body">
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
-
+                    <div class="row">
+                        <div class="col-md-4 col-lg-4 col-xl-4">
+                            <div class="card bg-primary order-card">
+                                <div class="card-block m-1">
+                                    <h5>Estudiantes</h5>                                               
+                                        <h2 class="text-right"><i class="fa fa-users f-left float-left"></i><span></span></h2>
+                                        <p class="m-b-0 text-right"><a href="/roles" class="text-white"> . . . </a></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-4 col-xl-4">
+                            <div class="card bg-primary order-card">
+                                <div class="card-block m-1">
+                                <h5>Presentes</h5>                                               
+                                    <h2 class="text-right"><i class="fa fa-user-check f-left float-left"></i><span></span></h2>
+                                    <p class="m-b-0 text-right"><a href="/roles" class="text-white"> . . . </a></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-4 col-xl-4">
+                            <div class="card bg-primary order-card">
+                                <div class="card-block m-1">
+                                <h5>Retirados</h5>                                               
+                                    <h2 class="text-right"><i class="fa fa-user-times f-left float-left"></i><span></span></h2>
+                                    <p class="m-b-0 text-right"><a href="/roles" class="text-white"> . . . </a></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
