@@ -33,6 +33,7 @@ class PdfController extends Controller
             $codigo_gradoseccionturnomodalidad = $EstudianteMatricula[3];
             $codigo_modalidad = substr($codigo_gradoseccionturnomodalidad,6,2);
             $codigo_turno = substr($codigo_gradoseccionturnomodalidad,4,2);
+            $codigo_seccion = substr($codigo_gradoseccionturnomodalidad,2,2);
             $codigo_grado = substr($codigo_gradoseccionturnomodalidad,0,2);
             $codigo_annlectivo = $EstudianteMatricula[4];
             $codigo_institucion = $EstudianteMatricula[5];
@@ -97,17 +98,26 @@ class PdfController extends Controller
             } // FIN DEL FOREACH para los datos de la insitucion.
 
             // Cabecera - DOCENE ENCARGADO DE LA SECCION
-            $AsignacionAsignatura = DB::table('encargado_grado as eg')
+            $EncargadoGrado = DB::table('encargado_grado as eg')
             ->join('personal as p','p.id_personal','=','eg.codigo_docente')
-            ->select('p.id_personal'
+            ->select('p.id_personal',
+                    DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
                     )
             ->where([
                 ['codigo_bachillerato', '=', $codigo_modalidad],
                 ['codigo_grado', '=', $codigo_grado],
                 ['codigo_ann_lectivo', '=', $codigo_annlectivo],
+                ['codigo_seccion', '=', $codigo_seccion],
+                ['codigo_turno', '=', $codigo_turno],
+                ['encargado', '=', 'true'],
                 ])
             ->orderBy('p.id_personal','asc')
             ->get();
+
+            foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
+                $codigo_personal = utf8_decode(trim($response_eg->id_personal));
+                $nombre_personal = utf8_decode(trim($response_eg->full_name));
+            } // FIN DEL FOREACH para los datos de la insitucion.
         /*
         print_r($datos_asignatura);
         $buscar = array_search("02", $datos_asignatura['codigo']);
@@ -215,7 +225,7 @@ class PdfController extends Controller
                     $this->fpdf->Cell(40,$alto_cell[0],"Estudiante",1,0,'L');       
                     $this->fpdf->Cell(135,$alto_cell[0],$codigo_nie . " - " . $nombre_completo,1,1,'L');       
                     $this->fpdf->SetX(30); 
-                    $this->fpdf->Cell(40,$alto_cell[0],utf8_decode("Modalidad de Atención"),1,0,'L');       
+                    $this->fpdf->Cell(40,$alto_cell[0],utf8_decode("Nivel"),1,0,'L');       
                     $this->fpdf->Cell(135,$alto_cell[0],$nombre_modalidad,1,1,'L');       
                     $this->fpdf->SetX(30); 
                     $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L');       
@@ -261,7 +271,7 @@ class PdfController extends Controller
                     $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("NF->Nota Final"),'LR',1,'L');                
                     $this->fpdf->ln();
                     // cabecera de la tabla de calificaicone4s por periodo
-                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"",1,0,'L');
+                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"",'LRT',0,'L');
                     for ($pp=0; $pp <= $valor_periodo; $pp++) { 
                         if($valor_periodo == $pp){
                             $this->fpdf->Cell($ancho_cell[2],$alto_cell[0],$periodos_a[$pp],1,1,'C');
@@ -270,7 +280,7 @@ class PdfController extends Controller
                         }
                     }
                     // COMPONENTE DE ESTUDIO Y PRIMER FILA DE LAS ACTIVIDADES Y PROMEDIOS
-                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"Componente de Estudio",1,0,'L');             
+                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"Componente del Plan de Estudio",'LRB',0,'C');             
                     for ($pp=0; $pp <= $valor_periodo; $pp++) { 
                         for ($ap=0; $ap < count($actividad_periodo) -1; $ap++) { 
                                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$actividad_periodo[$ap],1,0,'C');
@@ -591,7 +601,7 @@ class PdfController extends Controller
             $this->fpdf->SetY($ultima_linea+40);
             $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
             $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente',0,1,'L');
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal,0,1,'L');
             
             $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
             $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
