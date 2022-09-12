@@ -24,6 +24,10 @@ class CreateEncargadoGradoTable extends Migration
             $table->char('codigo_encargado', 2)->nullable();
             $table->decimal('codigo_docente', 2, 0);
             $table->char('codigo_turno', 2)->nullable();
+            $table->bigInteger('id', true);
+            $table->timeTz('timestampTz')->nullable();
+            $table->timeTz('updated_at')->nullable();
+            $table->timeTz('created_at')->nullable();
         });
     }
 

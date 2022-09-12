@@ -11,7 +11,14 @@ use Illuminate\Support\Facades;
     $correo_docente = Auth::user()->email;                                        
     $nombre_docente = Auth::user()->name;
     $codigo_personal = Auth::user()->codigo_personal; 
-    
+use App\Models\Tablas\EncargadoGrado;
+use App\Models\Tablas\Personal;
+
+    $EncargadoGrado = EncargadoGrado::from('encargado_grado as eg')
+        ->join('personal as p',function($join){$join->on('p.id_personal','=','eg.codigo_docente')
+        ->where('eg.codigo_docente','=',13);})
+            ->select("eg.codigo_docente",TRIM("p.nombres"))
+                ->where('eg.codigo_ann_lectivo','=','22')->get();
 @endphp
 
 @section('content')

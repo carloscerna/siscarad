@@ -49,6 +49,10 @@ class CreatePersonalTable extends Migration
             $table->char('isss', 25)->nullable();
             $table->char('afp', 25)->nullable();
             $table->text('comentario')->nullable();
+            $table->bigInteger('id', true);
+            $table->timeTz('timestampTz')->nullable();
+            $table->timeTz('updated_at')->nullable();
+            $table->timeTz('created_at')->nullable();
         });
     }
 
