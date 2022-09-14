@@ -41,19 +41,100 @@ use Illuminate\Support\Facades;
                         </div>       
                     </div>
                 </div>
-                <div class="card">
+            </div>
+        </div>
+    </div>
+
+    <div class="section-body">
+        <div class="jumbotron p-3">
+            <h3 class="display-5">Indicadores Educativos</h3>
+                <div class="row">
+                    <div class="col col-md-4 col-lg-4 col-xl-4">
+                        {{-- card  TOTAL DE ESTUDIANTES--}}
+                        <div class="card text-white bg-primary mb-3 p-1" style="max-width: 13rem;">
+                            <div class="card-header p-1"><h5>Total de Estudiantes</h5></div>
+                                <div class="card-body p-1">
+                                    <h5 class="card-title"></h5>
+                                    <p class="card-text">
+                                        <h2 class="text-right"><i class="fa fa-user-friends f-left float-left"></i><label for="totalEstudiantes">#</label></h2>
+                                    </p>
+                                        <div class="float-md-left">
+                                            <i class="fas fa-male"></i> Masculino: <label for="totalEstudiantesMasculino"></label>
+                                        </div>
+
+                                        <div class="float-md-right">
+                                            <i class="fas fa-female"></i> Femenino: <label for="totalEstudiantesFemenino"></label>
+                                        </div>
+                                        <div class="">
+                                            <button type="button" class="btn btn-info btn-sm" style="display: none;" id="VerEstudiantes">Ver más...</button>
+                                        </div>
+                                        
+                                </div>
+                        </div>
+                    </div>  {{-- --}}
+                    <div class="col col-md-4 col-lg-4 col-xl-4">
+                        {{-- card  TOTAL DE ESTUDIANTES PRESENTES--}}
+                        <div class="card text-white bg-info mb-3 p-1" style="max-width: 13rem;">
+                            <div class="card-header p-1"><h5>Prensentes</h5></div>
+                                <div class="card-body p-1">
+                                    <h5 class="card-title"></h5>
+                                    <p class="card-text">
+                                        <h2 class="text-right"><i class="fa fa-user-friends f-left float-left"></i><label for="totalEstudiantesPresentes">#</label></h2>
+                                    </p>
+                                        <div class="float-md-left">
+                                            <i class="fas fa-male"></i> Masculino: <label for="totalEstudiantesMasculinoPresentes"></label>
+                                        </div>
+        
+                                        <div class="float-md-right">
+                                            <i class="fas fa-female"></i> Femenino: <label for="totalEstudiantesFemeninoPresentes"></label>
+                                        </div>
+                                </div>
+                            </div>
+                    </div>                             {{-- card  TOTAL DE ESTUDIANTES PRESENTES--}}
+                    <div class="col col-md-4 col-lg-4 col-xl-4">
+                        {{-- card  TOTAL DE ESTUDIANTES RETIRADOS--}}
+                        <div class="card text-white bg-warning mb-3 p-1" style="max-width: 13rem;">
+                            <div class="card-header p-1"><h5>Retirados</h5></div>
+                                <div class="card-body p-1">
+                                    <h5 class="card-title"></h5>
+                                    <p class="card-text">
+                                        <h2 class="text-right"><i class="fa fa-user-friends f-left float-left"></i><label for="totalEstudiantesRetirados">#</label></h2>
+                                    </p>
+                                        <div class="float-md-left">
+                                            <i class="fas fa-male"></i> Masculino: <label for="totalEstudiantesMasculinoRetirados"></label>
+                                        </div>
+        
+                                        <div class="float-md-right">
+                                            <i class="fas fa-female"></i> Femenino: <label for="totalEstudiantesFemeninoRetirados"></label>
+                                        </div>
+                                </div>
+                            </div>
+                    </div>                             {{-- card  TOTAL DE ESTUDIANTES RETIRADOS--}}
+                </div>  {{-- row --}}
+        </div> {{-- JUMBOTRON --}}
+    </div> 
+                 {{-- <div class="jumbotron">
                     <div class="row">
                         <div class="col-md-4 col-lg-4 col-xl-4">
+                            <div class="card text-white bg-primary mb-3" style="max-width: 18rem;">
+                                <div class="card-header"><h5>Total de Estudiantes</h5></div>
+                                <div class="card-body">
+                                  <h5 class="card-title"></h5>
+                                  <p class="card-text">
+                                    <h2 class="text-right"><i class="fa fa-users f-left float-left"></i><label for="totalEstudiantes">#</label></h2>
+                                  </p>
+                                </div>
+                              </div>
                             <div class="card bg-primary order-card">
                                 <div class="card-block m-1">
                                     <h5>Estudiantes</h5>                                               
-                                        <h2 class="text-right"><i class="fa fa-users f-left float-left"></i><span id="TotalEstudiantes">C</span></h2>
+                                        <h2 class="text-right"><i class="fa fa-users f-left float-left"></i><label for="totalEstudiantes">#</label></h2>
                                         <p class="m-b-0 text-right"><a href="#" class="text-white"> Ver más. . . </a></p>
                                 </div>
-                            </div>
+                            </div> 
                         </div>
                         <div class="col-md-4 col-lg-4 col-xl-4">
-                            <div class="card bg-primary order-card">
+                            <div class="card bg-info order-card">
                                 <div class="card-block m-1">
                                 <h5>Presentes</h5>                                               
                                     <h2 class="text-right"><i class="fa fa-user-check f-left float-left"></i><span></span></h2>
@@ -62,21 +143,24 @@ use Illuminate\Support\Facades;
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4 col-xl-4">
-                            <div class="card bg-primary order-card">
+                            <div class="card bg-warning order-card">
                                 <div class="card-block m-1">
                                 <h5>Retirados</h5>                                               
                                     <h2 class="text-right"><i class="fa fa-user-times f-left float-left"></i><span></span></h2>
                                     <p class="m-b-0 text-right"><a href="#" class="text-white"> . . . </a></p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                        </div> 
+                     </div>  
+                </div>  --}}
 </section>
 @endrole
+
+{{-- <h6 id="totaldeEstudiantes">
+    <label for="totalEstudiantesMasculino"></label> - Masculino
+    <label for="totalEstudiantesFemenino"></label> - Femenino
+</h6>
+<h6><label for="totalEstudiantes"></label> - Estudiantes</h6> --}}
 
 
 @role('Administrador')
@@ -191,8 +275,38 @@ use Illuminate\Support\Facades;
                 dataType: 'json',
                 success:function(data) {
                     $.each( data, function( key, value ) {
-                        console.log("Total: " + value.total + " Presentes: " + value.presentes + " Retirados: " + value.retirados + " Sobreedad: " + value.sobreedad
-                                    + " Repitentes: " + value.repitentes);
+                        console.log(" Total: " + value.total_estudiantes + 
+                                    " Total Masculino: " + value.total_masculino + 
+                                    " Total Femenino: " + value.total_femenino + 
+                                    " Presentes: " + value.presentes + 
+                                    " Retirados Masculino: " + value.total_retirado_masculino + 
+                                    " Retirados Masculino: " + value.total_retirado_femenino + 
+                                    " Sobreedad: " + value.sobreedad +
+                                    " Repitentes: " + value.repitentes);
+                                     // TOTAL DE ALUMNOS MASCULINO Y FEMENINO
+                                            var masculino = Number(value.total_masculino);
+                                            var femenino = Number(value.total_femenino);
+                                            // TOTAL DE ALUMNOS MASCULINO Y FEMENINO RETIRADOS.
+                                            var femenino_retirado = Number(value.total_retirado_femenino);
+                                            var masculino_retirado = Number(value.total_retirado_masculino);
+                                            // TOTAL DE ALUMNOS MASCULINO Y FEMENINO RETIRADOS.
+                                                var total_femenino =  femenino - femenino_retirado;
+                                                var total_masculino = masculino - masculino_retirado;
+                                                var total_retirados = femenino_retirado + masculino_retirado;
+                                            // TOTAL DE ALUMNOS.
+                                            var total_estudiantes = (total_masculino + total_femenino);
+                                        // COLOAR VALOR EN LA ETIQUETA PARA LOS INDICADORES MASCULINO Y FEMENINO.  
+                                            $("label[for='totalEstudiantesFemenino']").text(value.total_femenino); 
+                                            $("label[for='totalEstudiantesMasculino']").text(value.total_masculino); 
+                                            $("label[for='totalEstudiantes']").text(value.total_estudiantes); 
+                                        // COLOAR VALOR EN LA ETIQUETA PARA LOS INDICADORES MASCULINO Y FEMENINO.  
+                                            $("label[for='totalEstudiantesFemeninoPresentes']").text(total_femenino); 
+                                            $("label[for='totalEstudiantesMasculinoPresentes']").text(total_masculino); 
+                                            $("label[for='totalEstudiantesPresentes']").text(total_estudiantes); 
+                                        // COLOAR VALOR EN LA ETIQUETA PARA LOS INDICADORES MASCULINO Y FEMENINO.  RETIRADOS
+                                            $("label[for='totalEstudiantesFemeninoRetirados']").text(femenino_retirado); 
+                                            $("label[for='totalEstudiantesMasculinoRetirados']").text(masculino_retirado); 
+                                            $("label[for='totalEstudiantesRetirados']").text(total_retirados); 
                     });
                 } 
             });

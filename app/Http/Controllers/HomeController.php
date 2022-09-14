@@ -77,7 +77,7 @@ class HomeController extends Controller
 
         $EstudiantesIndicadores = DB::table('alumno as a')
                 ->join('alumno_matricula as am','a.id_alumno','=','am.codigo_alumno')
-                ->select('a.id_alumno as codigo_alumno','a.codigo_nie','am.retirado','am.sobreedad','am.repitente')
+                ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.codigo_genero','a.foto','a.ruta_pn','am.retirado','am.sobreedad','am.repitente')
                 ->where([
                     ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
                     ['am.codigo_ann_lectivo', '=', $codigo_annlectivo],
@@ -89,16 +89,33 @@ class HomeController extends Controller
                 ->get();
                 // array
                 $Indicadores = array();
-                $fila_array = 0; $total_ = 0; $retirados_ = 0; $repitentes_ = 0; $sobreedad_ = 0; $presentes_ = 0;
+                $fila_array = 0; 
+                $total_ = 0; $total_m_ = 0; $total_f_ = 0;
+                $retirados_ = 0; $total_r_m_ = 0; $total_r_f_ = 0;
+                $repitentes_ = 0; 
+                $sobreedad_ = 0; 
+                $presentes_ = 0;
                 foreach($EstudiantesIndicadores as $response){  //Llenar el arreglo con datos
                     $retiradoss_ = trim($response->retirado);
                     $repitentess_ = trim($response->repitente);
                     $sobreedads_ = trim($response->sobreedad);
-                    // contar valores
-                        if($retiradoss_ == '1'){
-                            $retirados_++;
-                        }
-                    //
+                    $codigo_genero_ = trim($response->codigo_genero); //01- masculino ; 02-Femenino
+
+                    // CONSULTA PARA GENERO MASCULINO
+                    if($codigo_genero_ == '01'){
+                        $total_m_++;
+                            if($retiradoss_ == '1'){
+                                $total_r_m_++;
+                            }
+                    }
+                    // CONSULTA PARA GENERO FEMENINO
+                    if($codigo_genero_ == '02'){
+                        $total_f_++;
+                            if($retiradoss_ == '1'){
+                                $total_r_f_++;
+                            }
+                    }
+
                         if($repitentess_ == '1'){
                             $repitentes_++;
                         }
@@ -106,16 +123,19 @@ class HomeController extends Controller
                         if($sobreedads_ == '1'){
                             $sobreedad_++;
                         }
-                    // total
+                    // total estudiantes
                     $total_++;
                     $fila_array++;
                 };
                 // calculo de presentes.
                 $presentes_ = $total_ - $retirados_;
                 $Indicadores[$fila_array] = array ( 
-                    "total" => $total_,
+                    "total_estudiantes" => $total_,
+                    "total_masculino" => $total_m_,
+                    "total_femenino" => $total_f_,
+                    "total_retirado_masculino" => $total_r_m_,
+                    "total_retirado_femenino" => $total_r_f_,
                     "presentes" => $presentes_,
-                    "retirados" => $retirados_,
                     "sobreedad" => $sobreedad_,
                     "repitentes" => $repitentes_,
                 ); 
