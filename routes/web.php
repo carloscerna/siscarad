@@ -52,7 +52,9 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::post("getGradoSeccionCalificacionesAsignaturas", "App\Http\Controllers\CalificacionesPorAsignaturaController@getGradoSeccionCalificacionesAsignaturas")->name('getGradoSeccionCalificacionesAsignaturas');
     Route::post("getPeriodo", "App\Http\Controllers\CalificacionesPorAsignaturaController@getPeriodo")->name('getPeriodo');
     Route::PUT("getActualizarCalificacion", "App\Http\Controllers\CalificacionesPorAsignaturaController@getActualizarCalificacion")->name('getActualizarCalificacion');
-
+    // para HomeController
+    Route::post("getGradoSeccion", "App\Http\Controllers\HomeController@getGradoSeccion")->name('getGradoSeccion');
+    Route::post("getGradoSeccionIndicadores", "App\Http\Controllers\HomeController@getGradoSeccionIndicadores")->name('getGradoSeccionIndicadores');
 
     // REPORTES
     Route::get('pdf/{id}', [PdfController::class, 'index']);

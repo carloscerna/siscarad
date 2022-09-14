@@ -25,11 +25,9 @@ class CalificacionesPorAsignaturaController extends Controller
      */
     public function index()
     {
-        //
+        // vERIFICAR EL AÑO LECTIVO ACTIVO
         $annlectivo=Annlectivo::where('estatus', true)->orderBy('codigo', 'desc')->pluck('nombre','codigo')->toarray();
-        //$query = DB::table('tablethis')->where('id', $result)->where('type', 'like')->orderBy('created_at', 'desc');
-        //$annlectivo = Annlectivo::pluck('nombre','codigo')->toarray();
-        return view('CalificacionPorAsignatura.index', compact('annlectivo'));
+            return view('CalificacionPorAsignatura.index', compact('annlectivo'));
     }
 
     /**
