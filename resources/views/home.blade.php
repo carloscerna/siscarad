@@ -31,12 +31,12 @@ use Illuminate\Support\Facades;
                                 {!! Form::hidden('codigo_institucion', $codigo_institucion,['id'=>'codigo_institucion', 'class'=>'form-control']) !!}
         
                                 {{ Form::label('LblAnnLectivo', 'Año Lectivo:') }}
-                                {!! Form::select('codigo_annlectivo', ['placeholder'=>'Selecciona'] + $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control']) !!}
+                                {!! Form::select('codigo_annlectivo', ['00'=>'Selecciona...'] + $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control']) !!}
                             </div>
         
                             <div class="col col-md-6 col-lg-6 col-xl-6">
                                 {{ Form::label('LblGradoSeccionTurno', 'Grado-Sección-Turno:') }}
-                                {!! Form::select('codigo_grado_seccion_turno', ['placeholder'=>'Selecciona'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionIndicadores(this.value)', 'class' => 'form-control']) !!}
+                                {!! Form::select('codigo_grado_seccion_turno', ['00'=>'Selecciona...'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionIndicadores(this.value)', 'class' => 'form-control']) !!}
                             </div>    
                         </div>       
                     </div>
@@ -59,18 +59,17 @@ use Illuminate\Support\Facades;
                                         <h2 class="text-right"><i class="fa fa-user-friends f-left float-left"></i><label for="totalEstudiantes">#</label></h2>
                                     </p>
                                         <div class="float-md-left">
-                                            <i class="fas fa-male"></i> Masculino: <label for="totalEstudiantesMasculino"></label>
+                                            <i class="fas fa-male"></i>  <label for="totalEstudiantesMasculino"></label>
                                         </div>
 
                                         <div class="float-md-right">
-                                            <i class="fas fa-female"></i> Femenino: <label for="totalEstudiantesFemenino"></label>
+                                            <i class="fas fa-female"></i>  <label for="totalEstudiantesFemenino"></label>
                                         </div>
                                         <div class="">
                                             <button type="button" class="btn btn-info btn-sm" style="display: none;" id="VerEstudiantes">Ver más...</button>
                                         </div>
-                                        
                                 </div>
-                        </div>
+                        </div> 
                     </div>  {{-- --}}
                     <div class="col col-md-4 col-lg-4 col-xl-4">
                         {{-- card  TOTAL DE ESTUDIANTES PRESENTES--}}
@@ -79,18 +78,20 @@ use Illuminate\Support\Facades;
                                 <div class="card-body p-1">
                                     <h5 class="card-title"></h5>
                                     <p class="card-text">
-                                        <h2 class="text-right"><i class="fa fa-user-friends f-left float-left"></i><label for="totalEstudiantesPresentes">#</label></h2>
+                                        <h2 class="text-right"><i class="fa fa-user-check f-left float-left"></i><label for="totalEstudiantesPresentes">#</label></h2>
                                     </p>
                                         <div class="float-md-left">
-                                            <i class="fas fa-male"></i> Masculino: <label for="totalEstudiantesMasculinoPresentes"></label>
+                                            <i class="fas fa-male"></i>  <label for="totalEstudiantesMasculinoPresentes"></label>
                                         </div>
         
                                         <div class="float-md-right">
-                                            <i class="fas fa-female"></i> Femenino: <label for="totalEstudiantesFemeninoPresentes"></label>
+                                            <i class="fas fa-female"></i>  <label for="totalEstudiantesFemeninoPresentes"></label>
                                         </div>
                                 </div>
+                                {{-- BOTON DE INFORMACION --}}
+                                <button type="button" class="btn btn-dark" id="BuscarEstudiantesPresentes">Más detalles...</button>
                             </div>
-                    </div>                             {{-- card  TOTAL DE ESTUDIANTES PRESENTES--}}
+                    </div>  {{-- card  TOTAL DE ESTUDIANTES PRESENTES--}}
                     <div class="col col-md-4 col-lg-4 col-xl-4">
                         {{-- card  TOTAL DE ESTUDIANTES RETIRADOS--}}
                         <div class="card text-white bg-warning mb-3 p-1" style="max-width: 13rem;">
@@ -98,70 +99,25 @@ use Illuminate\Support\Facades;
                                 <div class="card-body p-1">
                                     <h5 class="card-title"></h5>
                                     <p class="card-text">
-                                        <h2 class="text-right"><i class="fa fa-user-friends f-left float-left"></i><label for="totalEstudiantesRetirados">#</label></h2>
+                                        <h2 class="text-right"><i class="fa fa-user-times f-left float-left"></i><label for="totalEstudiantesRetirados">#</label></h2>
                                     </p>
                                         <div class="float-md-left">
-                                            <i class="fas fa-male"></i> Masculino: <label for="totalEstudiantesMasculinoRetirados"></label>
+                                            <i class="fas fa-male"></i>  <label for="totalEstudiantesMasculinoRetirados"></label>
                                         </div>
         
                                         <div class="float-md-right">
-                                            <i class="fas fa-female"></i> Femenino: <label for="totalEstudiantesFemeninoRetirados"></label>
+                                            <i class="fas fa-female"></i>  <label for="totalEstudiantesFemeninoRetirados"></label>
                                         </div>
                                 </div>
+                                {{-- BOTON DE INFORMACION --}}
+                                <button type="button" class="btn btn-dark btn-block" id="BuscarEstudiantesRetirados">Más detalles...</button>
                             </div>
                     </div>                             {{-- card  TOTAL DE ESTUDIANTES RETIRADOS--}}
                 </div>  {{-- row --}}
         </div> {{-- JUMBOTRON --}}
     </div> 
-                 {{-- <div class="jumbotron">
-                    <div class="row">
-                        <div class="col-md-4 col-lg-4 col-xl-4">
-                            <div class="card text-white bg-primary mb-3" style="max-width: 18rem;">
-                                <div class="card-header"><h5>Total de Estudiantes</h5></div>
-                                <div class="card-body">
-                                  <h5 class="card-title"></h5>
-                                  <p class="card-text">
-                                    <h2 class="text-right"><i class="fa fa-users f-left float-left"></i><label for="totalEstudiantes">#</label></h2>
-                                  </p>
-                                </div>
-                              </div>
-                            <div class="card bg-primary order-card">
-                                <div class="card-block m-1">
-                                    <h5>Estudiantes</h5>                                               
-                                        <h2 class="text-right"><i class="fa fa-users f-left float-left"></i><label for="totalEstudiantes">#</label></h2>
-                                        <p class="m-b-0 text-right"><a href="#" class="text-white"> Ver más. . . </a></p>
-                                </div>
-                            </div> 
-                        </div>
-                        <div class="col-md-4 col-lg-4 col-xl-4">
-                            <div class="card bg-info order-card">
-                                <div class="card-block m-1">
-                                <h5>Presentes</h5>                                               
-                                    <h2 class="text-right"><i class="fa fa-user-check f-left float-left"></i><span></span></h2>
-                                    <p class="m-b-0 text-right"><a href="#" class="text-white"> . . . </a></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-lg-4 col-xl-4">
-                            <div class="card bg-warning order-card">
-                                <div class="card-block m-1">
-                                <h5>Retirados</h5>                                               
-                                    <h2 class="text-right"><i class="fa fa-user-times f-left float-left"></i><span></span></h2>
-                                    <p class="m-b-0 text-right"><a href="#" class="text-white"> . . . </a></p>
-                                </div>
-                            </div>
-                        </div> 
-                     </div>  
-                </div>  --}}
 </section>
 @endrole
-
-{{-- <h6 id="totaldeEstudiantes">
-    <label for="totalEstudiantesMasculino"></label> - Masculino
-    <label for="totalEstudiantesFemenino"></label> - Femenino
-</h6>
-<h6><label for="totalEstudiantes"></label> - Estudiantes</h6> --}}
-
 
 @role('Administrador')
 <section class="section">
@@ -217,7 +173,6 @@ use Illuminate\Support\Facades;
 @endsection
 
 @section('scripts')
-
     <script type="text/javascript">
         $('#codigo_asignatura1').select2();
             $('#codigo_asignatura1').on('change', function(e){
@@ -226,6 +181,28 @@ use Illuminate\Support\Facades;
                 //@this.set('seleccionado', text);
             })
   
+        // BOTON PARA LA BUSQUEDA DE ESTUDIANTES PRESENTES
+        $("#BuscarEstudiantesPresentes").click(function () {
+            var codigo_annlectivo = $('#codigo_annlectivo').val();
+            var codigo_gradoseccionturno = $('#codigo_grado_seccion_turno').val();
+                console.log(codigo_annlectivo + ' ' + codigo_gradoseccionturno);
+            if(codigo_annlectivo == '00' || codigo_gradoseccionturno == '00'){
+                alert('Debe seleccionar Año Lectivo y Grado-Sección-Turno');
+                    $('#codigo_annlectivo').focus();
+            }
+        }); // FIN DE LA FUNCION
+
+        // BOTON PARA LA BUSQUEDA DE ESTUDIANTES RETIRADOS
+        $("#BuscarEstudiantesRetirados").click(function () {
+            var codigo_annlectivo = $('#codigo_annlectivo').val();
+            var codigo_gradoseccionturno = $('#codigo_grado_seccion_turno').val();
+                console.log(codigo_annlectivo + ' ' + codigo_gradoseccionturno);
+            if(codigo_annlectivo == '00' || codigo_gradoseccionturno == '00'){
+                alert('Debe seleccionar Año Lectivo y Grado-Sección-Turno...');
+                    $('#codigo_annlectivo').focus();
+            }
+        }); // FIN DE LA FUNCION
+
         // funcion onchange
         function BuscarPorAnnLectivo(AnnLectivo) {
             url_ajax = '{{url("getGradoSeccion")}}' 
