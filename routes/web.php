@@ -55,6 +55,7 @@ Route::group(['middleware'=> ['auth']], function(){
     // para HomeController
     Route::post("getGradoSeccion", "App\Http\Controllers\HomeController@getGradoSeccion")->name('getGradoSeccion');
     Route::post("getGradoSeccionIndicadores", "App\Http\Controllers\HomeController@getGradoSeccionIndicadores")->name('getGradoSeccionIndicadores');
+    Route::post("getGradoSeccionPresentes", "App\Http\Controllers\HomeController@getGradoSeccionPresentes")->name('getGradoSeccionPresentes');
 
     // REPORTES
     Route::get('pdf/{id}', [PdfController::class, 'index']);

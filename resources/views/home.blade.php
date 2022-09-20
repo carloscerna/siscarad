@@ -12,6 +12,7 @@ use Illuminate\Support\Facades;
     $nombre_docente = Auth::user()->name;
     $codigo_personal = Auth::user()->codigo_personal; 
     $codigo_institucion = Auth::user()->codigo_institucion;                                                
+
 @endphp
 
 @section('content')
@@ -116,6 +117,48 @@ use Illuminate\Support\Facades;
                 </div>  {{-- row --}}
         </div> {{-- JUMBOTRON --}}
     </div> 
+
+    <div class="bg-light" id="NominaEstudiantes" style="display: none;">
+        {{-- {{ csrf_field() }}
+        {{ method_field('PATCH') }} --}}
+        <div class="card">
+            <div class="card-header">Estudiantes</div>
+            <div class="card-body">
+                <div class="table-responsive-sm">
+                    <table class="table" id="TablaNominaEstudiantes">
+                      <thead>
+                          <tr class="bg-secondary">
+                            <th>N.°</th>
+                            <th>Foto</th>
+                            <th>NIE</th>
+                            <th>Nombre del Estudiante</th>
+                          </tr>
+                      </thead>
+                      <tbody id="contenido">
+                          <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                          </tr>
+                      </tbody>
+                      <tfoot>
+                          
+                      </tfoot>
+                    </table>
+                  </div>
+            </div>
+            <div class="card-footer">
+                <tr>
+                    <td colspan = "4" style="text-align: right;">
+                              <button type="button" class="btn btn-success" id = "goCalificacionGuardar" onclick="GuardarRegistros()">
+                                  Guardar
+                              </button>
+                    </td>
+                </tr>
+            </div>
+          </div>
+    </div>
 </section>
 @endrole
 
@@ -184,11 +227,75 @@ use Illuminate\Support\Facades;
         // BOTON PARA LA BUSQUEDA DE ESTUDIANTES PRESENTES
         $("#BuscarEstudiantesPresentes").click(function () {
             var codigo_annlectivo = $('#codigo_annlectivo').val();
+            var codigo_institucion = $('#codigo_institucion').val();
             var codigo_gradoseccionturno = $('#codigo_grado_seccion_turno').val();
                 console.log(codigo_annlectivo + ' ' + codigo_gradoseccionturno);
             if(codigo_annlectivo == '00' || codigo_gradoseccionturno == '00'){
                 alert('Debe seleccionar Año Lectivo y Grado-Sección-Turno');
                     $('#codigo_annlectivo').focus();
+            }else{
+                // Botón Otro... visible.
+				    $("#NominaEstudiantes").css("display","block");
+                // CUANDO SE HA SELECCIONADO UN GRADO...
+                url_ajax = '{{url("getGradoSeccionPresentes")}}' 
+                csrf_token = '{{csrf_token()}}' 
+
+            codigo_personal = $('#codigo_personal').val();
+            codigo_annlectivo = $('#codigo_annlectivo').val();
+            // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
+            $.ajax({
+                type: "post",
+                url: url_ajax,
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id": codigo_personal, 
+                    codigo_annlectivo: codigo_annlectivo,
+                    codigo_institucion: codigo_institucion,
+                    codigo_gradoseccionturno: codigo_gradoseccionturno
+                },
+                dataType: 'json',
+                success:function(data) {
+                    var linea = 0; var html= "";
+                    $('#contenido').empty();
+                    $('#contenido').append(data);
+                    $.each( data, function( key, value ) {
+                        linea = linea + 1;
+                        // validar para cambiar de color la l{inea}
+                        if (linea % 2 === 0) {
+                            fila_color = '<tr style=background:#A5FFA5; text-color:black;>';
+                        }else{
+                            fila_color = '<tr style=background: #FFFFFF; text-color:black;>';
+                        }
+                        // validar si es cero la calificación
+                        if(parseFloat(value.nota_actividad) == 0){
+                            style = " style='background: #FFC5C5; color: #FA4646;'";
+                        }else{
+                            style = " style='background: #FAFAFA; color: black;'";
+                        } 
+                        // ARMAR VARIABLE QUE CONTENGA LOS DATOS PARA PODER OBTENER LA INFORMACION DE LA BOLETA DE CALIFICACIONES
+                        //
+                            var codigo_nie = value.codigo_nie;
+                            var codigo_alumno = value.codigo_alumno;
+                            var nombre_foto = value.foto;
+            //                            var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim();
+                        // ARMAR URL
+                         //   var url = '{{ url("/pdf", "id") }}';
+                         //   url = url.replace('id', datos_estudiantes);
+                        //<img src="img_girl.jpg" alt="Girl in a jacket" width="500" height="600">
+                        // armar el thml de la tabla.
+                        html += fila_color +
+                        '<td>' + linea + '</td>' +
+                        '<td><img src=' +nombre_foto+ ' width=120 height=140></td>' +
+                        '<td>' + value.codigo_nie + '</td>' +
+                        '<td>' + value.apellidos_nombres_estudiantes + '</td>' +
+                        '</tr>';
+                    });
+                    $('#contenido').html(html);
+                    $('#contenido').focus();
+                        // Display an info toast with no title
+                        toastr.success("Registros Encontrados... " + linea, "Sistema");
+                } 
+            });
             }
         }); // FIN DE LA FUNCION
 
@@ -221,6 +328,8 @@ use Illuminate\Support\Facades;
                 },
                 dataType: 'json',
                 success:function(data) {
+                    // limpiar empty NominaEstudiantes
+                        $('#contenido').empty();
                      var miselect=$("#codigo_grado_seccion_turno");
                              miselect.empty();
                              miselect.append('<option value="">Seleccionar...</option>');
@@ -234,6 +343,8 @@ use Illuminate\Support\Facades;
         }
         // funcion onchange. CUANDO SELECCIONO EL GRADO Y SECCION
         function BuscarPorGradoSeccionIndicadores(GradoSeccion) {
+            // limpiar empty NominaEstudiantes
+                $('#contenido').empty();
             url_ajax = '{{url("getGradoSeccionIndicadores")}}' 
             csrf_token = '{{csrf_token()}}' 
 
