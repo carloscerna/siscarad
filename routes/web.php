@@ -8,8 +8,14 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\CalificacionesPorAsignaturaController;
 use App\Http\Controllers\PdfController;
+use App\Http\Controllers\PdfRPAController;
+
+// emailes
+use App\Mail\BoletaEstudiantes;
+use Illuminate\Support\Facades\Mail;
 
 /*
+
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
@@ -57,9 +63,17 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::post("getGradoSeccionIndicadores", "App\Http\Controllers\HomeController@getGradoSeccionIndicadores")->name('getGradoSeccionIndicadores');
     Route::post("getGradoSeccionPresentes", "App\Http\Controllers\HomeController@getGradoSeccionPresentes")->name('getGradoSeccionPresentes');
 
-    // REPORTES
+    // REPORTES boleta de califiación
     Route::get('pdf/{id}', [PdfController::class, 'index']);
-
+    // REPORTES boleta de califiación por asignatura
+    Route::get('pdfRPA/{id}', [PdfRPAController::class, 'index']);
     // helpers
     Route::resource('funcion','PdfController');
+    Route::resource('funcion','PdfRPAController');
+
+    // Emails
+    // Route::get('/boleta', function(){
+    //     return new BoletaEstudiantes("yonYOn");
+    // });
+
 });

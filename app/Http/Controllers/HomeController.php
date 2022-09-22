@@ -146,6 +146,7 @@ class HomeController extends Controller
         $codigo_annlectivo = $_POST['codigo_annlectivo'];
         $codigo_institucion = $_POST['codigo_institucion'];
         $codigo_gradoseccionturno = $_POST['codigo_gradoseccionturno'];
+        $presentes_retirados = $_POST['presentes_retirados'];
         $codigo_grado = substr($codigo_gradoseccionturno,0,2);
         $codigo_seccion = substr($codigo_gradoseccionturno,2,2);
         $codigo_turno = substr($codigo_gradoseccionturno,4,2);
@@ -189,7 +190,7 @@ class HomeController extends Controller
                     ['am.codigo_grado', '=', $codigo_grado],
                     ['am.codigo_seccion', '=', $codigo_seccion],
                     ['am.codigo_turno', '=', $codigo_turno],
-                    ['am.retirado', '=', 'f'],
+                    ['am.retirado', '=', $presentes_retirados],
                     ])
                 ->orderBy('full_name','asc')
                 ->get();

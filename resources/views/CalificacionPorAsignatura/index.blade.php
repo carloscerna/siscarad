@@ -50,7 +50,12 @@ use Illuminate\Support\Facades;
     {{-- {{ csrf_field() }}
     {{ method_field('PATCH') }} --}}
     <div class="card">
-        <div class="card-header">Estudiantes</div>
+        <div class="card-header">
+            <h3>Estudiantes</h3>
+            <button type="button" class="btn btn-info" id = "goReportePorAsignatura" onclick="ReportePorAsignatura()">
+                Reporte por Asignatura
+            </button>
+        </div>
         <div class="card-body">
             <div class="table-responsive-sm">
                 <table class="table" id="TablaNominaEstudiantes">
@@ -314,7 +319,7 @@ use Illuminate\Support\Facades;
                             var codigo_nie = value.codigo_nie;
                             var codigo_alumno = value.codigo_alumno;
 
-                            var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim();
+                            var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim() + "-"+ codigo_personal;
                         // ARMAR URL
                             var url = '{{ url("/pdf", "id") }}';
                             url = url.replace('id', datos_estudiantes);
@@ -338,6 +343,32 @@ use Illuminate\Support\Facades;
                 } 
             });
         }
+
+        // Reporte de Calificaciones por asignatura.
+        function ReportePorAsignatura() {
+            var codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
+            var codigo_annlectivo = $('#codigo_annlectivo').val();
+            var codigo_asignatura_area = $("#codigo_asignatura").val();
+            var codigo_personal = $('#codigo_personal').val();
+            
+            var conteo_codigo_asignatura = codigo_asignatura_area.length;
+            if(conteo_codigo_asignatura == 4){
+                codigo_asignatura = codigo_asignatura_area.substring(0,2);
+                codigo_area = codigo_asignatura_area.substring(2,4);
+            }else{
+                codigo_asignatura = codigo_asignatura_area.substring(0,3);
+                codigo_area = codigo_asignatura_area.substring(3,5);
+            }
+
+            var datos_estudiantes = codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim()+"-"+codigo_asignatura+"-"+codigo_area+"-"+codigo_personal;
+            // ARMAR URL
+                var url = '{{ url("/pdfRPA", "id") }}';
+                url = url.replace('id', datos_estudiantes);
+            // abrir ventana emergente con el pdf de las califiaciones por asignatura.
+                AbrirVentana(url);
+        }
+
+        // Reporte de calificaciones por asingatura
         // funcionar para guardar las calificaciones.
         function GuardarRegistros() {
             csrf_token = '{{csrf_token()}}';

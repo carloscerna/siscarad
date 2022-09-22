@@ -15,6 +15,10 @@ use Brian2694\Toastr\Facades\Toastr;
 use App\Http\Controllers\PdfController;
 
 use Carbon\Carbon;
+// mail envio
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BoletaEstudiantes;
+
 
 class CalificacionesPorAsignaturaController extends Controller
 {
@@ -60,6 +64,8 @@ class CalificacionesPorAsignaturaController extends Controller
     public function show($id)
     {
         //
+        //Mail::to('carlos.w.cerna@gmail.com')->send(new BoletaEstudiantes());
+
         $CargaDocente = CargaDocente::join('bachillerato_ciclo', 'bachillerato_ciclo.codigo', '=', 'carga_docente.codigo_bachillerato')
             ->join('grado_ano', 'grado_ano.codigo', '=', 'carga_docente.codigo')
             ->join('seccion', 'seccion.turno', '=', 'carga_docente.codigo')
@@ -406,12 +412,16 @@ class CalificacionesPorAsignaturaController extends Controller
                     $actual = array();
                         for ($i=0; $i < $fila; $i++) { 
                             $id_notas_ = $codigo_calificacion['codigo_calificacion'][$i];
-                            $calificacion_ = $calificacion['calificacion'][$i];
+                            $calificacion_ = floatval($calificacion['calificacion'][$i]);
+                            if($calificacion_ == 0 || $calificacion_ == '0'){
+                                $calificacion_ = intval($calificacion_);
+                            }
+
                             // QUERY DB ACTUALIZAR.
-                                $actual['update'] = DB::update("update nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
+                                $actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                 if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08')
                                 {
-                                    DB::update("update nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+                                    DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
                                 }
                             // CODIGO MODALIDAD PARA REALIZAR LA ACUTILZIACION PROMEDIO FINAL
                                 /// VALIDAR PRIMERO A QUE MODALIDAD PERTENECE

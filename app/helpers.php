@@ -30,7 +30,7 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
                     $nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_2) / 2,0);
                 }
                 // RESUTLADO Y ENVIAR
-                    if($nota_promedio_final < 6){$resultado_por_asignatura[0] ="R";}
+                    if($nota_promedio_final < 6 || $nota_promedio_final == 0){$resultado_por_asignatura[0] ="R";}
             break;
             case ($codigo_modalidad >= '10' && $codigo_modalidad <= '12'):
                 if($nota_recuperacion_1 <> 0 ){
@@ -50,7 +50,7 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
 }
 
 function resultado_concepto($codigo_modalidad, $nota_promedio){
-    $resultado_concepto = "";
+    $resultado_concepto = "R";
     switch ($codigo_modalidad) {
         case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
             if($nota_promedio >= 5 && $nota_promedio <= 6 ){
