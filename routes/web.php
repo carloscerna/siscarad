@@ -9,7 +9,7 @@ use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\CalificacionesPorAsignaturaController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PdfRPAController;
-
+use App\Http\Controllers\PdfRPGController;
 // emailes
 use App\Mail\BoletaEstudiantes;
 use Illuminate\Support\Facades\Mail;
@@ -67,10 +67,12 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::get('pdf/{id}', [PdfController::class, 'index']);
     // REPORTES boleta de califiación por asignatura
     Route::get('pdfRPA/{id}', [PdfRPAController::class, 'index']);
+    // REPORTES boleta de califiación por asignatura
+    Route::get('pdfRPG/{id}', [PdfRPGController::class, 'index']);
     // helpers
     Route::resource('funcion','PdfController');
     Route::resource('funcion','PdfRPAController');
-
+    Route::resource('funcion','PdfRPGController');
     // Emails
     // Route::get('/boleta', function(){
     //     return new BoletaEstudiantes("yonYOn");

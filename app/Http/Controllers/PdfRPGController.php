@@ -7,13 +7,13 @@ use GuzzleHttp\Psr7\Header;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 
-class PdfController extends Controller
+class PdfRPGController extends Controller
 {
     protected $fpdf;
 
     public function __construct()
     {
-        $this->fpdf = new Fpdf('P','mm','Letter');	// Formato Letter;
+        $this->fpdf = new Fpdf('L','mm','Legal');	// Formato Letter;
     }
 
     public function index($id) 
@@ -27,16 +27,16 @@ class PdfController extends Controller
         // Variables
         // NIE - ID - CODIGO MATRICULOA - (CODIGO GRADO - SECCION - TURNO -MODALIDAD) - ANNLECTIVO
             $EstudianteMatricula = explode("-",$id);
-            $codigo_nie = $EstudianteMatricula[0];
-            $codigo_alumno = $EstudianteMatricula[1];
-            $codigo_matricula = $EstudianteMatricula[2];
-            $codigo_gradoseccionturnomodalidad = $EstudianteMatricula[3];
+            $codigo_gradoseccionturnomodalidad = $EstudianteMatricula[0];
             $codigo_modalidad = substr($codigo_gradoseccionturnomodalidad,6,2);
             $codigo_turno = substr($codigo_gradoseccionturnomodalidad,4,2);
             $codigo_seccion = substr($codigo_gradoseccionturnomodalidad,2,2);
             $codigo_grado = substr($codigo_gradoseccionturnomodalidad,0,2);
-            $codigo_annlectivo = $EstudianteMatricula[4];
-            $codigo_institucion = $EstudianteMatricula[5];
+            $codigo_annlectivo = $EstudianteMatricula[1];
+            $codigo_institucion = $EstudianteMatricula[2];
+            $codigo_asignatura = $EstudianteMatricula[3];
+            $codigo_area_asignatura = $EstudianteMatricula[4];
+            $codigo_personal = $EstudianteMatricula[5];
             ////////////////////////////////////////////////////////////////////
             //////// crear matriz para la tabla CATALOGO_AREA_ASIGNATURA.
             //////////////////////////////////////////////////////////////////
@@ -52,37 +52,37 @@ class PdfController extends Controller
             $catalogo_area_cc = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
             $catalogo_area_alertas = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
             // CATALOGO ASIGNATURA
-            //
-            $CatalogoAreaAsignatura = DB::table('catalogo_area_asignatura')
-            ->select('codigo','descripcion')
-            ->get();
-            foreach($CatalogoAreaAsignatura as $response_area){  //Llenar el arreglo con datos
-                $catalogo_area_asignatura_codigo[] = (trim($response_area->codigo));
-                $catalogo_area_asignatura_area[] = (trim($response_area->descripcion));
-                //* incrementar valor de la fila para la array asociativa
-            } // FIN DEL FOREACH para los datos de la insitucion.
+                //
+                $CatalogoAreaAsignatura = DB::table('catalogo_area_asignatura')
+                ->select('codigo','descripcion')
+                ->get();
+                foreach($CatalogoAreaAsignatura as $response_area){  //Llenar el arreglo con datos
+                    $catalogo_area_asignatura_codigo[] = (trim($response_area->codigo));
+                    $catalogo_area_asignatura_area[] = (trim($response_area->descripcion));
+                    //* incrementar valor de la fila para la array asociativa
+                } // FIN DEL FOREACH para los datos de la insitucion.
 
             // RELLENAR LAS ASIGNATURAS SEGUN CICLO
-            // Cabecera - INFORMACION GENERAL DE LA INSTITUCION
-            $AsignacionAsignatura = DB::table('a_a_a_bach_o_ciclo as aaa')
-            ->join('asignatura as a','a.codigo','=','aaa.codigo_asignatura')
-            ->select('aaa.orden','a.nombre as nombre_asignatura','a.codigo as codigo_asignatura','a.codigo_cc as concepto_calificacion','a.codigo_area'
-                    )
-            ->where([
-                ['codigo_bach_o_ciclo', '=', $codigo_modalidad],
-                ['codigo_grado', '=', $codigo_grado],
-                ['codigo_ann_lectivo', '=', $codigo_annlectivo],
-                ])
-            ->orderBy('aaa.orden','asc')
-            ->get();
-            // extgraer datos para el encabezado
-            $datos_asignatura = array(); $fila_array_asignatura = 0;
-            $datos_asignatura = [
-                "codigo" => [""],
-                "nombre" => [""],
-                "concepto" => [""],
-                "codigo_area" => [""]
-            ];                   
+                // Cabecera - INFORMACION GENERAL DE LA INSTITUCION
+                $AsignacionAsignatura = DB::table('a_a_a_bach_o_ciclo as aaa')
+                ->join('asignatura as a','a.codigo','=','aaa.codigo_asignatura')
+                ->select('aaa.orden','a.nombre as nombre_asignatura','a.codigo as codigo_asignatura','a.codigo_cc as concepto_calificacion','a.codigo_area'
+                        )
+                ->where([
+                    ['codigo_bach_o_ciclo', '=', $codigo_modalidad],
+                    ['codigo_grado', '=', $codigo_grado],
+                    ['codigo_ann_lectivo', '=', $codigo_annlectivo],
+                    ])
+                ->orderBy('aaa.orden','asc')
+                ->get();
+                // extgraer datos para el encabezado
+                $datos_asignatura = array(); $fila_array_asignatura = 0;
+                $datos_asignatura = [
+                    "codigo" => [""],
+                    "nombre" => [""],
+                    "concepto" => [""],
+                    "codigo_area" => [""]
+                ];                   
             foreach($AsignacionAsignatura as $response_i){  //Llenar el arreglo con datos
                 $nombre_asignatura_a = utf8_decode(trim($response_i->nombre_asignatura));
                 $codigo_asignatura_a = utf8_decode(trim($response_i->codigo_asignatura));
@@ -93,6 +93,11 @@ class PdfController extends Controller
                     $datos_asignatura["nombre"][$fila_array_asignatura] = $nombre_asignatura_a;
                     $datos_asignatura["concepto"][$fila_array_asignatura] = $concepto_calificacion_a;
                     $datos_asignatura["codigo_area"][$fila_array_asignatura] = $codigo_area_a;
+                // capturar el nombre de la asignatura.
+                    if($codigo_asignatura_a == $codigo_asignatura){
+                        $nombre_asignatura_boleta = $nombre_asignatura_a;
+                    }
+                     
                 //* incrementar valor de la fila para la array asociativa
                 $fila_array_asignatura++;
             } // FIN DEL FOREACH para los datos de la insitucion.
@@ -115,20 +120,26 @@ class PdfController extends Controller
             ->get();
 
             foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
-                $codigo_personal = utf8_decode(trim($response_eg->id_personal));
-                $nombre_personal = utf8_decode(trim($response_eg->full_name));
+                $codigo_personal_ = utf8_decode(trim($response_eg->id_personal));
+                $nombre_personal_ = utf8_decode(trim($response_eg->full_name));
             } // FIN DEL FOREACH para los datos de la insitucion.
-        /*
-        print_r($datos_asignatura);
-        $buscar = array_search("02", $datos_asignatura['codigo']);
-        
-            $Nombre = $datos_asignatura['nombre'][$buscar];
-            $Codigo = $datos_asignatura['codigo'][$buscar];
-            $Concepto = $datos_asignatura['concepto'][$buscar];
-            print "<br>";
-            echo 'Mi amigo ' . $Nombre. ' tiene ' . $Codigo . ' años y vinve en ' . $Concepto;
-        
-            echo 'Mi amigo ' . $Nombre. ' tiene ' . $Edad . ' años y vinve en ' . $Ciudad;*/
+
+                        // Cabecera - DOCENE ENCARGADO DE LA SECCION
+                        $EncargadoAsignatura = DB::table('personal as p')
+                        ->select('p.id_personal',
+                                DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
+                                )
+                        ->where([
+                            ['p.id_personal', '=', $codigo_personal],
+                            ])
+                        ->orderBy('p.id_personal','asc')
+                        ->get();
+            
+                        foreach($EncargadoAsignatura as $response_eg){  //Llenar el arreglo con datos
+                            $codigo_personal_ = utf8_decode(trim($response_eg->id_personal));
+                            $nombre_personal_ea = utf8_decode(trim($response_eg->full_name));
+                        } // FIN DEL FOREACH para los datos de la insitucion.
+
         // Cabecera - INFORMACION GENERAL DE LA INSTITUCION
             $EstudianteInformacionInstitucion = DB::table('informacion_institucion as inf')
             ->leftjoin('personal as p','p.codigo_cargo','=','inf.nombre_director')
@@ -143,7 +154,7 @@ class PdfController extends Controller
             ->limit(1)
             ->get();
             // extgraer datos para el encabezado
-            $alto_cell = array('5'); $ancho_cell = array('60','6','24','30');
+            $alto_cell = array('5'); $ancho_cell = array('60','6','24','30','12');
             foreach($EstudianteInformacionInstitucion as $response_i){  //Llenar el arreglo con datos
                 $nombre_institucion = utf8_decode(trim($response_i->nombre_institucion));
                 $nombre_director = utf8_decode(trim($response_i->full_name));
@@ -156,36 +167,44 @@ class PdfController extends Controller
                     $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
                     $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,1,1,'L');       
             } // FIN DEL FOREACH para los datos de la insitucion.
-            //
+             //
             $EstudianteBoleta = DB::table('alumno as a')
-            ->join('alumno_matricula AS am','a.id_alumno','=','am.codigo_alumno')
-            ->join('nota AS n','am.id_alumno_matricula','=','n.codigo_matricula')
-            ->join('bachillerato_ciclo AS bach', 'bach.codigo','=','am.codigo_bach_o_ciclo')
-            ->join('grado_ano AS gr', 'gr.codigo','=','am.codigo_grado')
-            ->join('seccion AS sec', 'sec.codigo','=','am.codigo_seccion')
-            ->join('turno AS tur', 'tur.codigo','=','am.codigo_turno')
-            ->join('asignatura AS asig','asig.codigo','=','n.codigo_asignatura')
-            ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno', 'a.foto', 'a.codigo_genero', 'a.direccion_email as correo_estudiante',
-                        'am.id_alumno_matricula as codigo_matricula','n.id_notas','n.codigo_asignatura',
+                ->join('alumno_matricula AS am','a.id_alumno','=','am.codigo_alumno')
+                ->join('nota AS n','am.id_alumno_matricula','=','n.codigo_matricula')
+                ->join('bachillerato_ciclo AS bach', 'bach.codigo','=','am.codigo_bach_o_ciclo')
+                ->join('grado_ano AS gr', 'gr.codigo','=','am.codigo_grado')
+                ->join('seccion AS sec', 'sec.codigo','=','am.codigo_seccion')
+                ->join('turno AS tur', 'tur.codigo','=','am.codigo_turno')
+                ->join('asignatura AS asig','asig.codigo','=','n.codigo_asignatura')
+                ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno', 'a.foto', 'a.codigo_genero',
+                        'am.id_alumno_matricula as codigo_matricula','am.codigo_bach_o_ciclo as codigo_modalidad','am.codigo_grado','am.codigo_seccion','am.codigo_turno','am.codigo_ann_lectivo',
+                        'n.id_notas','n.codigo_asignatura',
                         'bach.nombre AS nombre_modalidad', 'gr.nombre as nombre_grado', 'sec.nombre as nombre_seccion','tur.nombre as nombre_turno',
                         'n.nota_a1_1', 'n.nota_a2_1', 'n.nota_a3_1', 'n.nota_p_p_1', 'n.nota_a1_2', 'n.nota_a2_2', 'n.nota_a3_2', 'n.nota_p_p_2',
                         'n.nota_a1_3', 'n.nota_a2_3', 'n.nota_a3_3', 'n.nota_p_p_3', 'n.nota_a1_4', 'n.nota_a2_4', 'n.nota_a3_4', 'n.nota_p_p_4',
                         'n.nota_a1_5', 'n.nota_a2_5', 'n.nota_a3_5', 'n.nota_p_p_5', 'n.nota_final', 'n.recuperacion', 'n.nota_recuperacion_2',
-                        'asig.codigo_area',
+                        'asig.codigo_area','asig.codigo as codigo_asignatura','asig.nombre as nombre_asignatura',
                     DB::raw("TRIM(CONCAT(BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno), CAST(' ' AS VARCHAR), BTRIM(a.nombre_completo))) as full_name"),
                     DB::raw("TRIM(CONCAT(BTRIM(a.nombre_completo), CAST(' ' AS VARCHAR), BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno))) as full_nombres_apellidos")
                     )
-            ->where([
-                ['codigo_matricula', '=', $codigo_matricula],
-                ])
-            ->orderBy('n.orden','asc')
-            ->get();
+                        ->where([
+                            ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
+                            ['codigo_grado', '=', $codigo_grado],
+                            ['codigo_seccion', '=', $codigo_seccion],
+                            ['codigo_turno', '=', $codigo_turno],
+                            ['codigo_ann_lectivo', '=', $codigo_annlectivo],
+                            ['codigo_asignatura', '=', $codigo_asignatura],
+                            ['am.retirado', '=', 'f'],
+                            ])
+                        ->orderBy('full_name','asc')
+                        ->get();
 
             // variales de entorno para mostrar la información.
             $fila = 1;             
             $this->fpdf->SetX(30); 
             foreach($EstudianteBoleta as $response){  //Llenar el arreglo con datos
                 $nombre_completo = utf8_decode(trim($response->full_nombres_apellidos));
+                $nombre_estudiante = utf8_decode(trim($response->full_name));
                 $codigo_nie = utf8_decode(trim($response->codigo_nie));
                 $nombre_modalidad = utf8_decode(trim($response->nombre_modalidad));  
                 $nombre_grado = utf8_decode(trim($response->nombre_grado));  
@@ -196,7 +215,6 @@ class PdfController extends Controller
                 $nota_final = utf8_decode(trim($response->nota_final));
                 $nombre_foto = (trim($response->foto));
                 $codigo_genero = (trim($response->codigo_genero));
-                $correo_estudiante = (trim($response->correo_estudiante));
                 // NOTA ACTIVIDAD 1, 2 Y PO, NOTA PERIODO 1
                 $nota_actividades_0 = array('',
                             $response->nota_a1_1,$response->nota_a2_1,$response->nota_a3_1,$response->nota_p_p_1, // 1
@@ -207,7 +225,7 @@ class PdfController extends Controller
                             $response->recuperacion, $response->nota_recuperacion_2, $response->nota_final);      // 21, 22, 23
                 // MATRICES
                 $periodos_a = array('PERIODO 1', 'PERIODO 2', 'PERIODO 3', 'PERIODO 4', 'PERIODO 5', 'PROMEDIO FINAL', 'R');
-                $actividad_periodo = array('A1','A2','PO','PP','PF');
+                $actividad_periodo = array('NF','A2','PO','PP','PF');
                 // VALIDAR VARIABGLES PARA MOSTRAR CABECERA Y CALIFICACIONES.
                 if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
                     $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 162;
@@ -221,13 +239,6 @@ class PdfController extends Controller
 
                 if($fila == 1){
                     // LLAMAR A LA FUNCION QUE POSEE EL ENCAVEZADO DE CADA REA DE LA ASIGNTURA
-                    // EncabezadoCatalogoAreaAsignatura($codigo_area);
-                    //
-                    $this->fpdf->Cell(40,$alto_cell[0],"Estudiante",1,0,'L');       
-                    $this->fpdf->Cell(135,$alto_cell[0],$codigo_nie . " - " . $nombre_completo,1,1,'L');       
-                    $this->fpdf->SetX(30); 
-                    $this->fpdf->Cell(40,$alto_cell[0],utf8_decode("Correo Electrónico"),1,0,'L');       
-                    $this->fpdf->Cell(135,$alto_cell[0],$correo_estudiante,1,1,'L');       
                     $this->fpdf->SetX(30); 
                     $this->fpdf->Cell(40,$alto_cell[0],utf8_decode("Nivel"),1,0,'L');       
                     $this->fpdf->Cell(135,$alto_cell[0],$nombre_modalidad,1,1,'L');       
@@ -239,69 +250,26 @@ class PdfController extends Controller
                     $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion,1,0,'C');       
                     
                     $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L');       
-                    $this->fpdf->Cell(20,$alto_cell[0],$nombre_turno,1,1,'C');       
-                    // FOTO DEL ESTUDIANTE.
-                        if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
-                            {
-                                $img = 'c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
-                                $this->fpdf->image($img,180,5,25,30);
-                            }else if($codigo_genero == '01'){
-                                    $fotos = 'avatar_masculino.png';
-                                    $img = '/img/'.$fotos;
-                                    $this->fpdf->image(URL::to($img),180,5,25,30);
-                                }
-                                else{
-                                    $fotos = 'avatar_femenino.png';
-                                    $img = '/img/'.$fotos;
-                                    $this->fpdf->image(URL::to($img),180,5,25,30);
-                                }
-                    //
-                    $this->fpdf->ln();
-
+                    $this->fpdf->Cell(45,$alto_cell[0],$nombre_turno,1,1,'C');       
+                    // NOMBRE DEL ENCARGADO DE GRADO, Y ENCARGADO DE LA ASIGNATURA
                     $this->fpdf->SetX(30); 
+                    $this->fpdf->Cell(55,$alto_cell[0],"Encargado de Grado: ",1,0,'L');       
+                    $this->fpdf->Cell(120,$alto_cell[0],$nombre_personal_,1,1,'L');       
+
+                    $this->fpdf->ln(); 
                     $this->fpdf->SetFont('Arial', 'B', '7');
-                    // fila de información
-                    $this->fpdf->Cell(27,$alto_cell[0],"A1->Actividad 1 (35%)",'LR',0,'L');       
-                    $this->fpdf->Cell(27,$alto_cell[0],"A2->Actividad 2 (35%)",'LR',0,'L');       
-                    $this->fpdf->Cell(35,$alto_cell[0],"PO->Prueba Objetiva (30%)",'LR',0,'L'); 
-                    $this->fpdf->Cell(35,$alto_cell[0],"PP->Promedio Periodo",'LR',0,'L');      
-                    $this->fpdf->Cell(30,$alto_cell[0],"PF->Promedio Final",'LR',1,'L');          
-                    // fila de información 
-                    $this->fpdf->SetX(30);       
-                    $this->fpdf->Cell(35,$alto_cell[0],utf8_decode("NR1->Nota Recuperación 1"),'LR',0,'L');             
-                    $this->fpdf->Cell(35,$alto_cell[0],utf8_decode("NR2->Nota Recuperación 2"),'LR',0,'L');                
-                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("A->Aprobado"),'LR',0,'L');                
-                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("R->Reprobado"),'LR',0,'L');                
-                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("NF->Nota Final"),'LR',1,'L');                
-                    $this->fpdf->ln();
-                    // cabecera de la tabla de calificaicone4s por periodo
-                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"",'LRT',0,'L');
-                    for ($pp=0; $pp <= $valor_periodo; $pp++) { 
-                        if($valor_periodo == $pp){
-                            $this->fpdf->Cell($ancho_cell[2],$alto_cell[0],$periodos_a[$pp],1,1,'C');
-                        }else{
-                            $this->fpdf->Cell($ancho_cell[2],$alto_cell[0],$periodos_a[$pp],1,0,'C');
-                        }
-                    }
+                    // n.º, NIE. NOMBRE DEL ESTUDIANTE
+                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','LT',0,'L',false);            
+                        $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'','T',0,'L',false);            
+                        $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'','T',0,'L',false);            
+                    // TITULO ASIGNATURAS
+                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'ASIGNATURAS',1,1,'C');
                     // COMPONENTE DE ESTUDIO Y PRIMER FILA DE LAS ACTIVIDADES Y PROMEDIOS
-                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"Componente del Plan de Estudio",'LRB',0,'C');             
-                    for ($pp=0; $pp <= $valor_periodo; $pp++) { 
-                        for ($ap=0; $ap < count($actividad_periodo) -1; $ap++) { 
-                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$actividad_periodo[$ap],1,0,'C');
-                        }
-                        if($valor_periodo == $pp){
-                            // colocar celda PF
-                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$actividad_periodo[4],1,0,'C');
-                        }
-                    }
-                        // colocar celda NR1
-                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR1',1,0,'C');
-                        // colocar celda NR2
-                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR2',1,0,'C');
-                        // colocar celda NF
-                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NF',1,0,'C');
-                        // COLOCAR CELDA RESULTADO.
-                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$periodos_a[6],1,1,'C');
+                    // n.º, NIE. NOMBRE DEL ESTUDIANTE
+                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],utf8_decode('N.º'),1,0,'L',false);            
+                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'NIE',1,0,'L',false);            
+                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"NOMINA DE ESTUDIANTES",'LRB',1,'C');             
+
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
                     /////VERIFICAR ENCABEZADO de AREA DE ASIGNATURAS///////////////////////////////////////////////////
                     ///////////////////////////////////////////////////////////////////////////////////////////////////		
@@ -321,48 +289,7 @@ class PdfController extends Controller
                         $this->fpdf->SetFillColor(200,200,200);
                         $this->fpdf->SetTextColor(0);
                         $this->fpdf->SetFont('Times','B',12);
-    
-                        //print_r($catalogo_area_asignatura_codigo);
-                        //$encabezado_ = EncabezadoCatalogoAreaAsignatura($catalogo_area_asignatura_codigo, $codigo_area);
-                    //	print $descripcion_area;
-                        //exit;
-                    // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
-                        if($catalogo_area_asignatura_codigo[0] == $codigo_area){
-                            if($catalogo_area_basica == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[0])),1,1,'L',true);
-                                $catalogo_area_basica = false;
-                            }
-                        }
-                        //$this->fpdf->Cell(203,6,strtoupper(utf8_decode($encabezado_)),1,1,'L',true);
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
-                        if($catalogo_area_asignatura_codigo[1] == $codigo_area){
-                            if($catalogo_area_formativa == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[1])),1,1,'L',true);
-                                $catalogo_area_formativa = false;
-                            }
-                        }
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA TÉCNICA.
-                        if($catalogo_area_asignatura_codigo[2] == $codigo_area){
-                            if($catalogo_area_tecnica == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[2])),1,1,'L',true);
-                                $catalogo_area_tecnica = false;
-                            }
-                        }
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA COMPETENCIAS CIUDADANAS.
-                        if($catalogo_area_asignatura_codigo[6] == $codigo_area){
-                            if($catalogo_area_cc == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[6])),1,1,'L',true);
-                                $catalogo_area_cc = false;
-                            }
-                        }
-                        
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA COMPLEMENTARIA.
-                        if($catalogo_area_asignatura_codigo[7] == $codigo_area){
-                            if($catalogo_area_complementaria == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[7])),1,1,'L',true);
-                                $catalogo_area_complementaria = false;
-                            }
-                        }
+        
                         //Restauraci�n de colos y fuentes
                         $this->fpdf->SetFillColor(212, 230, 252);
                         $this->fpdf->SetTextColor(0);
@@ -372,12 +299,10 @@ class PdfController extends Controller
                     // VALOR DE LA CALIFIACION SEGUN PERIODO 
                         $this->fpdf->SetFont('Arial', '', '7');
                     // INFORMACION DE LA ARRAY EXTRAER DE LA MATRIZ
-                            $buscar = array_search($codigo_asignatura, $datos_asignatura['codigo']);
-                            
-                                $Nombre = $datos_asignatura['nombre'][$buscar];
-                                $Codigo = $datos_asignatura['codigo'][$buscar];
-                                $Concepto = $datos_asignatura['concepto'][$buscar];
-                                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$codigo_asignatura . "-" . substr($Nombre,0,60),1,0,'L');     
+                    // n.º, NIE. NOMBRE DEL ESTUDIANTE
+                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$fila,1,0,'L',false);            
+                        $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$codigo_nie,1,0,'L',false);            
+                        $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$nombre_estudiante,1,0,'L',false);            
                     //  validar la calificación promedio.
                         for ($na=1; $na <= $valor_actividades; $na++) { 
                             if($na == 4 || $na == 8 || $na == 12 || $na == 16 || $na == 20){
@@ -462,45 +387,6 @@ class PdfController extends Controller
                         $this->fpdf->SetTextColor(0);
                         $this->fpdf->SetFont('Times','B',12);
     
-                        //print_r($catalogo_area_asignatura_codigo);
-                    //	print $descripcion_area;
-                        //exit;
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
-                      /* if($catalogo_area_asignatura_codigo[0] == $codigo_area){
-                            if($catalogo_area_basica == true){
-                                $this->fpdf->Cell(203,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[0])),1,1,'L',true);
-                                $catalogo_area_basica = false;
-                            }
-                        }*/
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
-                        if($catalogo_area_asignatura_codigo[1] == $codigo_area){
-                            if($catalogo_area_formativa == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[1])),1,1,'L',true);
-                                $catalogo_area_formativa = false;
-                            }
-                        }
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA TÉCNICA.
-                        if($catalogo_area_asignatura_codigo[2] == $codigo_area){
-                            if($catalogo_area_tecnica == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[2])),1,1,'L',true);
-                                $catalogo_area_tecnica = false;
-                            }
-                        }
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA COMPETENCIAS CIUDADANAS.
-                        if($catalogo_area_asignatura_codigo[6] == $codigo_area){
-                            if($catalogo_area_cc == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[6])),1,1,'L',true);
-                                $catalogo_area_cc = false;
-                            }
-                        }
-                        
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA COMPLEMENTARIA.
-                        if($catalogo_area_asignatura_codigo[7] == $codigo_area){
-                            if($catalogo_area_complementaria == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[7])),1,1,'L',true);
-                                $catalogo_area_complementaria = false;
-                            }
-                        }
                         //Restauraci�n de colos y fuentes
                         $this->fpdf->SetFillColor(212, 230, 252);
                         $this->fpdf->SetTextColor(0);
@@ -510,12 +396,10 @@ class PdfController extends Controller
                     // VALOR DE LA CALIFIACION SEGUN PERIODO 
                     $this->fpdf->SetFont('Arial', '', '7');
                     // INFORMACION DE LA ARRAY EXTRAER DE LA MATRIZ
-                            $buscar = array_search($codigo_asignatura, $datos_asignatura['codigo']);
-                            
-                                $Nombre = $datos_asignatura['nombre'][$buscar];
-                                $Codigo = $datos_asignatura['codigo'][$buscar];
-                                $Concepto = $datos_asignatura['concepto'][$buscar];
-                                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$codigo_asignatura . "-" . substr($Nombre,0,40),1,0,'L');     
+                    // n.º, NIE. NOMBRE DEL ESTUDIANTE
+                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$fila,1,0,'L',false);            
+                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$codigo_nie,1,0,'L',false);            
+                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$nombre_estudiante,1,0,'L',false);         
                     //
                         for ($na=1; $na <= $valor_actividades; $na++) { 
                             if($na == 4 || $na == 8 || $na == 12 || $na == 16 || $na == 20){
@@ -594,7 +478,6 @@ class PdfController extends Controller
                                     $this->fpdf->SetFillColor(255,255,255);
                             }
                 }
-                
                 // incremento de variable que controla la fila
                     $fila++;
             } // FIN DEL FOREACH
@@ -605,7 +488,7 @@ class PdfController extends Controller
             $this->fpdf->SetY($ultima_linea+40);
             $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
             $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal,0,1,'L');
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal_,0,1,'L');
             
             $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
             $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
@@ -617,7 +500,7 @@ class PdfController extends Controller
             $this->fpdf->image(URL::to($firma_director),15,$ultima_linea+25,40,15);
             $this->fpdf->image(URL::to($sello_direccion),40,$ultima_linea+20,25,25);
         // Construir el nombre del archivo.
-           $nombre_archivo = $codigo_nie.'-'.$nombre_completo.'-'.$nombre_modalidad.' '.$nombre_grado . ' ' . $nombre_seccion . ' ' . $nombre_turno . '.pdf';
+            $nombre_archivo = $nombre_modalidad.' '.$nombre_grado . ' ' . $nombre_seccion . ' ' . $nombre_turno . '.pdf';
         // Salida del pdf.
             $modo = 'I'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
             $this->fpdf->Output($nombre_archivo,$modo);
