@@ -418,14 +418,33 @@ class CalificacionesPorAsignaturaController extends Controller
                             }
 
                             // QUERY DB ACTUALIZAR.
-                                $actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
+                                //$actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                 if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08')
                                 {
                                     // AGREGAR QUE SEA UN ENTERO YT UN DECIMAL PARA EDUCACION MEDIA.
                                     //
                                     DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+
+                                    switch ($codigo_modalidad) {
+                                        case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
+                                            $actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
+                                            DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+                                        break;
+                                        case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
+                                            $actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
+                                            DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),1) where id_notas = ?", [$id_notas_]);                                       
+                                        break;
+                                        case ($codigo_modalidad >= '10' && $codigo_modalidad <= '12'):
+                                            $actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
+                                            DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+                                        break;
+                                        default:
+                                            $actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
+                                            DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+                                                break;
+                                    }
                                 }
-                            // CODIGO MODALIDAD PARA REALIZAR LA ACUTILZIACION PROMEDIO FINAL
+                            // CODIGO MODALIDAD PARA REALIZAR LA ACTUALIZACION PROMEDIO FINAL
                                 /// VALIDAR PRIMERO A QUE MODALIDAD PERTENECE
                                 // 03 -> PRIMER CICLO
                                 // 04 -> SEGUNDO CICLO

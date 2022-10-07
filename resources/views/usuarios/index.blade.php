@@ -17,13 +17,15 @@
                         <div class="card-body">
                             <a href="{{route('usuarios.create')}}" class="btn btn-success">Nuevo</a>
 
-                            <table class="table table-striped mt-2">
+                            <table class="table table-striped mt-2" id="DatosUsuarios">
                                 <thead style="background-color:#6777ef">
+                                  <tr>
                                     <th style="display:none;">ID</th>
                                     <th style="color:#fff;">Nombre</th>
                                     <th style="color:#fff;">E-mail</th>
                                     <th style="color:#fff;">Rol</th>
                                     <th style="color:#fff;">Acciones</th>
+                                  </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($usuarios as $usuario)

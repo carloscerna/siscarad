@@ -31,7 +31,7 @@ class UsuarioController extends Controller
     public function index()
     {
         //
-        $usuarios = User::Paginate(5);
+        $usuarios = User::orderby('name')->Paginate(10);
         return view('usuarios.index', compact('usuarios'));
     }
 

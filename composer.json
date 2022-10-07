@@ -18,6 +18,7 @@
         "nesbot/carbon": "^2.62",
         "spatie/laravel-permission": "^5.5",
         "swiftmailer/swiftmailer": "^6.3",
+        "yajra/laravel-datatables-oracle": "^9.21",
         "yoeunes/toastr": "^2.0"
     },
     "require-dev": {

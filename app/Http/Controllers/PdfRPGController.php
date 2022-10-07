@@ -274,7 +274,7 @@ class PdfRPGController extends Controller
                     }else{
                         $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 162;    // DEFAULT PUEDE SER PARVULARIA
                     }
-                // LLAMAR A LA FUNCION QUE POSEE EL ENCAVEZADO DE CADA REA DE LA ASIGNTURA
+                // LLAMAR A LA FUNCION QUE POSEE EL ENCABEZADO DE CADA REA DE LA ASIGNTURA
                     if($fila == 1){
                         // DATOS DE LA PRIMERA LINEA
                             $this->fpdf->SetX(30); 
