@@ -45,6 +45,8 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
                 $resultado_por_asignatura[0] ="R";
                 break;
         }
+        // nota final con las recuperaciones.
+            $resultado_por_asignatura[1] = $nota_promedio_final;
     return $resultado_por_asignatura;
     
 }

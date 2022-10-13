@@ -526,7 +526,7 @@ class PdfController extends Controller
                                         $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
                                     }else{
                                         //
-                                        // ASIGNATUR ACOMPETENCIA CIUDADNA
+                                        // ASIGNATURA ACOMPETENCIA CIUDADANA
                                         //
                                         if($codigo_area == '07'){
                                             $result_concepto = resultado_concepto($codigo_modalidad, $nota_actividades_0[$na]);
