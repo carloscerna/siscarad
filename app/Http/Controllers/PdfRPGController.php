@@ -146,7 +146,7 @@ class PdfRPGController extends Controller
             // Cabecera - DOCENE ENCARGADO DE LA SECCION
                 $EncargadoGrado = DB::table('encargado_grado as eg')
                 ->join('personal as p','p.id_personal','=','eg.codigo_docente')
-                ->select('p.id_personal',
+                ->select('p.id_personal', 'p.firma',
                         DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
                         )
                 ->where([
@@ -163,6 +163,7 @@ class PdfRPGController extends Controller
                 foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
                     $codigo_personal_ = utf8_decode(trim($response_eg->id_personal));
                     $nombre_personal_ = utf8_decode(trim($response_eg->full_name));
+                    $firma_docente = utf8_decode(trim($response_eg->firma));
                 } // FIN DEL FOREACH para los datos de la insitucion.
 
                         // Cabecera - DOCENE ENCARGADO DE LA SECCION
@@ -405,6 +406,31 @@ class PdfRPGController extends Controller
                      //$this->fpdf->SetFillColor(255,255,255);
             } // FIN DEL FOREACH
         //
+        // agregar filas faltantes
+        //
+            // Línea diagonal para los cuadros. en la segunda página. 
+            $numero = $fila_asignatura; $linea_faltante = 0;
+            $this->fpdf->Ln();
+            if($numero > 25){
+                // Colocar línea diagonal si es menor a 19.
+                    $valor_y1 = 0;
+                    $linea_faltante =  50 - $numero;
+                    $numero_p = $numero - 1;
+            }
+            		// Escribir líneas faltantes.  
+            for($i=0;$i<=$linea_faltante;$i++)
+            {
+                // n.º, NIE. NOMBRE DEL ESTUDIANTE
+                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'L',$fill);            
+                $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',1,0,'L',$fill);            
+                $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],''.$fila_asignatura,1,0,'L',$fill); 
+                // Para el fondo de la fila.
+                $fill=!$fill;
+                for($j=1;$j<=$total_asignaturas;$j++){
+                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',1,0,'L',$fill);            
+                }
+            }
+        //
         //  DATOS AL FINAL DE LAS CALIFICACIONES
         //
             $ultimo_espaciado = 10; $ultima_fila = 100;
@@ -413,7 +439,16 @@ class PdfRPGController extends Controller
             $this->fpdf->SetXY($ultima_columna + $ultimo_espaciado,$ultima_fila);
                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal_,0,0,'L');
             $this->fpdf->SetXY($ultima_columna + $ultimo_espaciado,$this->fpdf->GetY()+5);
-                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,1,'L');
+                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,0,'L');
+                // FOTO DEL ESTUDIANTE.
+                if (file_exists('c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente))
+                {
+                    $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
+                    $this->fpdf->image($img,$this->fpdf->GetX(),$this->fpdf->GetY()-30,25,30);
+                    //$this->fpdf->image(URL::to($img),$this->fpdf->GetX(),$this->fpdf->GetY()-20,40,15);
+                }
+        //
+
             // información del director
             $this->fpdf->SetXY($ultima_columna + $ultimo_espaciado,$this->fpdf->GetY()+40);
                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
