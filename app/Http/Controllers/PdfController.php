@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use GuzzleHttp\Psr7\Header;
+use Illuminate\Mail\Mailer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+use App\Mail\BoletaEstudiantes;
 
 class PdfController extends Controller
 {
@@ -103,7 +105,7 @@ class PdfController extends Controller
             // Cabecera - DOCENE ENCARGADO DE LA SECCION
             $EncargadoGrado = DB::table('encargado_grado as eg')
             ->join('personal as p','p.id_personal','=','eg.codigo_docente')
-            ->select('p.id_personal',
+            ->select('p.id_personal','p.firma',
                     DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
                     )
             ->where([
@@ -120,6 +122,7 @@ class PdfController extends Controller
             foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
                 $codigo_personal = utf8_decode(trim($response_eg->id_personal));
                 $nombre_personal = utf8_decode(trim($response_eg->full_name));
+                $firma_docente = utf8_decode(trim($response_eg->firma));
             } // FIN DEL FOREACH para los datos de la insitucion.
         /*
         print_r($datos_asignatura);
@@ -612,10 +615,17 @@ class PdfController extends Controller
             
             $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
             $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
+                // FOTO DEL ESTUDIANTE.
+                if(!empty($firma_docente)){
+                    if (file_exists('c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente))
+                    {
+                        $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
+                        $this->fpdf->image($img,$this->fpdf->GetX()+10,$this->fpdf->GetY()-30,25,30);
+                    }
+                }
             $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,1,'L');
         //  Información del docente responsable de la sección.
 
-            
         // agregar firma y sello
             $this->fpdf->image(URL::to($firma_director),15,$ultima_linea+25,40,15);
             $this->fpdf->image(URL::to($sello_direccion),40,$ultima_linea+20,25,25);
