@@ -323,6 +323,8 @@ use Illuminate\Support\Facades;
                             var codigo_alumno = value.codigo_alumno;
 
                             var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim() + "-"+ codigo_personal;
+                            var descargar_si = "-SI";
+                            var descargar_no = "-NO";
                         // ARMAR URL
                             var url = '{{ url("/pdf", "id") }}';
                             url = url.replace('id', datos_estudiantes);
@@ -335,7 +337,8 @@ use Illuminate\Support\Facades;
                         "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
                             "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
                             "<input type=hidden name=_method value=PUT>"+"</td>" +
-                            '<td><a class="btn btn-info" target="_blank" href="'+url+'"><i class="fas fa-file"></i></td>'+
+                            '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
+                            '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
                         '</tr>';
                         // "<td><a class='btn btn-info' target='_blank' href='{{ url('pdf/id->value.codigo_nie') }}'"+"><i class='fas fa-file'></i></td>"+
                     });

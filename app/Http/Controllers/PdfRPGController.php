@@ -409,7 +409,7 @@ class PdfRPGController extends Controller
         // agregar filas faltantes
         //
             // Línea diagonal para los cuadros. en la segunda página. 
-            $numero = $fila_asignatura; $linea_faltante = 0;
+            $numero = $fila_numero; $linea_faltante = 0;
             $this->fpdf->Ln();
             if($numero > 25){
                 // Colocar línea diagonal si es menor a 19.
@@ -423,30 +423,37 @@ class PdfRPGController extends Controller
                 // n.º, NIE. NOMBRE DEL ESTUDIANTE
                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'L',$fill);            
                 $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',1,0,'L',$fill);            
-                $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],''.$fila_asignatura,1,0,'L',$fill); 
+                $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'',1,0,'L',$fill); 
                 // Para el fondo de la fila.
                 $fill=!$fill;
                 for($j=1;$j<=$total_asignaturas;$j++){
                     $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',1,0,'L',$fill);            
+                    //
+                    if($j == $total_asignaturas){
+                        $ultima_columna = $this->fpdf->GetX();            
+                    }
                 }
+                $this->fpdf->ln();
             }
         //
         //  DATOS AL FINAL DE LAS CALIFICACIONES
         //
             $ultimo_espaciado = 10; $ultima_fila = 100;
-            $ultima_columna = $this->fpdf->GetX();
+            //$ultima_columna = $this->fpdf->GetX();
             // datos del docente
             $this->fpdf->SetXY($ultima_columna + $ultimo_espaciado,$ultima_fila);
                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal_,0,0,'L');
             $this->fpdf->SetXY($ultima_columna + $ultimo_espaciado,$this->fpdf->GetY()+5);
                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,0,'L');
                 // FOTO DEL ESTUDIANTE.
-                if (file_exists('c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente))
-                {
-                    $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
-                    $this->fpdf->image($img,$this->fpdf->GetX(),$this->fpdf->GetY()-30,25,30);
-                    //$this->fpdf->image(URL::to($img),$this->fpdf->GetX(),$this->fpdf->GetY()-20,40,15);
+                if(!empty($firma_docente)){
+                    if (file_exists('c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente))
+                    {
+                        $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
+                        $this->fpdf->image($img,$this->fpdf->GetX(),$this->fpdf->GetY()-30,25,30);
+                    }
                 }
+                    
         //
 
             // información del director

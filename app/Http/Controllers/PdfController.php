@@ -37,6 +37,8 @@ class PdfController extends Controller
             $codigo_grado = substr($codigo_gradoseccionturnomodalidad,0,2);
             $codigo_annlectivo = $EstudianteMatricula[4];
             $codigo_institucion = $EstudianteMatricula[5];
+            // CREAR ARCHIVO PDF
+            $crear_archivos = $EstudianteMatricula[7];;
             ////////////////////////////////////////////////////////////////////
             //////// crear matriz para la tabla CATALOGO_AREA_ASIGNATURA.
             //////////////////////////////////////////////////////////////////
@@ -51,6 +53,7 @@ class PdfController extends Controller
             $catalogo_area_complementaria = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
             $catalogo_area_cc = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
             $catalogo_area_alertas = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
+
             // CATALOGO ASIGNATURA
             //
             $CatalogoAreaAsignatura = DB::table('catalogo_area_asignatura')
@@ -619,7 +622,11 @@ class PdfController extends Controller
         // Construir el nombre del archivo.
            $nombre_archivo = $codigo_nie.'-'.$nombre_completo.'-'.$nombre_modalidad.' '.$nombre_grado . ' ' . $nombre_seccion . ' ' . $nombre_turno . '.pdf';
         // Salida del pdf.
+        if($crear_archivos == "SI"){
+            $modo = 'D'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
+        }else{
             $modo = 'I'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
+        }
             $this->fpdf->Output($nombre_archivo,$modo);
                 exit;
     }    //
