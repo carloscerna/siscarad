@@ -245,6 +245,8 @@ use Illuminate\Support\Facades;
                 miselect.append('<option value=01>Periodo 1</option>'); 
                 miselect.append('<option value=02>Periodo 2</option>'); 
                 miselect.append('<option value=03>Periodo 3</option>'); 
+                miselect.append('<option value=04>Periodo 4</option>'); 
+                miselect.append('<option value=05>Periodo 5</option>'); 
                     // Llamar a la funciond e busqueda
                     BuscarPorActividadPorcentaje(Periodo);
             }
