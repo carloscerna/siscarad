@@ -358,7 +358,10 @@ class CalificacionesPorAsignaturaController extends Controller
         // 01 - PERIODO 1 ... 05 - PERIODO 5
         // CODIGO ACTIVIDAD
         // 01- NOTA_A1_1 ... 03 - NOTA_A2_1
-
+                // echo "<pre>";
+                // print_r($calificacion);
+                //  echo "</pre>";
+                 
                 $nombre_periodos = array('nota_p_p_');
                 $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
                 $numero_periodo = 0;
@@ -471,17 +474,6 @@ class CalificacionesPorAsignaturaController extends Controller
                                         break;
                                 }
                             }
-                
-                    /*
-                        // CALCULO DEL PERIODO, PERO CUANDO SEA EL ULTIMO PORCIENTO INGRESADO.
-                        if($calcular_promedio == true){
-                            for ($i=0; $i < $fila; $i++) { 
-                                $id_notas_ = $codigo_calificacion['codigo_calificacion'][$i];
-                                // QUERY DB ACTUALIZAR.
-                                    $actual['update'] = DB::update("update nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
-                            }   
-                        }
-                    */
         return $actual;
     }
 

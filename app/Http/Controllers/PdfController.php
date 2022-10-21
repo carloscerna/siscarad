@@ -431,6 +431,7 @@ class PdfController extends Controller
                             // NOTA PROMEDIO FINAL.
                             if($nota_actividades_0[23] == 0){
                                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,1,'C');
                             }
                             else{
                                 // CALCULAR SI ES APROBADO O REPROBRADO
@@ -586,6 +587,7 @@ class PdfController extends Controller
                             // NOTA PROMEDIO FINAL.
                             if($nota_actividades_0[23] == 0){
                                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,1,'C');
                             }
                             else{
                                 // CALCULAR SI ES APROBADO O REPROBRADO

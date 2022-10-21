@@ -105,7 +105,7 @@ class PdfRPAController extends Controller
             // Cabecera - DOCENE ENCARGADO DE LA SECCION
             $EncargadoGrado = DB::table('encargado_grado as eg')
             ->join('personal as p','p.id_personal','=','eg.codigo_docente')
-            ->select('p.id_personal',
+            ->select('p.id_personal', 'p.firma',
                     DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
                     )
             ->where([
@@ -122,6 +122,7 @@ class PdfRPAController extends Controller
             foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
                 $codigo_personal_ = utf8_decode(trim($response_eg->id_personal));
                 $nombre_personal_ = utf8_decode(trim($response_eg->full_name));
+                $firma_docente = utf8_decode(trim($response_eg->firma));
             } // FIN DEL FOREACH para los datos de la insitucion.
 
                         // Cabecera - DOCENE ENCARGADO DE LA SECCION
@@ -516,6 +517,7 @@ class PdfRPAController extends Controller
                             // NOTA PROMEDIO FINAL.
                             if($nota_actividades_0[23] == 0){
                                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,1,'C');
                             }
                             else{
                                 // CALCULAR SI ES APROBADO O REPROBRADO
@@ -544,6 +546,14 @@ class PdfRPAController extends Controller
             
             $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
             $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
+            // FOTO DEL ESTUDIANTE.
+            if(!empty($firma_docente)){
+                if (file_exists('c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente))
+                {
+                    $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
+                    $this->fpdf->image($img,$this->fpdf->GetX()+10,$this->fpdf->GetY()-30,25,30);
+                }
+            }
             $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,1,'L');
         //  Información del docente responsable de la sección.
 

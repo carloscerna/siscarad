@@ -15,16 +15,7 @@ class PdfRPGController extends Controller
     {
         $this->fpdf = new Fpdf('L','mm','Legal');	// Formato Letter;
     }
-    // // rotar texto funcion MultiCell()
-    // public function RotatedTextMultiCell($x,$y,$txt,$angle)
-    // {
-    //     //Text rotated around its origin
-    //     $this->fpdf->Rotate($angle,$x,$y);
-    //     $this->fpdf->SetXY($x,$y);
-    //         $this->fpdf->MultiCell(30,4,$txt,0,'L');
-    //     $this->fpdf->Rotate(0);
-    // }
-    //
+    
     public function index($id) 
     {
         // Configurar PDF.
