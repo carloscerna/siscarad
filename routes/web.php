@@ -7,9 +7,11 @@ use App\Http\Controllers\RolController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\CalificacionesPorAsignaturaController;
+use App\Http\Controllers\MatriculaController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PdfRPAController;
 use App\Http\Controllers\PdfRPGController;
+
 // emailes
 use App\Mail\BoletaEstudiantes;
 use Illuminate\Support\Facades\Mail;
@@ -51,6 +53,7 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('asignaturas', AsignaturaController::class);
     Route::resource('calificacionporasignatura', CalificacionesPorAsignaturaController::class);
+    Route::resource('matricula ', MatriculaController::class);
     //Route::get('gradoseccion/{id}', 'CalificacionesPorAsignaturaController@getGradoSeccion');
     //Route::get('buscarGradoSeccion','AsignaturaController@getGradoSeccion');
     Route::post("getGradoSeccion", "App\Http\Controllers\CalificacionesPorAsignaturaController@getGradoSeccion")->name('getGradoSeccion');

@@ -280,30 +280,38 @@ class CalificacionesPorAsignaturaController extends Controller
                 04 - 05 - 06 - 07 - 09
             */
 
-            $nombre_periodos = array('nota_p_p_');
+            $nombre_periodos = array('nota_p_p_','recuperacion','nota_recuperacion_2');
             $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
             $nombre_observacion = array('observacion_');
             $numero_periodo = 0;
             switch ($codigo_periodo) {
-                case '01':
+                case '01':  // nota_p_p_1
                     $nombre_periodo = $nombre_periodos[0] . '1';
                     $numero_periodo = '1';
                 break;
-                case '02':
+                case '02':  // nota_p_p_2
                     $nombre_periodo = $nombre_periodos[0] . '2';
                     $numero_periodo = '2';
                 break;
-                case '03':
+                case '03':  // nota_p_p_3
                     $nombre_periodo = $nombre_periodos[0] . '3';
                     $numero_periodo = '3';
                 break;
-                case '04':
+                case '04':  // nota_p_p_4
                     $nombre_periodo = $nombre_periodos[0] . '4';
                     $numero_periodo = '4';
                 break;
-                case '05':
+                case '05':  // nota_p_p_5
                     $nombre_periodo = $nombre_periodos[0] . '5';
                     $numero_periodo = '5';
+                break;
+                case '06':  // recuperacion
+                    $nombre_periodo = $nombre_periodos[1];
+                    $numero_periodo = '6';
+                break;
+                case '07':  // nota_recuperacion_2
+                    $nombre_periodo = $nombre_periodos[2];
+                    $numero_periodo = '7';
                 break;
             }
             // ACTIVIDADES
@@ -328,7 +336,8 @@ class CalificacionesPorAsignaturaController extends Controller
         $EstudiantesMatricula = DB::table('alumno as a')
                 ->join('alumno_matricula as am','a.id_alumno','=','am.codigo_alumno')
                 ->join('nota as n','am.id_alumno_matricula','=','n.codigo_matricula')
-                ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno','am.id_alumno_matricula as codigo_matricula','n.id_notas', "$nombre_actividad as nota_actividad",
+                ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno','am.id_alumno_matricula as codigo_matricula',
+                        'n.id_notas', "$nombre_actividad as nota_actividad",'n.nota_final',
                         DB::raw("TRIM(CONCAT(BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno), CAST(' ' AS VARCHAR), BTRIM(a.nombre_completo))) as full_name"))
                 ->where([
                     ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
@@ -362,30 +371,38 @@ class CalificacionesPorAsignaturaController extends Controller
                 // print_r($calificacion);
                 //  echo "</pre>";
                  
-                $nombre_periodos = array('nota_p_p_');
+                $nombre_periodos = array('nota_p_p_','recuperacion','nota_recuperacion_2');
                 $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
                 $numero_periodo = 0;
 
                     switch ($codigo_periodo) {
-                        case '01':
+                        case '01':  // nota_p_p_1
                             $nombre_periodo = $nombre_periodos[0] . '1';
                             $numero_periodo = '1';
                         break;
-                        case '02':
+                        case '02':  // nota_p_p_2
                             $nombre_periodo = $nombre_periodos[0] . '2';
                             $numero_periodo = '2';
                         break;
-                        case '03':
+                        case '03':  // nota_p_p_3
                             $nombre_periodo = $nombre_periodos[0] . '3';
                             $numero_periodo = '3';
                         break;
-                        case '04':
+                        case '04':  // nota_p_p_4
                             $nombre_periodo = $nombre_periodos[0] . '4';
                             $numero_periodo = '4';
                         break;
-                        case '05':
+                        case '05':  // nota_p_p_5
                             $nombre_periodo = $nombre_periodos[0] . '5';
                             $numero_periodo = '5';
+                        break;
+                        case '06':  // recuperacion
+                            $nombre_periodo = $nombre_periodos[1];
+                            $numero_periodo = '6';
+                        break;
+                        case '07':  // nota_recuperacion_2
+                            $nombre_periodo = $nombre_periodos[2];
+                            $numero_periodo = '7';
                         break;
                     }
                 // EVALUAR EL AREA DE LA ASIGNATURA
@@ -427,7 +444,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                     //
                                     switch ($codigo_modalidad) {
                                         case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
-                                            if($codigo_area == '07'){
+                                            if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
@@ -435,7 +452,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                             }
                                         break;
                                         case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
-                                            if($codigo_area == '07'){
+                                            if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
@@ -443,7 +460,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                             }
                                         break;
                                         case ($codigo_modalidad >= '10' && $codigo_modalidad <= '12'):
-                                            if($codigo_area == '07'){
+                                            if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
@@ -466,20 +483,23 @@ class CalificacionesPorAsignaturaController extends Controller
                                 // 10 -> TERCER CICLO NOCTURNA
                                 // 11 -> BACHILLERATO GENERAL NOCTURNA
                                 // 12 -> EDUCACION BASDICA DE ADULTOS NOCTURNA
-                                switch ($codigo_modalidad) {
-                                    case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
-                                        DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3)/3,0) where id_notas = ?", [$id_notas_]);                                        
-                                    break;
-                                    case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
-                                        DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4)/4,0) where id_notas = ?", [$id_notas_]);                                                                                
-                                    break;
-                                    case ($codigo_modalidad >= '10' && $codigo_modalidad <= '12'):
-                                        DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4 + nota_p_p_4)/5,0) where id_notas = ?", [$id_notas_]);
-                                    break;
-                                    default:
-                                    DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3)/3,0) where id_notas = ?", [$id_notas_]);                                        
+                                if ($numero_periodo >= '1' && $numero_periodo <= '5') {
+                                    switch ($codigo_modalidad) {
+                                        case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
+                                            DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3)/3,0) where id_notas = ?", [$id_notas_]);                                        
                                         break;
+                                        case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
+                                            DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4)/4,0) where id_notas = ?", [$id_notas_]);                                                                                
+                                        break;
+                                        case ($codigo_modalidad >= '10' && $codigo_modalidad <= '12'):
+                                            DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4 + nota_p_p_4)/5,0) where id_notas = ?", [$id_notas_]);
+                                        break;
+                                        default:
+                                        DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3)/3,0) where id_notas = ?", [$id_notas_]);                                        
+                                            break;
+                                    }
                                 }
+
                             }
         return $actual;
     }

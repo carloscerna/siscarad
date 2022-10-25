@@ -26,7 +26,7 @@ use Illuminate\Support\Facades;
 </section>
 @endrole
 
-    <div class="form-group">
+    <div class="form-group text-black p-0">
         {!! Form::hidden('codigo_personal', $codigo_personal,['id'=>'codigo_personal', 'class'=>'form-control']) !!}
         {!! Form::hidden('codigo_institucion', $codigo_institucion,['id'=>'codigo_institucion', 'class'=>'form-control']) !!}
         {{ Form::label('LblAnnLectivo', 'Año Lectivo:') }}
@@ -231,6 +231,7 @@ use Illuminate\Support\Facades;
                 codigo_asignatura = codigo_asignatura_area.substring(0,3);
                 codigo_area = codigo_asignatura_area.substring(3,5);
             }
+            
             if(codigo_area == '01' || codigo_area == '02' || codigo_area == '03' || codigo_area == '08'){
                 miselect = $("#codigo_actividad_porcentaje");
                 miselect.empty();
@@ -239,14 +240,16 @@ use Illuminate\Support\Facades;
                 miselect.append('<option value=02>Actividad 2 (35%)</option>'); 
                 miselect.append('<option value=03>Examen o Prueba Objetiva (30%)</option>'); 
             }else{
+                // Extraer datos del periodo
+                codigo_periodo = $("#codigo_periodo").val();
+                var valor_periodo = $("#codigo_periodo option:selected");
+                // enviar resultados a la consola
+                    console.log(valor_periodo.val() + " Texto: "  + valor_periodo.text());
+                //
                 miselect = $("#codigo_actividad_porcentaje");
                 miselect.empty();
                 miselect.append('<option value=00>Seleccionar...</option>'); 
-                miselect.append('<option value=01>Periodo 1</option>'); 
-                miselect.append('<option value=02>Periodo 2</option>'); 
-                miselect.append('<option value=03>Periodo 3</option>'); 
-                miselect.append('<option value=04>Periodo 4</option>'); 
-                miselect.append('<option value=05>Periodo 5</option>'); 
+                miselect.append('<option value='+valor_periodo.val()+'>'+valor_periodo.text()+'</option>'); 
                     // Llamar a la funciond e busqueda
                     BuscarPorActividadPorcentaje(Periodo);
             }
