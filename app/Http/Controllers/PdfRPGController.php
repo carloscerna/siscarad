@@ -234,9 +234,9 @@ class PdfRPGController extends Controller
             //  INICIA EL PROCESO DE RECORRER LA INFORMACION PARA LA BOLETA DE CALIFICACIONES.
             //  variales de entorno para mostrar la información.
             //  ************************************************************************************************************
-        // echo "<pre>";
-        // print_r($EstudianteBoleta);
-        // echo "</pre>";
+         /* echo "<pre>";
+         print_r($EstudianteBoleta);
+         echo "</pre>"; */
      
             $fila = 1; $fila_asignatura = 0; $fila_numero = 1; $fill = true;
             $this->fpdf->SetX(30); 

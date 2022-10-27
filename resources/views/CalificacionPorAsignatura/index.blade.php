@@ -235,10 +235,23 @@ use Illuminate\Support\Facades;
             if(codigo_area == '01' || codigo_area == '02' || codigo_area == '03' || codigo_area == '08'){
                 miselect = $("#codigo_actividad_porcentaje");
                 miselect.empty();
-                miselect.append('<option value=00>Seleccionar...</option>'); 
-                miselect.append('<option value=01>Actividad 1 (35%)</option>'); 
-                miselect.append('<option value=02>Actividad 2 (35%)</option>'); 
-                miselect.append('<option value=03>Examen o Prueba Objetiva (30%)</option>'); 
+                // Evaluar si es recuperación o Actividades.
+                // Extraer datos del periodo
+                    codigo_periodo = $("#codigo_periodo").val();
+                    var valor_periodo = $("#codigo_periodo option:selected");
+                    // enviar resultados a la consola
+                        console.log(valor_periodo.val() + " Texto: "  + valor_periodo.text());
+                    //
+                    if(valor_periodo.val() == '06' || valor_periodo.val() == '07'){
+                        miselect.append('<option value=00>Seleccionar...</option>'); 
+                        miselect.append('<option value='+valor_periodo.val()+'>'+valor_periodo.text()+'</option>'); 
+                    }else{
+                        miselect.append('<option value=00>Seleccionar...</option>'); 
+                        miselect.append('<option value=01>Actividad 1 (35%)</option>'); 
+                        miselect.append('<option value=02>Actividad 2 (35%)</option>'); 
+                        miselect.append('<option value=03>Examen o Prueba Objetiva (30%)</option>'); 
+                    }
+                
             }else{
                 // Extraer datos del periodo
                 codigo_periodo = $("#codigo_periodo").val();
@@ -287,9 +300,13 @@ use Illuminate\Support\Facades;
                 codigo_area = codigo_asignatura_area.substring(3,5);
             }
             // CDIGO PRERIO, GRADOSECCIONTURNO - CODIGO INSTTIUCION
-            codigo_periodo = $("#codigo_periodo").val();
-            codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
-            codigo_institucion = $("#codigo_institucion").val();
+                codigo_periodo = $("#codigo_periodo").val();
+                // codigo periodo 2 digitos. 
+                codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
+                // codigo modalidad.
+                codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
+                    console.log("Codigo Modalidad: " + codigo_modalidad);
+                codigo_institucion = $("#codigo_institucion").val();
 
             $.ajax({
                 type: "post",
@@ -334,18 +351,61 @@ use Illuminate\Support\Facades;
                             var url = '{{ url("/pdf", "id") }}';
                             url = url.replace('id', datos_estudiantes);
                         //
-                        // armar el thml de la tabla.
-                        html += fila_color +
-                        '<td>' + linea + '</td>' +
-                        '<td>' + value.codigo_nie + '</td>' +
-                        '<td>' + value.full_name + '</td>' +
-                        "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
-                            "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
-                            "<input type=hidden name=_method value=PUT>"+"</td>" +
-                            '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
-                            '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
-                        '</tr>';
-                        // "<td><a class='btn btn-info' target='_blank' href='{{ url('pdf/id->value.codigo_nie') }}'"+"><i class='fas fa-file'></i></td>"+
+                        //  armar el thml de la tabla.
+                        //  EN ESTE APARTADO QUE DIFERENCIA CUANDO ES PERIODO NORMAL Y PERIODO EXTAORDINARIO.
+                        //  
+                            var valor_nota_final = 0; var valor_bm = "";
+                            if(codigo_periodo == '06' && codigo_periodo == '07'){
+
+                                if(codigo_modalidad >= '03' && codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
+                                    valor_nota_final = 5; valor_bm = "Basica";
+                                }else if($codigo_modalidad >= '06' && codigo_modalidad <= '09'){   // EDUCACION MEDIA
+                                    valor_nota_final = 6; valor_bm = "Media";
+                                }else if($codigo_modalidad >= '10' && codigo_modalidad <= '12'){   // NOCTURNA
+                                    valor_nota_final = 5; valor_bm = "Media";
+                                }else{
+                                    valor_nota_final = 5;
+                                }
+
+                                // validar matricula final. EDUCACIÓN BÁSICA
+                                    if(value.nota_final < valor_nota_final && valor_bm == "Basica"){
+                                        html += fila_color +
+                                            '<td>' + linea + '</td>' +
+                                            '<td>' + value.codigo_nie + '</td>' +
+                                            '<td>' + value.full_name + '</td>' +
+                                            "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
+                                                "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
+                                                "<input type=hidden name=_method value=PUT>"+"</td>" +
+                                                '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
+                                                '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
+                                            '</tr>';
+                                    }
+                                // validar matricula final. EDUCACIÓN MEDIA
+                                if(value.nota_final < valor_nota_final && valor_bm == "Media"){
+                                        html += fila_color +
+                                            '<td>' + linea + '</td>' +
+                                            '<td>' + value.codigo_nie + '</td>' +
+                                            '<td>' + value.full_name + '</td>' +
+                                            "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
+                                                "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
+                                                "<input type=hidden name=_method value=PUT>"+"</td>" +
+                                                '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
+                                                '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
+                                            '</tr>';
+                                    }
+                            }else{
+                                html += fila_color +
+                                '<td>' + linea + '</td>' +
+                                '<td>' + value.codigo_nie + '</td>' +
+                                '<td>' + value.full_name + '</td>' +
+                                "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
+                                    "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
+                                    "<input type=hidden name=_method value=PUT>"+"</td>" +
+                                    '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
+                                    '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
+                                '</tr>';
+                            }
+                            
                     });
                     $('#contenido').html(html);
                     $('#contenido').focus();

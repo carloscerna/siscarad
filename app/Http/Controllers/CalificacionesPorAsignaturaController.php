@@ -213,7 +213,7 @@ class CalificacionesPorAsignaturaController extends Controller
         }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
             $codigo_modalidad = '10';
         }else{
-            $codigo_modalidad = '03';;    // DEFAULT PUEDE SER PARVULARIA
+            $codigo_modalidad = '03';    // DEFAULT PUEDE SER PARVULARIA
         }
         // Array
         $Periodo = array();
