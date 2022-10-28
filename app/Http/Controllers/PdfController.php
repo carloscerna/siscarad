@@ -440,7 +440,7 @@ class PdfController extends Controller
                                     if($result[0] == "R"){
                                         $this->fpdf->SetTextColor(255,0,0);
                                     } 
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[23],1,0,'C');
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],round($result[1],0),1,0,'C');
                                         $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result[0],1,1,'C');
                                         // restaurar el color
                                         $this->fpdf->SetTextColor(0);
@@ -595,7 +595,7 @@ class PdfController extends Controller
                                         if($result[0] == "R"){
                                             $this->fpdf->SetTextColor(255,0,0);
                                         } 
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[23],1,0,'C');
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],round($result[1],0),1,0,'C');
                                         $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result[0],1,1,'C');
                                     
                                     $this->fpdf->SetTextColor(0);

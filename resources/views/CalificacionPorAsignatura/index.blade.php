@@ -301,6 +301,7 @@ use Illuminate\Support\Facades;
             }
             // CDIGO PRERIO, GRADOSECCIONTURNO - CODIGO INSTTIUCION
                 codigo_periodo = $("#codigo_periodo").val();
+                //console.log("Código Período: " + codigo_periodo);
                 // codigo periodo 2 digitos. 
                 codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
                 // codigo modalidad.
@@ -355,13 +356,14 @@ use Illuminate\Support\Facades;
                         //  EN ESTE APARTADO QUE DIFERENCIA CUANDO ES PERIODO NORMAL Y PERIODO EXTAORDINARIO.
                         //  
                             var valor_nota_final = 0; var valor_bm = "";
-                            if(codigo_periodo == '06' && codigo_periodo == '07'){
+                            if(codigo_periodo == '06' || codigo_periodo == '07'){
 
                                 if(codigo_modalidad >= '03' && codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
                                     valor_nota_final = 5; valor_bm = "Basica";
-                                }else if($codigo_modalidad >= '06' && codigo_modalidad <= '09'){   // EDUCACION MEDIA
+                                }else if(codigo_modalidad >= '06' && codigo_modalidad <= '09'){   // EDUCACION MEDIA
                                     valor_nota_final = 6; valor_bm = "Media";
-                                }else if($codigo_modalidad >= '10' && codigo_modalidad <= '12'){   // NOCTURNA
+                                    console.log("valor: " + valor_nota_final + " valor m: " + valor_bm);
+                                }else if(codigo_modalidad >= '10' && codigo_modalidad <= '12'){   // NOCTURNA
                                     valor_nota_final = 5; valor_bm = "Media";
                                 }else{
                                     valor_nota_final = 5;

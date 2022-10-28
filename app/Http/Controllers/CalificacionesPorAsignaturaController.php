@@ -328,6 +328,12 @@ class CalificacionesPorAsignaturaController extends Controller
                     case '03':
                         $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
                     break;
+                    case '06':
+                        $nombre_actividad = $nombre_periodos[1];
+                    break;
+                    case '07':
+                        $nombre_actividad = $nombre_periodos[2];
+                    break;
                 }
             }else{
                 // cambiar el nombre de actividad por el nombre del periodo

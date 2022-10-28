@@ -365,36 +365,52 @@ class PdfRPGController extends Controller
                             $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final);                                
                             if($result[0] == "R"){
                                 $this->fpdf->SetTextColor(255,0,0);
-                            } 
+                                $this->fpdf->SetFillColor(197,225,165);
+                                // PRIMERA NOTA FINAL.           
+                                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],round($result[1],0),1,0,'C', true);
+                            }else{
+                                $this->fpdf->SetFillColor(212,230,252);
+                                // PRIMERA NOTA FINAL.           
+                                $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],round($result[1],0),1,0,'C', $fill);
+                            }
                         }
-                    // PRIMERA NOTA FINAL.           
-                         $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$result[1],1,0,'C', $fill);
+
                 }else{
                     if($codigo_area == '07')
                     {
                         $result_concepto = resultado_concepto($codigo_modalidad, $nota_final);
                             if($result_concepto[0] == "R"){
                                 $this->fpdf->SetTextColor(255,0,0);
+                                $this->fpdf->SetFillColor(197,225,165);
+                                // RESULTADO FINAL CONCEPTOS
+                                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$result_concepto,1,0,'C', true);
+                            }else{
+                                $this->fpdf->SetFillColor(212,230,252);
+                                // RESULTADO FINAL CONCEPTOS
+                                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$result_concepto,1,0,'C', $fill);
                             } 
-                            //
-                                $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$result_concepto,1,0,'C', $fill);
                     }else{
                         // VERIFICAR SI LA CALIFIACION ES MENOR A 5 O 6 SEGUN MODALIDAD
                         if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08'){
                             $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final);                                
                             if($result[0] == "R"){
                                 $this->fpdf->SetTextColor(255,0,0);
-                            } 
+                                $this->fpdf->SetFillColor(197,225,165);
+                                // PRIMERA NOTA FINAL.           
+                                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],round($result[1],0),1,0,'C', true);
+                            }else{
+                                $this->fpdf->SetFillColor(212,230,252);
+                                // PRIMERA NOTA FINAL.           
+                                $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],round($result[1],0),1,0,'C', $fill);
+                            }
                         }
-                        // NOTA FINAL
-                            $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$result[1],1,0,'C', $fill);
                     }
                 }
                     // incremento de variable que controla la fila
                     $fila_asignatura++; $fila++; 
                      // restaurar el color
                      $this->fpdf->SetTextColor(0,0,0);
-                     //$this->fpdf->SetFillColor(255,255,255);
+                     $this->fpdf->SetFillColor(212,230,252);
             } // FIN DEL FOREACH
         //
         // agregar filas faltantes
