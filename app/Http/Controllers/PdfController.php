@@ -188,7 +188,7 @@ class PdfController extends Controller
             ->get();
 
             // variales de entorno para mostrar la información.
-            $fila = 1;             
+            $fila = 1; $fill = true;
             $this->fpdf->SetX(30); 
             foreach($EstudianteBoleta as $response){  //Llenar el arreglo con datos
                 $nombre_completo = utf8_decode(trim($response->full_nombres_apellidos));
@@ -324,8 +324,8 @@ class PdfController extends Controller
                     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                     // DAR FORMATO. -1 en la matriz
                         //Colores, ancho de l�nea y fuente en negrita
-                        $this->fpdf->SetFillColor(200,200,200);
-                        $this->fpdf->SetTextColor(0);
+                        $this->fpdf->SetFillColor(212, 230, 252);
+                        $this->fpdf->SetTextColor(0,0,0);
                         $this->fpdf->SetFont('Times','B',12);
     
                         //print_r($catalogo_area_asignatura_codigo);
