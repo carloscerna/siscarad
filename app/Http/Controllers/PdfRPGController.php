@@ -77,6 +77,7 @@ class PdfRPGController extends Controller
                     ['codigo_ann_lectivo', '=', $codigo_annlectivo],
                     ])
                 ->orderBy('aaa.orden','asc')
+                ->orderBy('a.codigo_area','asc')
                 ->get();
                 // extgraer datos para el encabezado
                 $datos_asignatura = array(); $fila_array_asignatura = 0; $count_asignaturas = array();
