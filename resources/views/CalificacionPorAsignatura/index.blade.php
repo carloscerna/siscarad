@@ -308,7 +308,14 @@ use Illuminate\Support\Facades;
                 codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
                     console.log("Codigo Modalidad: " + codigo_modalidad);
                 codigo_institucion = $("#codigo_institucion").val();
-
+            // VALIDAR SELECT ANTES DE CONSULTAR LA INFORMACIÓN
+            //
+            //
+                if(codigo_asignatura_area == ""){
+                    // Display an info toast with no title
+                        toastr.info("!Seleccione la Asignatura!", "Sistema");
+                        exit;
+                }
             $.ajax({
                 type: "post",
                 url: url_ajax,
