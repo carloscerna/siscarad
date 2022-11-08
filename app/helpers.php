@@ -26,6 +26,10 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
             case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
                 if($nota_recuperacion_1 <> 0 ){
                     $nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_1) / 2,0);
+
+                        if($nota_promedio_final < 6){
+                            $nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_2) / 2,0);
+                        }
                 }elseif ($nota_recuperacion_2 <> 0) {
                     $nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_2) / 2,0);
                 }

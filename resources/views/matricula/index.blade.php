@@ -19,7 +19,7 @@ use Illuminate\Support\Facades;
 @role("Docente")
 <section class="section">
     <div class="section-header mb-1">
-        <h4 class="page__heading">{{$nombre_docente}} - EN CONSTRUCCIÓNpg</h4>
+        <h4 class="page__heading">{{$nombre_docente}} - EN CONSTRUCCIÓN</h4>
     </div>
     <div class="section-body">
         <div class="row">
@@ -48,72 +48,10 @@ use Illuminate\Support\Facades;
 
     <div class="section-body">
         <div class="jumbotron p-3">
-            <h3 class="display-5">Indicadores Educativos</h3>
+            <h3 class="display-5">Matricula</h3>
                 <div class="row">
                     <div class="col col-md-4 col-lg-4 col-xl-4">
-                        {{-- card  TOTAL DE ESTUDIANTES--}}
-                        <div class="card text-white bg-primary mb-3 p-1" style="max-width: 13rem;">
-                            <div class="card-header p-1"><h5>Total de Estudiantes</h5></div>
-                                <div class="card-body p-1">
-                                    <h5 class="card-title"></h5>
-                                    <p class="card-text">
-                                        <h2 class="text-right"><i class="fa fa-user-friends f-left float-left"></i><label for="totalEstudiantes">#</label></h2>
-                                    </p>
-                                        <div class="float-md-left">
-                                            <i class="fas fa-male"></i>  <label for="totalEstudiantesMasculino"></label>
-                                        </div>
-
-                                        <div class="float-md-right">
-                                            <i class="fas fa-female"></i>  <label for="totalEstudiantesFemenino"></label>
-                                        </div>
-                                        <div class="">
-                                            <button type="button" class="btn btn-info btn-sm" style="display: none;" id="VerEstudiantes">Ver más...</button>
-                                        </div>
-                                </div>
-                        </div> 
-                    </div>  {{-- --}}
-                    <div class="col col-md-4 col-lg-4 col-xl-4">
-                        {{-- card  TOTAL DE ESTUDIANTES PRESENTES--}}
-                        <div class="card text-white bg-info mb-3 p-1" style="max-width: 13rem;">
-                            <div class="card-header p-1"><h5>Prensentes</h5></div>
-                                <div class="card-body p-1">
-                                    <h5 class="card-title"></h5>
-                                    <p class="card-text">
-                                        <h2 class="text-right"><i class="fa fa-user-check f-left float-left"></i><label for="totalEstudiantesPresentes">#</label></h2>
-                                    </p>
-                                        <div class="float-md-left">
-                                            <i class="fas fa-male"></i>  <label for="totalEstudiantesMasculinoPresentes"></label>
-                                        </div>
-        
-                                        <div class="float-md-right">
-                                            <i class="fas fa-female"></i>  <label for="totalEstudiantesFemeninoPresentes"></label>
-                                        </div>
-                                </div>
-                                {{-- BOTON DE INFORMACION --}}
-                                <button type="button" class="btn btn-dark" id="BuscarEstudiantesPresentes">Más detalles...</button>
-                            </div>
-                    </div>  {{-- card  TOTAL DE ESTUDIANTES PRESENTES--}}
-                    <div class="col col-md-4 col-lg-4 col-xl-4">
-                        {{-- card  TOTAL DE ESTUDIANTES RETIRADOS--}}
-                        <div class="card text-white bg-warning mb-3 p-1" style="max-width: 13rem;">
-                            <div class="card-header p-1"><h5>Retirados</h5></div>
-                                <div class="card-body p-1">
-                                    <h5 class="card-title"></h5>
-                                    <p class="card-text">
-                                        <h2 class="text-right"><i class="fa fa-user-times f-left float-left"></i><label for="totalEstudiantesRetirados">#</label></h2>
-                                    </p>
-                                        <div class="float-md-left">
-                                            <i class="fas fa-male"></i>  <label for="totalEstudiantesMasculinoRetirados"></label>
-                                        </div>
-        
-                                        <div class="float-md-right">
-                                            <i class="fas fa-female"></i>  <label for="totalEstudiantesFemeninoRetirados"></label>
-                                        </div>
-                                </div>
-                                {{-- BOTON DE INFORMACION --}}
-                                <button type="button" class="btn btn-dark btn-block" id="BuscarEstudiantesRetirados">Más detalles...</button>
-                            </div>
-                    </div>                             {{-- card  TOTAL DE ESTUDIANTES RETIRADOS--}}
+                    </div>
                 </div>  {{-- row --}}
         </div> {{-- JUMBOTRON --}}
     </div> 
@@ -224,21 +162,9 @@ use Illuminate\Support\Facades;
                 //@this.set('seleccionado', text);
             })
   
-        // BOTON PARA LA BUSQUEDA DE ESTUDIANTES PRESENTES
-        $("#BuscarEstudiantesPresentes").click(function () {
-            var PR = 'f';
-           BuscarPresentesRetirados(PR);
-        }); // FIN DE LA FUNCION
-
-        // BOTON PARA LA BUSQUEDA DE ESTUDIANTES RETIRADOS
-        $("#BuscarEstudiantesRetirados").click(function () {
-            var PR = 't';
-                BuscarPresentesRetirados(PR);
-        }); // FIN DE LA FUNCION
-
-        // funcion onchange
+       // funcion onchange
         function BuscarPorAnnLectivo(AnnLectivo) {
-            url_ajax = '{{url("getGradoSeccion")}}' 
+            url_ajax = '{{url("getGradoSeccionMatricula")}}' 
             csrf_token = '{{csrf_token()}}' 
 
             codigo_personal = $('#codigo_personal').val();

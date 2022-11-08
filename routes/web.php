@@ -66,6 +66,12 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::post("getGradoSeccionIndicadores", "App\Http\Controllers\HomeController@getGradoSeccionIndicadores")->name('getGradoSeccionIndicadores');
     Route::post("getGradoSeccionPresentes", "App\Http\Controllers\HomeController@getGradoSeccionPresentes")->name('getGradoSeccionPresentes');
 
+    // Para MatriculaController
+    Route::post("getGradoSeccionMatricula", "App\Http\Controllers\MatriculaController@getGradoSeccionMatricula")->name('getGradoSeccion');
+    
+    /////////////////////////////////////////
+    //** REPORTES */
+    ////////////////////////////////////////
     // REPORTES boleta de califiación
     Route::get('pdf/{id}', [PdfController::class, 'index']);
     // REPORTES boleta de califiación por asignatura
