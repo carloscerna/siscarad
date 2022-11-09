@@ -37,7 +37,7 @@ use Illuminate\Support\Facades;
         
                             <div class="col col-md-6 col-lg-6 col-xl-6">
                                 {{ Form::label('LblGradoSeccionTurno', 'Grado-Sección-Turno:') }}
-                                {!! Form::select('codigo_grado_seccion_turno', ['00'=>'Selecciona...'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionIndicadores(this.value)', 'class' => 'form-control']) !!}
+                                {!! Form::select('codigo_grado_seccion_turno', ['00'=>'Selecciona...'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionMatriculaTodos(this.value)', 'class' => 'form-control']) !!}
                             </div>    
                         </div>       
                     </div>
@@ -67,13 +67,21 @@ use Illuminate\Support\Facades;
                       <thead>
                           <tr class="bg-secondary">
                             <th>N.°</th>
-                            <th>Foto</th>
                             <th>NIE</th>
                             <th>Nombre del Estudiante</th>
+                            <th>Edad</th>
+                            <th>Estatus</th>
+                            <th>Indicador</th>
+                            <th>Promoción</th>
+                            <th></th>
                           </tr>
                       </thead>
                       <tbody id="contenido">
                           <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                             <td></td>
                             <td></td>
                             <td></td>
@@ -193,71 +201,13 @@ use Illuminate\Support\Facades;
                 } 
             });
         }
-        // funcion onchange. CUANDO SELECCIONO EL GRADO Y SECCION
-        function BuscarPorGradoSeccionIndicadores(GradoSeccion) {
-            // limpiar empty NominaEstudiantes
-                $('#contenido').empty();
-            url_ajax = '{{url("getGradoSeccionIndicadores")}}' 
-            csrf_token = '{{csrf_token()}}' 
-
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
-            // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
-            $.ajax({
-                type: "post",
-                url: url_ajax,
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    "id": codigo_personal, 
-                    codigo_annlectivo: codigo_annlectivo,
-                    codigo_gradoseccionturno: GradoSeccion
-                },
-                dataType: 'json',
-                success:function(data) {
-                    $.each( data, function( key, value ) {
-                        console.log(" Total: " + value.total_estudiantes + 
-                                    " Total Masculino: " + value.total_masculino + 
-                                    " Total Femenino: " + value.total_femenino + 
-                                    " Presentes: " + value.presentes + 
-                                    " Retirados Masculino: " + value.total_retirado_masculino + 
-                                    " Retirados Masculino: " + value.total_retirado_femenino + 
-                                    " Sobreedad: " + value.sobreedad +
-                                    " Repitentes: " + value.repitentes);
-                                     // TOTAL DE ALUMNOS MASCULINO Y FEMENINO
-                                            var masculino = Number(value.total_masculino);
-                                            var femenino = Number(value.total_femenino);
-                                            // TOTAL DE ALUMNOS MASCULINO Y FEMENINO RETIRADOS.
-                                            var femenino_retirado = Number(value.total_retirado_femenino);
-                                            var masculino_retirado = Number(value.total_retirado_masculino);
-                                            // TOTAL DE ALUMNOS MASCULINO Y FEMENINO RETIRADOS.
-                                                var total_femenino =  femenino - femenino_retirado;
-                                                var total_masculino = masculino - masculino_retirado;
-                                                var total_retirados = femenino_retirado + masculino_retirado;
-                                            // TOTAL DE ALUMNOS.
-                                            var total_estudiantes = (total_masculino + total_femenino);
-                                        // COLOAR VALOR EN LA ETIQUETA PARA LOS INDICADORES MASCULINO Y FEMENINO.  
-                                            $("label[for='totalEstudiantesFemenino']").text(value.total_femenino); 
-                                            $("label[for='totalEstudiantesMasculino']").text(value.total_masculino); 
-                                            $("label[for='totalEstudiantes']").text(value.total_estudiantes); 
-                                        // COLOAR VALOR EN LA ETIQUETA PARA LOS INDICADORES MASCULINO Y FEMENINO.  
-                                            $("label[for='totalEstudiantesFemeninoPresentes']").text(total_femenino); 
-                                            $("label[for='totalEstudiantesMasculinoPresentes']").text(total_masculino); 
-                                            $("label[for='totalEstudiantesPresentes']").text(total_estudiantes); 
-                                        // COLOAR VALOR EN LA ETIQUETA PARA LOS INDICADORES MASCULINO Y FEMENINO.  RETIRADOS
-                                            $("label[for='totalEstudiantesFemeninoRetirados']").text(femenino_retirado); 
-                                            $("label[for='totalEstudiantesMasculinoRetirados']").text(masculino_retirado); 
-                                            $("label[for='totalEstudiantesRetirados']").text(total_retirados); 
-                    });
-                } 
-            });
-        }
+       
 
         // FUNCION PARA PRESENTES O RETIRADOS.
-        function BuscarPresentesRetirados(PR) {
+        function BuscarPorGradoSeccionMatriculaTodos() {
             var codigo_annlectivo = $('#codigo_annlectivo').val();
             var codigo_institucion = $('#codigo_institucion').val();
             var codigo_gradoseccionturno = $('#codigo_grado_seccion_turno').val();
-            var presentes_retirados = PR;
                 console.log(codigo_annlectivo + ' ' + codigo_gradoseccionturno);
             if(codigo_annlectivo == '00' || codigo_gradoseccionturno == '00'){
                 alert('Debe seleccionar Año Lectivo y Grado-Sección-Turno');
@@ -266,7 +216,7 @@ use Illuminate\Support\Facades;
                 // Botón Otro... visible.
 				    $("#NominaEstudiantes").css("display","block");
                 // CUANDO SE HA SELECCIONADO UN GRADO...
-                url_ajax = '{{url("getGradoSeccionPresentes")}}' 
+                url_ajax = '{{url("getGradoSeccionMatriculaTodos")}}' 
                 csrf_token = '{{csrf_token()}}' 
 
             codigo_personal = $('#codigo_personal').val();
@@ -280,8 +230,7 @@ use Illuminate\Support\Facades;
                     "id": codigo_personal, 
                     codigo_annlectivo: codigo_annlectivo,
                     codigo_institucion: codigo_institucion,
-                    codigo_gradoseccionturno: codigo_gradoseccionturno,
-                    presentes_retirados: presentes_retirados
+                    codigo_gradoseccionturno: codigo_gradoseccionturno
                 },
                 dataType: 'json',
                 success:function(data) {
@@ -307,17 +256,39 @@ use Illuminate\Support\Facades;
                             var codigo_nie = value.codigo_nie;
                             var codigo_alumno = value.codigo_alumno;
                             var nombre_foto = value.foto;
-            //                            var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim();
-                        // ARMAR URL
-                         //   var url = '{{ url("/pdf", "id") }}';
-                         //   url = url.replace('id', datos_estudiantes);
-                        //<img src="img_girl.jpg" alt="Girl in a jacket" width="500" height="600">
+                            var edad = value.edad;
+                            var retirado = value.retirado;
+                            var sobreedad = value.sobreedad;
+                            // Validar retirado.
+                                if(retirado == ""){
+                                    var td_retirado = "<td class='bg-primary text-white'> Presente </td>";
+                                }else{
+                                    var td_retirado = "<td class='bg-danger text-white'> Retirado </td>";
+                                }
+                            // Validar Sobreedad.
+                                if(sobreedad == ""){
+                                    var td_sobreedad = "<td class='bg-primary text-white'> Sin Sobreedad </td>";
+                                }else{
+                                    var td_sobreedad = "<td class='bg-warning text-white'> Sobreedad </td>";
+                                }
+                                /*
+                                <p class="bg-primary text-white">This text is important.</p>
+                                <p class="bg-success text-white">This text indicates success.</p>
+                                <p class="bg-info text-white">This text represents some information.</p>
+                                <p class="bg-warning text-white">This text represents a warning.</p>
+                                <p class="bg-danger text-white">This text represents danger.</p>
+                                <p class="bg-secondary text-white">Secondary background color.</p>
+                                <p class="bg-dark text-white">Dark grey background color.</p>
+                                <p class="bg-light text-dark">Light grey background color.</p>
+                                */
                         // armar el thml de la tabla.
                         html += fila_color +
                         '<td>' + linea + '</td>' +
-                        '<td><img src=' +nombre_foto+ ' width=120 height=140></td>' +
                         '<td>' + value.codigo_nie + '</td>' +
                         '<td>' + value.apellidos_nombres_estudiantes + '</td>' +
+                        '<td>' + edad + '</td>' +
+                        td_retirado +
+                        td_sobreedad +
                         '</tr>';
                     });
                     $('#contenido').html(html);
