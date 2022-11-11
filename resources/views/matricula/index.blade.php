@@ -46,22 +46,83 @@ use Illuminate\Support\Facades;
         </div>
     </div>
 
-    <div class="section-body">
+{{--     <div class="section-body">
         <div class="jumbotron p-3">
             <h3 class="display-5">Matricula</h3>
                 <div class="row">
                     <div class="col col-md-4 col-lg-4 col-xl-4">
                     </div>
-                </div>  {{-- row --}}
-        </div> {{-- JUMBOTRON --}}
-    </div> 
+                </div>  {{-- row
+        </div> {{-- JUMBOTRON 
+    </div>  --}}
 
     <div class="bg-info" id="NominaEstudiantes" style="display: none;">
         {{-- {{ csrf_field() }}
         {{ method_field('PATCH') }} --}}
         <div class="card">
-            <div class="card-header">Estudiantes</div>
+            <div class="card-header">
+                <h2>Nómina de Estudiantes</h2>
+            </div>
             <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <table>
+                            <thead>
+                                <tr class="bg-info">
+                                    <th colspan="2">Edad</th>
+                                    <th colspan="2">Estatus</th>
+                                    <th colspan="2">Indicador</th>
+                                    <th colspan="2">Promoción</th>
+                                </tr>
+                            </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <button type="button" class="btn btn-primary">
+                                                1 año <span class="badge badge-light" id="uno">#</span>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-danger">
+                                                2 años <span class="badge badge-light" id="dos">#</span>
+                                            </button>            
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-primary">
+                                                Presentes <span class="badge badge-light" id="presentes">#</span>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-danger">
+                                                Retirados <span class="badge badge-light" id="retirados">#</span>
+                                            </button>            
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-primary">
+                                                Sin Sobredad <span class="badge badge-light" id="sinsobreedad">#</span>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-danger">
+                                                Sobreedad <span class="badge badge-light" id="sobreedad">#</span>
+                                            </button>            
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-primary">
+                                                Promovidos <span class="badge badge-light" id="promovidos">#</span>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-info">
+                                                No Promovidos <span class="badge badge-light" id="nopromovidos">#</span>
+                                            </button>            
+                                        </td>
+                                    </tr>
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="table-responsive-sm">
                     <table class="table" id="TablaNominaEstudiantes">
                       <thead>
@@ -234,9 +295,14 @@ use Illuminate\Support\Facades;
                 },
                 dataType: 'json',
                 success:function(data) {
-                    var linea = 0; var html= "";
-                    $('#contenido').empty();
-                    $('#contenido').append(data);
+                    //
+                    // variables a utilizar.
+                    //
+                    var linea = 0; var html= ""; var presentes_ = 0; var retirados_ = 0; var sobreedad_ = 0; var promovidos_ = 0; var no_promovidos_ = 0; var sinsobreedad_ = 0;
+                    var matricula_ = 0;
+                        $('#contenido').empty();
+                        $('#contenido').append(data);
+                    // recorrer la matriz que viene del Controlador.
                     $.each( data, function( key, value ) {
                         linea = linea + 1;
                         // validar para cambiar de color la l{inea}
@@ -259,17 +325,31 @@ use Illuminate\Support\Facades;
                             var edad = value.edad;
                             var retirado = value.retirado;
                             var sobreedad = value.sobreedad;
+                            var codigo_resultado = value.codigo_resultado;
+
                             // Validar retirado.
                                 if(retirado == ""){
                                     var td_retirado = "<td class='bg-primary text-white'> Presente </td>";
+                                    presentes_++;
                                 }else{
                                     var td_retirado = "<td class='bg-danger text-white'> Retirado </td>";
+                                    retirados_++;
                                 }
                             // Validar Sobreedad.
                                 if(sobreedad == ""){
                                     var td_sobreedad = "<td class='bg-primary text-white'> Sin Sobreedad </td>";
+                                    sinsobreedad_++;
                                 }else{
                                     var td_sobreedad = "<td class='bg-warning text-white'> Sobreedad </td>";
+                                    sobreedad_++;
+                                }
+                                // Validar Sobreedad.
+                                if(codigo_resultado == "3"){
+                                    var td_codigo_resultado = "<td class='bg-primary text-white'> Promovido </td>";
+                                    promovidos_++;
+                                }else{
+                                    var td_codigo_resultado = "<td class='bg-info text-white'> No Promovido </td>";
+                                    no_promovidos_++;
                                 }
                                 /*
                                 <p class="bg-primary text-white">This text is important.</p>
@@ -281,6 +361,16 @@ use Illuminate\Support\Facades;
                                 <p class="bg-dark text-white">Dark grey background color.</p>
                                 <p class="bg-light text-dark">Light grey background color.</p>
                                 */
+                        // colocar los valores de las etiquetas con el dato de cada indicadores, presentes o sobreeedad.
+                            $("#presentes").text(presentes_);
+                            $("#retirados").text(retirados_);
+
+                            $("#sobreedad").text(sobreedad_);
+                            $("#sinsobreedad").text(sinsobreedad_);
+
+                            $("#promovidos").text(promovidos_);
+                            $("#nopromovidos").text(no_promovidos_);
+
                         // armar el thml de la tabla.
                         html += fila_color +
                         '<td>' + linea + '</td>' +
@@ -289,12 +379,13 @@ use Illuminate\Support\Facades;
                         '<td>' + edad + '</td>' +
                         td_retirado +
                         td_sobreedad +
+                        td_codigo_resultado + 
                         '</tr>';
-                    });
-                    $('#contenido').html(html);
-                    $('#contenido').focus();
-                        // Display an info toast with no title
-                        toastr.success("Registros Encontrados... " + linea, "Sistema");
+                    }); // fin del for...eacht...
+                        $('#contenido').html(html);
+                        $('#contenido').focus();
+                            // Display an info toast with no title
+                            toastr.success("Registros Encontrados... " + linea, "Sistema");
                 } 
             });
             } 

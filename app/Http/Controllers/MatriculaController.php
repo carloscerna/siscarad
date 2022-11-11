@@ -162,7 +162,7 @@ class MatriculaController extends Controller
         $EstudiantesPresentes = DB::table('alumno as a')
                 ->join('alumno_matricula as am','a.id_alumno','=','am.codigo_alumno')
                 ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.codigo_genero','a.foto','a.ruta_pn', 'a.edad',
-                        'am.retirado','am.sobreedad','am.repitente', 
+                        'am.retirado','am.sobreedad','am.repitente', 'am.codigo_resultado',
                         DB::raw("TRIM(CONCAT(BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno), CAST(' ' AS VARCHAR), BTRIM(a.nombre_completo))) as full_name"))
                 ->where([
                     ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
@@ -191,6 +191,7 @@ class MatriculaController extends Controller
                     $edad = trim($response->edad);
                     $sobreedad = trim($response->sobreedad);
                     $retirado = trim($response->retirado);
+                    $codigo_resultado = trim($response->codigo_resultado);
                         // FOTO DEL ESTUDIANTE.
                         if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
                         {
@@ -220,8 +221,8 @@ class MatriculaController extends Controller
                             "ruta_pn" => $ruta_pn,
                             "edad"=> $edad,
                             "retirado"=>$retirado,
-                            "sobreedad"=>$sobreedad
-
+                            "sobreedad"=>$sobreedad,
+                            "codigo_resultado"=>$codigo_resultado
                         ); 
                     // total estudiantes
                     $total_++;
