@@ -84,6 +84,7 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::resource('funcion','PdfController');
     Route::resource('funcion','PdfRPAController');
     Route::resource('funcion','PdfRPGController');
+    Route::resource('funcion','matricula/index');
     // Emails
     //  Route::get('/boleta', function(){
     //      return new BoletaEstudiantes("yonYOn");

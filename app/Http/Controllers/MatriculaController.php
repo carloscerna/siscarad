@@ -222,7 +222,8 @@ class MatriculaController extends Controller
                             "edad"=> $edad,
                             "retirado"=>$retirado,
                             "sobreedad"=>$sobreedad,
-                            "codigo_resultado"=>$codigo_resultado
+                            "codigo_resultado"=>$codigo_resultado,
+                            "codigo_grado"=>$codigo_grado
                         ); 
                     // total estudiantes
                     $total_++;

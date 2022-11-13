@@ -66,60 +66,72 @@ use Illuminate\Support\Facades;
             <div class="card-body">
                 <div class="row">
                     <div class="col">
-                        <table>
-                            <thead>
-                                <tr class="bg-info">
-                                    <th colspan="2">Edad</th>
-                                    <th colspan="2">Estatus</th>
-                                    <th colspan="2">Indicador</th>
-                                    <th colspan="2">Promoción</th>
-                                </tr>
-                            </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <button type="button" class="btn btn-primary">
-                                                1 año <span class="badge badge-light" id="uno">#</span>
-                                            </button>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-danger">
-                                                2 años <span class="badge badge-light" id="dos">#</span>
-                                            </button>            
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-primary">
-                                                Presentes <span class="badge badge-light" id="presentes">#</span>
-                                            </button>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-danger">
-                                                Retirados <span class="badge badge-light" id="retirados">#</span>
-                                            </button>            
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-primary">
-                                                Sin Sobredad <span class="badge badge-light" id="sinsobreedad">#</span>
-                                            </button>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-danger">
-                                                Sobreedad <span class="badge badge-light" id="sobreedad">#</span>
-                                            </button>            
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-primary">
-                                                Promovidos <span class="badge badge-light" id="promovidos">#</span>
-                                            </button>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-info">
-                                                No Promovidos <span class="badge badge-light" id="nopromovidos">#</span>
-                                            </button>            
-                                        </td>
+                        <div class="table-responsive-sm">
+                            <table>
+                                <thead>
+                                    <tr class="bg-secondary">
+                                        <th colspan="4">Edad-Escala</th>
+                                        <th colspan="2">Estatus</th>
+                                        <th colspan="2">Indicador</th>
+                                        <th colspan="2">Promoción</th>
                                     </tr>
-                                </tbody>
-                        </table>
+                                </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <button type="button" class="btn" style="background-color: rgb(0, 255, 102);">
+                                                    <label style="text-color: white"> 1 año </label><span class="badge badge-light" id="uno">#</span>
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn" style="background-color: rgb(5, 210, 87);">
+                                                    <label style="text-color: white"> 2 años </label><span class="badge badge-light" id="uno">#</span>
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn" style="background-color: rgb(1, 178, 72);">
+                                                    <label style="text-color: white"> 3 años </label><span class="badge badge-light" id="uno">#</span>
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn" style="background-color: rgb(2, 147, 60);">
+                                                    <label style="text-color: white"> 4 años </label><span class="badge badge-light" id="uno">#</span>
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-primary">
+                                                    Presentes <span class="badge badge-light" id="presentes">#</span>
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-danger">
+                                                    Retirados <span class="badge badge-light" id="retirados">#</span>
+                                                </button>            
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-primary">
+                                                    Sin Sobredad <span class="badge badge-light" id="sinsobreedad">#</span>
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-warning">
+                                                    Sobreedad <span class="badge badge-light" id="sobreedad">#</span>
+                                                </button>            
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-primary">
+                                                    Promovidos <span class="badge badge-light" id="promovidos">#</span>
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-info">
+                                                    No Promovidos <span class="badge badge-light" id="nopromovidos">#</span>
+                                                </button>            
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -326,29 +338,31 @@ use Illuminate\Support\Facades;
                             var retirado = value.retirado;
                             var sobreedad = value.sobreedad;
                             var codigo_resultado = value.codigo_resultado;
-
+                            var codigo_grado = value.codigo_grado;
+                            // validar edad.
+                                calcular_sobreedad_escala($edad, $codigo_grado);
                             // Validar retirado.
                                 if(retirado == ""){
-                                    var td_retirado = "<td class='bg-primary text-white'> Presente </td>";
+                                    var td_retirado = "<td class='bg-primary text-white text-small'> Presente </td>";
                                     presentes_++;
                                 }else{
-                                    var td_retirado = "<td class='bg-danger text-white'> Retirado </td>";
+                                    var td_retirado = "<td class='bg-danger text-white text-small'> Retirado </td>";
                                     retirados_++;
                                 }
                             // Validar Sobreedad.
                                 if(sobreedad == ""){
-                                    var td_sobreedad = "<td class='bg-primary text-white'> Sin Sobreedad </td>";
+                                    var td_sobreedad = "<td class='bg-primary text-white text-small'> Sin Sobreedad </td>";
                                     sinsobreedad_++;
                                 }else{
-                                    var td_sobreedad = "<td class='bg-warning text-white'> Sobreedad </td>";
+                                    var td_sobreedad = "<td class='bg-warning text-white text-small'> Sobreedad </td>";
                                     sobreedad_++;
                                 }
                                 // Validar Sobreedad.
                                 if(codigo_resultado == "3"){
-                                    var td_codigo_resultado = "<td class='bg-primary text-white'> Promovido </td>";
+                                    var td_codigo_resultado = "<td class='bg-primary text-white text-small'> Promovido </td>";
                                     promovidos_++;
                                 }else{
-                                    var td_codigo_resultado = "<td class='bg-info text-white'> No Promovido </td>";
+                                    var td_codigo_resultado = "<td class='bg-info text-white text-small'> No Promovido </td>";
                                     no_promovidos_++;
                                 }
                                 /*
