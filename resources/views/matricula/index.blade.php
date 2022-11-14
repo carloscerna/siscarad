@@ -70,7 +70,7 @@ use Illuminate\Support\Facades;
                             <table>
                                 <thead>
                                     <tr class="bg-secondary">
-                                        <th colspan="4">Edad-Escala</th>
+                                        <th colspan="4">Edad-Escala (Sobreedad)</th>
                                         <th colspan="2">Estatus</th>
                                         <th colspan="2">Indicador</th>
                                         <th colspan="2">Promoción</th>
@@ -80,22 +80,22 @@ use Illuminate\Support\Facades;
                                         <tr>
                                             <td>
                                                 <button type="button" class="btn" style="background-color: rgb(0, 255, 102);">
-                                                    <label style="text-color: white"> 1 año </label><span class="badge badge-light" id="uno">#</span>
+                                                    <label style="text-color: white"> 0 años </label><span class="badge badge-light" id="CantidadCero">#</span>
                                                 </button>
                                             </td>
                                             <td>
                                                 <button type="button" class="btn" style="background-color: rgb(5, 210, 87);">
-                                                    <label style="text-color: white"> 2 años </label><span class="badge badge-light" id="uno">#</span>
+                                                    <label style="text-color: white"> 1 años </label><span class="badge badge-light" id="CantidadUno">#</span>
                                                 </button>
                                             </td>
                                             <td>
                                                 <button type="button" class="btn" style="background-color: rgb(1, 178, 72);">
-                                                    <label style="text-color: white"> 3 años </label><span class="badge badge-light" id="uno">#</span>
+                                                    <label style="text-color: white"> 2 años </label><span class="badge badge-light" id="CantidadDos">#</span>
                                                 </button>
                                             </td>
                                             <td>
                                                 <button type="button" class="btn" style="background-color: rgb(2, 147, 60);">
-                                                    <label style="text-color: white"> 4 años </label><span class="badge badge-light" id="uno">#</span>
+                                                    <label style="text-color: white"> >3 años </label><span class="badge badge-light" id="CantidadTres">#</span>
                                                 </button>
                                             </td>
                                             <td>
@@ -178,6 +178,8 @@ use Illuminate\Support\Facades;
             </div>
           </div>
     </div>
+    <!-- The modal PARA LOS DATOS DE LA MATRICULA.-->
+            
 </section>
 @endrole
 
@@ -311,7 +313,7 @@ use Illuminate\Support\Facades;
                     // variables a utilizar.
                     //
                     var linea = 0; var html= ""; var presentes_ = 0; var retirados_ = 0; var sobreedad_ = 0; var promovidos_ = 0; var no_promovidos_ = 0; var sinsobreedad_ = 0;
-                    var matricula_ = 0;
+                    var matricula_ = 0;  var cantidad_escala_0 = 0; var cantidad_escala_1 = 0; var cantidad_escala_2 = 0; var cantidad_escala_3 = 0; var matricula = true;
                         $('#contenido').empty();
                         $('#contenido').append(data);
                     // recorrer la matriz que viene del Controlador.
@@ -339,8 +341,25 @@ use Illuminate\Support\Facades;
                             var sobreedad = value.sobreedad;
                             var codigo_resultado = value.codigo_resultado;
                             var codigo_grado = value.codigo_grado;
+                            sobreedad_escala = 0;
                             // validar edad.
-                                calcular_sobreedad_escala($edad, $codigo_grado);
+                                
+                                calcular_sobreedad_escala(edad, codigo_grado);
+                                console.log("retornado " + sobreedad_escala);
+                                if(sobreedad_escala == 0){
+                                    var td_edad = "<td class='text-black' style='background-color: rgb(0, 255, 102)'>" + edad + "</td>";
+                                    cantidad_escala_0++;
+                                }else if(sobreedad_escala == 1){
+                                    var td_edad = "<td class='text-white' style='background-color: rgb(5, 210, 87)'>" + edad + "</td>";
+                                    cantidad_escala_1++;
+                                }else if(sobreedad_escala == 2){
+                                    var td_edad = "<td class='text-white' style='background-color: rgb(1, 178, 72)'>" + edad + "</td>";
+                                    cantidad_escala_2++;
+                                }else{
+                                    var td_edad = "<td class='text-white' style='background-color: rgb(0, 255, 102)'>" + edad + "</td>";
+                                    cantidad_escala_3++;
+                                }
+                                
                             // Validar retirado.
                                 if(retirado == ""){
                                     var td_retirado = "<td class='bg-primary text-white text-small'> Presente </td>";
@@ -356,15 +375,24 @@ use Illuminate\Support\Facades;
                                 }else{
                                     var td_sobreedad = "<td class='bg-warning text-white text-small'> Sobreedad </td>";
                                     sobreedad_++;
+                                    matricula = false;
                                 }
                                 // Validar Sobreedad.
                                 if(codigo_resultado == "3"){
                                     var td_codigo_resultado = "<td class='bg-primary text-white text-small'> Promovido </td>";
                                     promovidos_++;
+                                    matricula = true;
                                 }else{
                                     var td_codigo_resultado = "<td class='bg-info text-white text-small'> No Promovido </td>";
                                     no_promovidos_++;
+                                    matricula = false;
                                 }
+                                // VALIDARBOTON DE MATRICULA.
+                                    if(matricula == true){
+                                        var boton_matricula = '<td><a class="btn btn-primary" data-toggle="modal" data-target="#myModal" href="'+codigo_alumno+"-"+codigo_grado+'">Matricular</i>';
+                                    }else{
+                                        var boton_matricula = '<td><a class="btn btn-primary disabled"  href="'+codigo_alumno+"-"+codigo_grado+'">Matricular</i>';
+                                    }
                                 /*
                                 <p class="bg-primary text-white">This text is important.</p>
                                 <p class="bg-success text-white">This text indicates success.</p>
@@ -384,16 +412,22 @@ use Illuminate\Support\Facades;
 
                             $("#promovidos").text(promovidos_);
                             $("#nopromovidos").text(no_promovidos_);
+                        // colocar la cantidad segundo la escala.
+                            $("#CantidadCero").text(cantidad_escala_0);
+                            $("#CantidadUno").text(cantidad_escala_1);
+                            $("#CantidadDos").text(cantidad_escala_2);
+                            $("#CantidadTres").text(cantidad_escala_3);
 
                         // armar el thml de la tabla.
                         html += fila_color +
                         '<td>' + linea + '</td>' +
                         '<td>' + value.codigo_nie + '</td>' +
                         '<td>' + value.apellidos_nombres_estudiantes + '</td>' +
-                        '<td>' + edad + '</td>' +
+                        td_edad +
                         td_retirado +
                         td_sobreedad +
                         td_codigo_resultado + 
+                        boton_matricula +
                         '</tr>';
                     }); // fin del for...eacht...
                         $('#contenido').html(html);
@@ -404,5 +438,192 @@ use Illuminate\Support\Facades;
             });
             } 
         }
+
+
+function calcular_sobreedad_escala(edad,grado) {
+    console.log(edad + " " +  grado);
+        sobreedad_escala = 0;
+        if(edad >= 4 && grado == "4P" ){ // 4 y cuatro años.
+			if(edad == 4){
+                sobreedad_escala = 0;
+			}else if(edad == 5){
+				sobreedad_escala = 1;
+			}else if(edad == 6){
+				sobreedad_escala = 2;
+			}else if(edad > 6){
+                sobreedad_escala = 3;
+            }
+		}
+
+        if(edad >= 5 && grado == "5P" ){ // 5 y cinco años.
+			if(edad == 5){
+                sobreedad_escala = 0;
+			}else if(edad == 6){
+				sobreedad_escala = 1;
+			}else if(edad == 7){
+				sobreedad_escala = 2;
+			}else if(edad > 8){
+                sobreedad_escala = 3;
+            }
+		}
+
+        if(edad >= 6 && grado == "6P" ){ // 6 y seis años.
+			if(edad == 6){
+                sobreedad_escala = 0;
+			}else if(edad == 7){
+				sobreedad_escala = 1;
+			}else if(edad == 8){
+				sobreedad_escala = 2;
+			}else if(edad > 8){
+                sobreedad_escala = 3;
+            }
+		}
+
+		if(edad >= 7 && grado == "01" ){ // 7 y Primer grado.
+			if(edad == 7){
+                sobreedad_escala = 0;
+			}else if(edad == 8){
+				sobreedad_escala = 1;
+			}else if(edad == 9){
+				sobreedad_escala = 2;
+			}else if(edad > 9){
+                sobreedad_escala = 3;
+            }
+		}
+		
+		if(edad >= 8 && grado == "02" ){ // 8 y segundo grado.
+			if(edad == 8){
+                sobreedad_escala = 0;
+			}else if(edad == 9){
+				sobreedad_escala = 1;
+			}else if(edad == 10){
+				sobreedad_escala = 2;
+			}else if(edad > 10){
+                sobreedad_escala = 3;
+            }
+		}
+		
+		if(edad >= 9 && grado == "03" ){ // 9 y tercer grado.
+			if(edad == 9){
+                sobreedad_escala = 0;
+			}else if(edad == 10){
+				sobreedad_escala = 1;
+			}else if(edad == 11){
+				sobreedad_escala = 2;
+			}else if(edad > 11){
+                sobreedad_escala = 3;
+            }
+		}
+		
+		if(edad >= 10 && grado == "04" ){ // 10 y cuarto grado.
+			if(edad == 10){
+                sobreedad_escala = 0;
+			}else if(edad == 11){
+				sobreedad_escala = 1;
+			}else if(edad == 12){
+				sobreedad_escala = 2;
+			}else if(edad > 12){
+                sobreedad_escala = 3;
+            }
+		}
+		
+		if(edad >= 11 && grado == "05" ){ // 11 y quinto grado.
+			if(edad == 11){
+                sobreedad_escala = 0;
+			}else if(edad == 12){
+				sobreedad_escala = 1;
+			}else if(edad == 13){
+				sobreedad_escala = 2;
+			}else if(edad > 13){
+                sobreedad_escala = 3;
+            }
+		}
+		
+		if(edad >= 12 && grado == "06" ){ // 12 y sexto grado.
+			if(edad == 12){
+                sobreedad_escala = 0;
+			}else if(edad == 13){
+				sobreedad_escala = 1;
+			}else if(edad == 14){
+				sobreedad_escala = 2;
+			}else if(edad > 14){
+                sobreedad_escala = 3;
+            }
+		}
+		
+		if(edad >= 13 && grado == "07" ){ // 13 y septimo grado.
+			if(edad == 13){
+                sobreedad_escala = 0;
+			}else if(edad == 14){
+				sobreedad_escala = 1;
+			}else if(edad == 15){
+				sobreedad_escala = 2;
+			}else if(edad > 15){
+                sobreedad_escala = 3;
+            }
+		}
+		
+		if(edad >= 14 && grado == "08" ){ // 14 y octavo grado.
+			if(edad == 14){
+                sobreedad_escala = 0;
+			}else if(edad == 15){
+				sobreedad_escala = 1;
+			}else if(edad == 16){
+				sobreedad_escala = 2;
+			}else if(edad > 16){
+                sobreedad_escala = 3;
+            }
+		}
+		
+		if(edad >= 15 && grado == "09" ){ // 15 y noveno grado.
+			if(edad == 15){
+                sobreedad_escala = 0;
+			}else if(edad == 16){
+				sobreedad_escala = 1;
+			}else if(edad == 17){
+				sobreedad_escala = 2;
+			}else if(edad > 17){
+                sobreedad_escala = 3;
+            }
+		}
+
+        if(edad >= 16 && grado == "10" ){ // 16 y primer año.
+			if(edad == 16){
+                sobreedad_escala = 0;
+			}else if(edad == 17){
+				sobreedad_escala = 1;
+			}else if(edad == 18){
+				sobreedad_escala = 2;
+			}else if(edad > 18){
+                sobreedad_escala = 3;
+            }
+		}	
+		
+		if(edad >= 17 && grado == "11" ){ // 17 y segundo año.
+			if(edad == 17){
+                sobreedad_escala = 0;
+			}else if(edad == 18){
+				sobreedad_escala = 1;
+			}else if(edad == 19){
+				sobreedad_escala = 2;
+			}else if(edad > 19){
+                sobreedad_escala = 3;
+            }
+		}	
+
+		if(edad >= 18 && grado == "12" ){ // 18 y tercer año.
+			if(edad == 18){
+                sobreedad_escala = 0;
+			}else if(edad == 19){
+				sobreedad_escala = 1;
+			}else if(edad == 20){
+				sobreedad_escala = 2;
+			}else if(edad > 20){
+                sobreedad_escala = 3;
+            }
+		}
+		
+		return sobreedad_escala;
+    }
     </script>
 @endsection
