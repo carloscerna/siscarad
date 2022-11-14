@@ -178,9 +178,26 @@ use Illuminate\Support\Facades;
             </div>
           </div>
     </div>
-    <!-- The modal PARA LOS DATOS DE LA MATRICULA.-->
-            
+    <!-- The modal PARA LOS DATOS DE LA MATRICULA.-->  
 </section>
+
+<!-- Modal -->
+<div id="myModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+      <!-- Contenido del modal -->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Texto del modal</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 @endrole
 
 @role('Administrador')
@@ -389,7 +406,7 @@ use Illuminate\Support\Facades;
                                 }
                                 // VALIDARBOTON DE MATRICULA.
                                     if(matricula == true){
-                                        var boton_matricula = '<td><a class="btn btn-primary" data-toggle="modal" data-target="#myModal" href="'+codigo_alumno+"-"+codigo_grado+'">Matricular</i>';
+                                        var boton_matricula = '<td><a class="eliminar btn btn-primary" onclick="javascript:BuscarMatriculaPorEstudiante();" href="#">Matricular</i>';
                                     }else{
                                         var boton_matricula = '<td><a class="btn btn-primary disabled"  href="'+codigo_alumno+"-"+codigo_grado+'">Matricular</i>';
                                     }
@@ -438,8 +455,13 @@ use Illuminate\Support\Facades;
             });
             } 
         }
+    // BUSCAR DATOS DE LA MATRICULA. POR ESTUDIANTE.
+        function BuscarMatriculaPorEstudiante(codigo_estudiante, codigo_grado){
 
+            alert(href);
+        }
 
+// CALCULAR LA ESCALA DE LA SOBREEDAD
 function calcular_sobreedad_escala(edad,grado) {
     console.log(edad + " " +  grado);
         sobreedad_escala = 0;
@@ -625,5 +647,6 @@ function calcular_sobreedad_escala(edad,grado) {
 		
 		return sobreedad_escala;
     }
+	
     </script>
 @endsection

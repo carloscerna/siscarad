@@ -70,7 +70,8 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::post("getGradoSeccionMatricula", "App\Http\Controllers\MatriculaController@getGradoSeccionMatricula")->name('getGradoSeccionMatricula');
     // Para MatriculaControllerTodos
     Route::post("getGradoSeccionMatriculaTodos", "App\Http\Controllers\MatriculaController@getGradoSeccionMatriculaTodos")->name('getGradoSeccionMatriculaTodos');
-
+    // para matriculaBuscarDatos.
+    Route::post("getGradoSeccionMatriculaBuscar", "App\Http\Controllers\MatriculaController@getGradoSeccionMatriculaBuscar")->name('getGradoSeccionMatriculaBuscar');
     /////////////////////////////////////////
     //** REPORTES */
     ////////////////////////////////////////
