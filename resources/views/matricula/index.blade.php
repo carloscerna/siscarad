@@ -70,32 +70,32 @@ use Illuminate\Support\Facades;
                             <table>
                                 <thead>
                                     <tr class="bg-secondary">
-                                        <th colspan="4">Edad-Escala (Sobreedad)</th>
-                                        <th colspan="2">Estatus</th>
-                                        <th colspan="2">Indicador</th>
-                                        <th colspan="2">Promoción</th>
+                                        <th colspan="4">Edad-Escala de Años (Sobreedad)</th>
+                                        <th colspan="2" class="bg-info text-dark text-center">Estatus</th>
+                                        <th colspan="2" class="text-dark text-center">Indicador</th>
+                                        <th colspan="2"class="bg-info text-center text-dark"> Promoción</th>
                                     </tr>
                                 </thead>
-                                    <tbody>
+                                    <tbody id="escalas">
                                         <tr>
                                             <td>
                                                 <button type="button" class="btn" style="background-color: rgb(0, 255, 102);">
-                                                    <label style="text-color: white"> 0 años </label><span class="badge badge-light" id="CantidadCero">#</span>
+                                                    <label style="text-color: white"> 0  </label><span class="badge badge-light" id="CantidadCero">#</span>
                                                 </button>
                                             </td>
                                             <td>
                                                 <button type="button" class="btn" style="background-color: rgb(5, 210, 87);">
-                                                    <label style="text-color: white"> 1 años </label><span class="badge badge-light" id="CantidadUno">#</span>
+                                                    <label style="text-color: white"> 1  </label><span class="badge badge-light" id="CantidadUno">#</span>
                                                 </button>
                                             </td>
                                             <td>
                                                 <button type="button" class="btn" style="background-color: rgb(1, 178, 72);">
-                                                    <label style="text-color: white"> 2 años </label><span class="badge badge-light" id="CantidadDos">#</span>
+                                                    <label style="text-color: white"> 2  </label><span class="badge badge-light" id="CantidadDos">#</span>
                                                 </button>
                                             </td>
                                             <td>
                                                 <button type="button" class="btn" style="background-color: rgb(2, 147, 60);">
-                                                    <label style="text-color: white"> >3 años </label><span class="badge badge-light" id="CantidadTres">#</span>
+                                                    <label style="text-color: white"> > 3  </label><span class="badge badge-light" id="CantidadTres">#</span>
                                                 </button>
                                             </td>
                                             <td>
@@ -182,18 +182,40 @@ use Illuminate\Support\Facades;
 </section>
 
 <!-- Modal -->
-<div id="myModal" class="modal fade" role="dialog">
-    <div class="modal-dialog">
+<div id="MyMatricula" class="modal fade" role="dialog" data-backdrop="static">
+    <div class="modal-dialog modal-lg">
       <!-- Contenido del modal -->
       <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header bg-secondary">
+          <h4 class="modal-title">¡Matricular!</h4>
           <button type="button" class="close" data-dismiss="modal">&times;</button>
         </div>
         <div class="modal-body">
-          <p>Texto del modal</p>
+            <form>
+                <!-- CODIGO Y NOMBRE -->
+                <div class="row">
+                  <div class="col">
+                    <label style="text-color: white"> Id: </label><span class="badge badge-light" id="IdMatricula">#</span>
+                    <label style="text-color: white"> Estudiante: </label><span class="badge badge-light" id="EstudianteMatricula">#</span>
+                  </div>
+                </div>
+
+                <!-- AÑO LECTIVO Y NIVEL-GRADO-SECCION-TURNO -->
+                <div class="row">
+                    <div class="col">
+                      <label style="text-color: white"> Año lectivo: </label><span class="badge badge-light" id="AnnLectivoMatricula">#</span>
+                    </div>
+                    <div class="col">
+                        <label style="text-color: white"> Grado-Sección-Turno: </label><span class="badge badge-light" id="GSTMatricula">#</span>
+                    </div>
+                </div>
+                <!-- INFORMACIÓN DEL RESPONSABLE -->
+
+            </form>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer bg-light">
           <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="GuardarMatricula()">Guardar</button>
         </div>
       </div>
     </div>
@@ -362,7 +384,7 @@ use Illuminate\Support\Facades;
                             // validar edad.
                                 
                                 calcular_sobreedad_escala(edad, codigo_grado);
-                                console.log("retornado " + sobreedad_escala);
+                               // console.log("retornado " + sobreedad_escala);
                                 if(sobreedad_escala == 0){
                                     var td_edad = "<td class='text-black' style='background-color: rgb(0, 255, 102)'>" + edad + "</td>";
                                     cantidad_escala_0++;
@@ -373,7 +395,7 @@ use Illuminate\Support\Facades;
                                     var td_edad = "<td class='text-white' style='background-color: rgb(1, 178, 72)'>" + edad + "</td>";
                                     cantidad_escala_2++;
                                 }else{
-                                    var td_edad = "<td class='text-white' style='background-color: rgb(0, 255, 102)'>" + edad + "</td>";
+                                    var td_edad = "<td class='text-white' style='background-color: rgb(2, 147, 60)'>" + edad + "</td>";
                                     cantidad_escala_3++;
                                 }
                                 
@@ -406,7 +428,7 @@ use Illuminate\Support\Facades;
                                 }
                                 // VALIDARBOTON DE MATRICULA.
                                     if(matricula == true){
-                                        var boton_matricula = '<td><a class="eliminar btn btn-primary" onclick="javascript:BuscarMatriculaPorEstudiante();" href="#">Matricular</i>';
+                                        var boton_matricula = '<td><a class="fixedbutton btn btn-primary"  href="#">Matricular</i>';
                                     }else{
                                         var boton_matricula = '<td><a class="btn btn-primary disabled"  href="'+codigo_alumno+"-"+codigo_grado+'">Matricular</i>';
                                     }
@@ -437,7 +459,8 @@ use Illuminate\Support\Facades;
 
                         // armar el thml de la tabla.
                         html += fila_color +
-                        '<td>' + linea + '</td>' +
+                        '<td>' + linea + 
+                        '<input type="hidden" name="codigo_alumno" value="' + codigo_alumno + '"</td>' +
                         '<td>' + value.codigo_nie + '</td>' +
                         '<td>' + value.apellidos_nombres_estudiantes + '</td>' +
                         td_edad +
@@ -456,11 +479,24 @@ use Illuminate\Support\Facades;
             } 
         }
     // BUSCAR DATOS DE LA MATRICULA. POR ESTUDIANTE.
-        function BuscarMatriculaPorEstudiante(codigo_estudiante, codigo_grado){
+    $('#TablaNominaEstudiantes #contenido').on( 'click', '.fixedbutton', function (){
+        var currow = $(this).closest('tr');
+        var codigo_alumno = currow.find('td').eq(0).find("input[name='codigo_alumno']").val();
+        var nie = currow.find('td:eq(1)').html();
+        var nombre = currow.find('td:eq(2)').html();
+        //alert("Nombre: " + nombre + " Código: " + codigo_alumno + " Nie: " + nie);           
+        $("#IdMatricula").text(codigo_alumno);
+        $("#EstudianteMatricula").text(nombre);
 
-            alert(href);
-        }
+        $("#AnnLectivoMatricula").text("2023");
+        $("#GSTMatricula").text("Octavo Grado Sección A");
 
+        $("#MyMatricula").modal("show");
+    });
+// funcionar para guardar las calificaciones.
+    function GuardarMatricula() {
+        alert("Proceso para guardar la matricula");
+    }
 // CALCULAR LA ESCALA DE LA SOBREEDAD
 function calcular_sobreedad_escala(edad,grado) {
     console.log(edad + " " +  grado);
