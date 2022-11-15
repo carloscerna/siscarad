@@ -182,7 +182,7 @@ class HomeController extends Controller
 
         $EstudiantesPresentes = DB::table('alumno as a')
                 ->join('alumno_matricula as am','a.id_alumno','=','am.codigo_alumno')
-                ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.codigo_genero','a.foto','a.ruta_pn','am.retirado','am.sobreedad','am.repitente',
+                ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.codigo_genero','a.foto','a.ruta_pn','am.retirado','am.sobreedad','am.repitente', 'am.id_alumno_matricula as codigo_matricula',
                         DB::raw("TRIM(CONCAT(BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno), CAST(' ' AS VARCHAR), BTRIM(a.nombre_completo))) as full_name"))
                 ->where([
                     ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
@@ -209,6 +209,7 @@ class HomeController extends Controller
                     $foto = trim($response->foto);
                     $ruta_pn = trim($response->ruta_pn);
                     $codigo_genero = trim($response->codigo_genero);
+                    $codigo_matricula = trim($response->codigo_matricula);
                         // FOTO DEL ESTUDIANTE.
                         if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
                         {
@@ -236,6 +237,7 @@ class HomeController extends Controller
                             "nombre_foto" => $foto,
                             "codigo_institucion" => $codigo_institucion,
                             "ruta_pn" => $ruta_pn,
+                            "codigo_matricula"=>$codigo_matricula
                         ); 
                     // total estudiantes
                     $total_++;

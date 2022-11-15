@@ -132,10 +132,12 @@ use Illuminate\Support\Facades;
                             <th>Foto</th>
                             <th>NIE</th>
                             <th>Nombre del Estudiante</th>
+                            <th></th>
                           </tr>
                       </thead>
                       <tbody id="contenido">
                           <tr>
+                            <td></td>
                             <td></td>
                             <td></td>
                             <td></td>
@@ -381,17 +383,22 @@ use Illuminate\Support\Facades;
                             var codigo_nie = value.codigo_nie;
                             var codigo_alumno = value.codigo_alumno;
                             var nombre_foto = value.foto;
-            //                            var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim();
-                        // ARMAR URL
-                         //   var url = '{{ url("/pdf", "id") }}';
-                         //   url = url.replace('id', datos_estudiantes);
-                        //<img src="img_girl.jpg" alt="Girl in a jacket" width="500" height="600">
+
+                            var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim() + "-"+ codigo_personal;
+
+                            var descargar_si = "-SI";
+                            var descargar_no = "-NO";
+                        // ARMAR URL, para ver o descargar la boleta.
+                            var url = '{{ url("/pdf", "id") }}';
+                            url = url.replace('id', datos_estudiantes);
                         // armar el thml de la tabla.
                         html += fila_color +
                         '<td>' + linea + '</td>' +
                         '<td><img src=' +nombre_foto+ ' width=120 height=140></td>' +
                         '<td>' + value.codigo_nie + '</td>' +
                         '<td>' + value.apellidos_nombres_estudiantes + '</td>' +
+                        '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
+                            '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
                         '</tr>';
                     });
                     $('#contenido').html(html);
