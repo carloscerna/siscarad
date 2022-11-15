@@ -351,6 +351,7 @@ use Illuminate\Support\Facades;
                         //
                             var codigo_nie = value.codigo_nie;
                             var codigo_alumno = value.codigo_alumno;
+                            var codigo_matricula = value.codigo_matricula;
 
                             var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim() + "-"+ codigo_personal;
                             var descargar_si = "-SI";
