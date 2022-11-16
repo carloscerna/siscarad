@@ -188,6 +188,7 @@ use Illuminate\Support\Facades;
       <div class="modal-content">
         <div class="modal-header bg-secondary">
           <h4 class="modal-title">¡Matricular!</h4>
+          <label style="text-color: white"></label><span class="badge badge-primary" id="PromocionMatricula">#</span>
           <button type="button" class="close" data-dismiss="modal">&times;</button>
         </div>
         <div class="modal-body">
@@ -200,17 +201,18 @@ use Illuminate\Support\Facades;
                   </div>
                 </div>
 
-                <!-- AÑO LECTIVO Y NIVEL-GRADO-SECCION-TURNO -->
-                <div class="row">
-                    <div class="col">
-                      <label style="text-color: white"> Año lectivo: </label><span class="badge badge-light" id="AnnLectivoMatricula">#</span>
-                    </div>
-                    <div class="col">
-                        <label style="text-color: white"> Grado-Sección-Turno: </label><span class="badge badge-light" id="GSTMatricula">#</span>
-                    </div>
-                </div>
-                <!-- INFORMACIÓN DEL RESPONSABLE -->
+                    <!-- AÑO LECTIVO Y NIVEL-GRADO-SECCION-TURNO -->
+                    <div class="row">
+                        <div class="col">
+                            <label style="text-color: white"> Año lectivo: </label><span class="badge badge-light" id="AnnLectivoMatricula">#</span>
 
+                            <label style="text-color: white"> Código Modalidad: </label><span class="badge badge-light" id="CodigoModalidadMatricula">#</span>
+                            <label style="text-color: white"> Código Grado: </label><span class="badge badge-light" id="CodigoGradoMatricula">#</span>
+                            <label style="text-color: white"> Código Sección: </label><span class="badge badge-light" id="CodigoSeccionMatricula">#</span>
+                            <label style="text-color: white"> Código Turno: </label><span class="badge badge-light" id="CodigoTurnoMatricula">#</span>
+                        </div>
+                    <!-- INFORMACIÓN DEL RESPONSABLE -->
+                    </div>
             </form>
         </div>
         <div class="modal-footer bg-light">
@@ -484,19 +486,47 @@ use Illuminate\Support\Facades;
         var codigo_alumno = currow.find('td').eq(0).find("input[name='codigo_alumno']").val();
         var nie = currow.find('td:eq(1)').html();
         var nombre = currow.find('td:eq(2)').html();
+        var promocion = currow.find('td:eq(6)').html();
+        // Variables.
+        var codigo_gradoseccionturno = $('#codigo_grado_seccion_turno').val();
+        var codigo_annlectivo = $('#codigo_annlectivo').val();
+        codigo_annlectivo = codigo_annlectivo.trim();
+
         //alert("Nombre: " + nombre + " Código: " + codigo_alumno + " Nie: " + nie);           
         $("#IdMatricula").text(codigo_alumno);
         $("#EstudianteMatricula").text(nombre);
 
-        $("#AnnLectivoMatricula").text("2023");
-        $("#GSTMatricula").text("Octavo Grado Sección A");
+        $("#PromocionMatricula").text(promocion);
+        // Validar si es promovido o no promovido.
+        if(promocion.trim() == "Promovido"){
+            //promocion_verificar(codigo_gradoseccionturno)
+            codigo_grado = codigo_gradoseccionturno.substring(0,2);
+            codigo_seccion = codigo_gradoseccionturno.substring(2,4);
+            codigo_turno = codigo_gradoseccionturno.substring(4,6);
+            codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
 
+            $("#AnnLectivoMatricula").text(codigo_annlectivo);
+            $("#CodigoModalidadMatricula").text(codigo_modalidad);    
+            $("#CodigoGradoMatricula").text(codigo_grado);    
+            $("#CodigoSeccionMatricula").text(codigo_seccion);    
+            $("#CodigoTurnoMatricula").text(codigo_turno);    
+            
+        }
+
+        if(promocion == "No Promovido"){
+            
+        }
+        // form modal.
         $("#MyMatricula").modal("show");
     });
 // funcionar para guardar las calificaciones.
     function GuardarMatricula() {
         alert("Proceso para guardar la matricula");
     }
+// VERIFICAR LA PROMOCION PARA EL CAMBIO DE GRADO SECCION TURNO
+function promocion_verificar(gradoseccionturno) {
+    codigo_grado = codigo_asignatura_area.substring(0,2);
+}
 // CALCULAR LA ESCALA DE LA SOBREEDAD
 function calcular_sobreedad_escala(edad,grado) {
     console.log(edad + " " +  grado);
@@ -683,6 +713,5 @@ function calcular_sobreedad_escala(edad,grado) {
 		
 		return sobreedad_escala;
     }
-	
     </script>
 @endsection
