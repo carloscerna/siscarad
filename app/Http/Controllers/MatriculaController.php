@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 //
 use App\Models\Tablas\Annlectivo;
+use App\Models\Tablas\CatalogoFamiliar;
+
 use Illuminate\Support\Facades\DB;
 
 class MatriculaController extends Controller
@@ -18,7 +20,10 @@ class MatriculaController extends Controller
     {
         // vERIFICAR EL AÑO LECTIVO ACTIVO
         $annlectivo=Annlectivo::where('estatus', true)->orderBy('codigo', 'desc')->pluck('nombre','codigo')->toarray();
-            return view('matricula.index', compact('annlectivo'));
+        // vERIFICAR EL AÑO LECTIVO ACTIVO
+        $codigo_familiar_0=CatalogoFamiliar::all()->pluck('descripcion','codigo')->toarray();
+        // return view
+        return view('matricula.index', compact('annlectivo','codigo_familiar_0'));
     }
 
     /**

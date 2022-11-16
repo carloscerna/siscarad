@@ -211,8 +211,33 @@ use Illuminate\Support\Facades;
                             <label style="text-color: white"> Código Sección: </label><span class="badge badge-light" id="CodigoSeccionMatricula">#</span>
                             <label style="text-color: white"> Código Turno: </label><span class="badge badge-light" id="CodigoTurnoMatricula">#</span>
                         </div>
-                    <!-- INFORMACIÓN DEL RESPONSABLE -->
                     </div>
+                    <!-- INFORMACIÓN DEL RESPONSABLE -->
+                    <h2>Datos del Responsables.</h2>
+                    <p>Parentesco y N.º de Teléfono o Célular</p>            
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>Parentesco</th>
+                            <th>Dirección</th>
+                            <th>N.º de Telefóno o Célular</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>{!! Form::select('codigo_familiar_0', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_00', 'class' => 'form-control']) !!}</td>
+                            <td><input type="text" class="form-control" id="telefono1" name="telefono1"></td>
+                        </tr>
+                        <tr>
+                            <td>{!! Form::select('codigo_familiar_1', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_01', 'class' => 'form-control']) !!}</td>
+                            <td><input type="text" class="form-control" id="telefono1" name="telefono2"></td>
+                        </tr>
+                        <tr>
+                            <td>{!! Form::select('codigo_familiar_2', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_02', 'class' => 'form-control']) !!}</td>
+                            <td><input type="text" class="form-control" id="telefono1" name="telefono3"></td>
+                        </tr>
+                        </tbody>
+                    </table>
             </form>
         </div>
         <div class="modal-footer bg-light">
