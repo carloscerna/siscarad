@@ -206,6 +206,10 @@ use Illuminate\Support\Facades;
                         <div class="col">
                             <label style="text-color: white"> Año lectivo: </label><span class="badge badge-light" id="AnnLectivoMatricula">#</span>
 
+                            <select name="lstModalidad" id="lstModalidad" style="display: none;">
+                                <option value="06">Bachillerato General</option>
+                                <option value="07">Bachillerato Técnico</option>
+                            </select>
                             <label style="text-color: white"> Código Modalidad: </label><span class="badge badge-light" id="CodigoModalidadMatricula">#</span>
                             <label style="text-color: white"> Código Grado: </label><span class="badge badge-light" id="CodigoGradoMatricula">#</span>
                             <label style="text-color: white"> Código Sección: </label><span class="badge badge-light" id="CodigoSeccionMatricula">#</span>
@@ -577,6 +581,13 @@ use Illuminate\Support\Facades;
                     break;
                 case '09':  // cambiar modalidad. puede ser la 10 o la once.
                     codigo_grado = '10';
+                    $("#lstModalidad").show();
+                    break;
+                case '10':  // segundos años sin cambiar modalidad
+                    codigo_grado = '11';
+                    break;
+                case '11':  // tercer año solo para técnico.
+                    codigo_grado = '12';
                     break;
                 default:
                     break;
