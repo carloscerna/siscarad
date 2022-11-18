@@ -72,6 +72,8 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::post("getGradoSeccionMatriculaTodos", "App\Http\Controllers\MatriculaController@getGradoSeccionMatriculaTodos")->name('getGradoSeccionMatriculaTodos');
     // para matriculaBuscarDatos.
     Route::post("getGradoSeccionMatriculaBuscar", "App\Http\Controllers\MatriculaController@getGradoSeccionMatriculaBuscar")->name('getGradoSeccionMatriculaBuscar');
+    // para matriculaBuscarDatos.
+    Route::post("getDatosResponsables", "App\Http\Controllers\MatriculaController@getDatosResponsables")->name('getDatosResponsables');
     /////////////////////////////////////////
     //** REPORTES */
     ////////////////////////////////////////
@@ -81,6 +83,7 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::get('pdfRPA/{id}', [PdfRPAController::class, 'index']);
     // REPORTES boleta de califiación por asignatura
     Route::get('pdfRPG/{id}', [PdfRPGController::class, 'index']);
+    
     // helpers
     Route::resource('funcion','PdfController');
     Route::resource('funcion','PdfRPAController');

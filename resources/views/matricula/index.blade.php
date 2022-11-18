@@ -191,13 +191,13 @@ use Illuminate\Support\Facades;
           <label style="text-color: white"></label><span class="badge badge-primary" id="PromocionMatricula">#</span>
           <button type="button" class="close" data-dismiss="modal">&times;</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body bg-light">
             <form>
                 <!-- CODIGO Y NOMBRE -->
                 <div class="row">
-                  <div class="col">
+                  <div class="col col-lg-12">
                     <label style="text-color: white"> Id: </label><span class="badge badge-light" id="IdMatricula">#</span>
-                    <label style="text-color: white"> Estudiante: </label><span class="badge badge-light" id="EstudianteMatricula">#</span>
+                    <label style="text-color: white"> <h4>Estudiante: </label><span class="badge badge-light" id="EstudianteMatricula">#</span></h4>
                   </div>
                 </div>
 
@@ -213,28 +213,34 @@ use Illuminate\Support\Facades;
                         </div>
                     </div>
                     <!-- INFORMACIÓN DEL RESPONSABLE -->
-                    <h2>Datos del Responsables.</h2>
-                    <p>Parentesco y N.º de Teléfono o Célular</p>            
-                    <table class="table table-hover">
+                    <h4>Datos del Responsables.</h4>        
+                    <table class="table table-hover" id="DatosResponsableTabla">
                         <thead>
-                        <tr>
+                        <tr class="bg-secondary">
                             <th>Parentesco</th>
-                            <th>Dirección</th>
+                            <th>Nombre y Dirección</th>
                             <th>N.º de Telefóno o Célular</th>
                         </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="ContenidoResponsable">
                         <tr>
                             <td>{!! Form::select('codigo_familiar_0', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_00', 'class' => 'form-control']) !!}</td>
+                            <td><input type="hidden" name="id_1" id="id_1" value="">
+                                <label for="">Nombre del Padre: </label><input type="text" class="form-control text-bold text-black" id="nombrep" name="nombrep">
+                                <textarea name="direccion1" id="direccion1" rows="3" cols="40"></textarea></td>
                             <td><input type="text" class="form-control" id="telefono1" name="telefono1"></td>
                         </tr>
-                        <tr>
+                        <tr class="bg-secondary">
                             <td>{!! Form::select('codigo_familiar_1', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_01', 'class' => 'form-control']) !!}</td>
-                            <td><input type="text" class="form-control" id="telefono1" name="telefono2"></td>
+                            <td><input type="hidden" name="id_2" id="id_2" value="">
+                                <label for="">Nombre de la Madre: </label><input type="text" class="form-control text-bold text-black" id="nombrem" name="nombrem">
+                            <td><input type="text" class="form-control" id="telefono2" name="telefono2"></td>
                         </tr>
                         <tr>
                             <td>{!! Form::select('codigo_familiar_2', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_02', 'class' => 'form-control']) !!}</td>
-                            <td><input type="text" class="form-control" id="telefono1" name="telefono3"></td>
+                            <td><input type="hidden" name="id_3" id="id_3" value="">
+                                <label for="" >Nombre Otro: </label><input type="text" class="form-control text-bold text-black" id="nombreotro" name="nnombreotroombrep">
+                            <td><input type="text" class="form-control" id="telefono3" name="telefono3"></td>
                         </tr>
                         </tbody>
                     </table>
@@ -342,7 +348,7 @@ use Illuminate\Support\Facades;
                 } 
             });
         }
-       
+        
 
         // FUNCION PARA PRESENTES O RETIRADOS.
         function BuscarPorGradoSeccionMatriculaTodos() {
@@ -529,7 +535,52 @@ use Illuminate\Support\Facades;
             codigo_seccion = codigo_gradoseccionturno.substring(2,4);
             codigo_turno = codigo_gradoseccionturno.substring(4,6);
             codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
-
+            // cambios los codigos de grado, modalidad, annlectivo.
+                codigo_annlectivo = parseInt(codigo_annlectivo) +  1;
+            // cambiar el grado
+            switch (codigo_grado) {
+                case '4P':
+                    codigo_grado = '5P';
+                    break;
+                case '5P':
+                    codigo_grado = '6P';
+                    break;
+                case '6P': // cambia la modalidad a Primer ciclo y primer grado
+                    codigo_grado = '01';
+                    codigo_modalidad = '03';
+                    break;
+                case '01':
+                    codigo_grado = '02';
+                    break;
+                case '02':
+                    codigo_grado = '03';
+                    break;
+                case '03':  // cambia la Modalidad a Segundo ciclo y Cuarto Grado.
+                    codigo_grado = '04';
+                    codigo_modalidad = '04';
+                    break;
+                case '04':
+                    codigo_grado = '05';
+                    break;
+                case '05':
+                    codigo_grado = '06';
+                    break;
+                case '06':  // Cambila de Modalidad a Tercer Ciclo y Septimo Grado
+                    codigo_grado = '07';                    
+                    codigo_modalidad = '05';
+                    break;
+                case '07':
+                    codigo_grado = '08';
+                    break;
+                case '08':
+                    codigo_grado = '09';
+                    break;
+                case '09':  // cambiar modalidad. puede ser la 10 o la once.
+                    codigo_grado = '10';
+                    break;
+                default:
+                    break;
+            }
             $("#AnnLectivoMatricula").text(codigo_annlectivo);
             $("#CodigoModalidadMatricula").text(codigo_modalidad);    
             $("#CodigoGradoMatricula").text(codigo_grado);    
@@ -541,6 +592,49 @@ use Illuminate\Support\Facades;
         if(promocion == "No Promovido"){
             
         }
+        //
+        // traer datos del responsable.
+        //
+
+        url_ajax = '{{url("getDatosResponsables")}}' 
+            csrf_token = '{{csrf_token()}}' 
+
+            $.ajax({
+                type: "post",
+                url: url_ajax,
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id": codigo_alumno
+                },
+                dataType: 'json',
+                success:function(data) {
+                    $.each( data, function( key, value ) {
+                        switch (value.fila) {
+                            case 0:
+                                $("#codigo_familiar_00").val(value.codigo_familiar);
+                                $("#id_1").val(value.id_);
+                                $("#nombrep").val(value.nombres);
+                                $("#direccion1").val(value.direccion);
+                                $("#telefono1").val(value.telefono);
+                                break;
+                            case 1:
+                                $("#codigo_familiar_01").val(value.codigo_familiar);
+                                $("#id_2").val(value.id_);
+                                $("#nombrem").val(value.nombres);
+                                $("#telefono2").val(value.telefono);
+                            break;
+                            case 2:
+                                $("#codigo_familiar_02").val(value.codigo_familiar);
+                                $("#id_3").val(value.id_);
+                                $("#nombreotro").val(value.nombres);
+                                $("#telefono3").val(value.telefono);
+                                break;
+                            default:
+                                break;
+                        }
+                    }); // fin del for...eacht...
+                } 
+            });
         // form modal.
         $("#MyMatricula").modal("show");
     });
@@ -549,8 +643,7 @@ use Illuminate\Support\Facades;
         alert("Proceso para guardar la matricula");
     }
 // VERIFICAR LA PROMOCION PARA EL CAMBIO DE GRADO SECCION TURNO
-function promocion_verificar(gradoseccionturno) {
-    codigo_grado = codigo_asignatura_area.substring(0,2);
+function promocion_verificar(codigo_grado) {
 }
 // CALCULAR LA ESCALA DE LA SOBREEDAD
 function calcular_sobreedad_escala(edad,grado) {

@@ -236,4 +236,40 @@ class MatriculaController extends Controller
                 };
            return $Presentes;
     }
+
+    public function getDatosResponsables()
+    {
+        $codigo_alumno = $_POST['id'];
+        $DatosResponsables = array();
+
+            $DatosResponsablesEstudiantes = DB::table('alumno_encargado')
+                ->select('id_alumno_encargado', 'nombres','telefono', 'direccion', 'encargado','codigo_familiar', 'dui')
+                ->where('codigo_alumno', '=', $codigo_alumno)
+                ->orderBy('id_alumno_encargado','asc')
+                ->get();
+                
+                $fila_array = 0;
+                foreach($DatosResponsablesEstudiantes as $response){  //Llenar el arreglo con datos
+                    $id_encargado_ = $response->id_alumno_encargado; 
+                    $nombres = trim($response->nombres); 
+                    $telefono = $response->telefono; 
+                    $direccion = $response->direccion; 
+                    $encargado  = $response->encargado; 
+                    $codigo_familiar = $response->codigo_familiar; 
+                    $dui = $response->dui;
+
+                    $DatosResponsables[$fila_array] = array ( 
+                        "id_" => $id_encargado_,
+                        "nombres"=>$nombres,
+                        "telefono"=>$telefono,
+                        "direccion"=>$direccion,
+                        "encargado"=>$encargado,
+                        "codigo_familiar"=>$codigo_familiar,
+                        "dui"=>$dui,
+                        "fila"=>$fila_array
+                    ); 
+                    $fila_array++;
+                }
+            return $DatosResponsables;
+    }
 }
