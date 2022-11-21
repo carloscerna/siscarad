@@ -227,32 +227,34 @@ use Illuminate\Support\Facades;
                         </tr>
                         </thead>
                         <tbody id="ContenidoResponsable">
-                        <tr>
-                            <td>{!! Form::select('codigo_familiar_0', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_00', 'class' => 'form-control']) !!}</td>
-                            <td><input type="hidden" name="id_1" id="id_1" value="">
-                                <label for="">Nombre del Padre: </label><input type="text" class="form-control text-bold text-black" id="nombrep" name="nombrep">
-                                <textarea name="direccion1" id="direccion1" rows="3" cols="40"></textarea></td>
-                            <td><input type="text" class="form-control" id="telefono1" name="telefono1"></td>
-                        </tr>
-                        <tr class="bg-secondary">
-                            <td>{!! Form::select('codigo_familiar_1', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_01', 'class' => 'form-control']) !!}</td>
-                            <td><input type="hidden" name="id_2" id="id_2" value="">
-                                <label for="">Nombre de la Madre: </label><input type="text" class="form-control text-bold text-black" id="nombrem" name="nombrem">
-                            <td><input type="text" class="form-control" id="telefono2" name="telefono2"></td>
-                        </tr>
-                        <tr>
-                            <td>{!! Form::select('codigo_familiar_2', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_02', 'class' => 'form-control']) !!}</td>
-                            <td><input type="hidden" name="id_3" id="id_3" value="">
-                                <label for="" >Nombre Otro: </label><input type="text" class="form-control text-bold text-black" id="nombreotro" name="nnombreotroombrep">
-                            <td><input type="text" class="form-control" id="telefono3" name="telefono3"></td>
-                        </tr>
+                            <form action="" method="post" id="cusCreate" autocomplete="off">
+                                <tr>
+                                    <td>{!! Form::select('codigo_familiar_0', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_00', 'class' => 'form-control']) !!}</td>
+                                    <td><input type="hidden" name="id_1" id="id_1" value="">
+                                        <label for="">Nombre del Padre: </label><input type="text" class="form-control text-bold text-black" id="nombrep" name="nombrep" readonly>
+                                        <textarea name="direccion1" id="direccion1" rows="3" cols="40"></textarea></td>
+                                    <td><input type="text" class="form-control" id="telefono1" name="telefono1" maxlength="9" pattern="[0-9]{4}[-][0-9]{4}" autocomplete="off"></td>
+                                </tr>
+                                <tr class="bg-secondary">
+                                    <td>{!! Form::select('codigo_familiar_1', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_01', 'class' => 'form-control']) !!}</td>
+                                    <td><input type="hidden" name="id_2" id="id_2" value="">
+                                        <label for="">Nombre de la Madre: </label><input type="text" class="form-control text-bold text-black" id="nombrem" name="nombrem" readonly>
+                                    <td><input type="text" class="form-control" id="telefono2" name="telefono2" maxlength="9" pattern="[0-9]{4}[-][0-9]{4}" autocomplete="off"></td>
+                                </tr>
+                                <tr>
+                                    <td>{!! Form::select('codigo_familiar_2', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_02', 'class' => 'form-control']) !!}</td>
+                                    <td><input type="hidden" name="id_3" id="id_3" value="">
+                                        <label for="" >Nombre Otro: </label><input type="text" class="form-control text-bold text-black" id="nombreotro" name="nnombreotroombrep" autocomplete="off">
+                                    <td><input type="text" class="form-control" id="telefono3" name="telefono3" maxlength="9" pattern="[0-9]{4}[-][0-9]{4}" autocomplete="off"></td>
+                                </tr>
+                            </form>
                         </tbody>
                     </table>
             </form>
         </div>
         <div class="modal-footer bg-light">
           <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>
-          <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="GuardarMatricula()">Guardar</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="GuardarMatricula()" id="GuardarMatricular">Guardar</button>
         </div>
       </div>
     </div>
@@ -443,6 +445,7 @@ use Illuminate\Support\Facades;
                                 }else{
                                     var td_retirado = "<td class='bg-danger text-white text-small'> Retirado </td>";
                                     retirados_++;
+                                    matricula = false;
                                 }
                             // Validar Sobreedad.
                                 if(sobreedad == ""){
@@ -453,7 +456,7 @@ use Illuminate\Support\Facades;
                                     sobreedad_++;
                                     matricula = false;
                                 }
-                                // Validar Sobreedad.
+                                // Validar Promovido no Promovido.
                                 if(codigo_resultado == "3"){
                                     var td_codigo_resultado = "<td class='bg-primary text-white text-small'> Promovido </td>";
                                     promovidos_++;
@@ -601,7 +604,20 @@ use Illuminate\Support\Facades;
         }
 
         if(promocion == "No Promovido"){
-            
+            //promocion_verificar(codigo_gradoseccionturno)
+            codigo_grado = codigo_gradoseccionturno.substring(0,2);
+            codigo_seccion = codigo_gradoseccionturno.substring(2,4);
+            codigo_turno = codigo_gradoseccionturno.substring(4,6);
+            codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
+            // cambios los codigos de grado, modalidad, annlectivo.
+            codigo_annlectivo = parseInt(codigo_annlectivo);
+
+            $("#AnnLectivoMatricula").text(codigo_annlectivo);
+            $("#CodigoModalidadMatricula").text(codigo_modalidad);    
+            $("#CodigoGradoMatricula").text(codigo_grado);    
+            $("#CodigoSeccionMatricula").text(codigo_seccion);    
+            $("#CodigoTurnoMatricula").text(codigo_turno);   
+
         }
         //
         // traer datos del responsable.
@@ -615,11 +631,21 @@ use Illuminate\Support\Facades;
                 url: url_ajax,
                 data: {
                     "_token": "{{ csrf_token() }}",
-                    "id": codigo_alumno
+                    "id": codigo_alumno,
+                    codigo_modalidad: codigo_modalidad,
+                    codigo_grado: codigo_grado,
+                    codigo_annlectivo: codigo_annlectivo
                 },
                 dataType: 'json',
                 success:function(data) {
                     $.each( data, function( key, value ) {
+                        // VALIDAR SI LA MATRICULA YA FUE REALIZADA.
+                            if(value.estado_matricular == 'si'){
+                                $("#GuardarMatricular").prop('disabled', true);
+                                $("#PromocionMatricula").text("MATRICULADO");
+                            }else{
+                                $("#GuardarMatricular").prop('disabled', false);
+                            }
                         switch (value.fila) {
                             case 0:
                                 $("#codigo_familiar_00").val(value.codigo_familiar);
@@ -651,7 +677,71 @@ use Illuminate\Support\Facades;
     });
 // funcionar para guardar las calificaciones.
     function GuardarMatricula() {
-        alert("Proceso para guardar la matricula");
+        var codigo_annlectivo = $("#AnnLectivoMatricula").html();
+        var codigo_grado = $("#CodigoGradoMatricula").html();
+        var codigo_modalidad = $("#CodigoModalidadMatricula").html();
+        var codigo_alumno = $("#IdMatricula").html();
+        var codigo_seccion = $("#CodigoSeccionMatricula").html();
+        var codigo_turno = $("#CodigoTurnoMatricula").html();
+        // DATOS DE LOS RESPONSABLES.
+        var codigo_familiar_padre = $("#codigo_familiar_00").val();
+        var codigo_familiar_madre = $("#codigo_familiar_01").val();
+        var codigo_familiar_otro = $("#codigo_familiar_02").val();
+            const codigo_familiar_ = [codigo_familiar_padre, codigo_familiar_madre, codigo_familiar_otro];
+        // DATOS DEL ID DE CADA ENCARGADO.
+        var codigo_id_padre = $("#id_1").val();
+        var codigo_id_madre = $("#id_2").val();
+        var codigo_id_otro = $("#id_3").val();
+            const codigo_id_ = [codigo_id_padre, codigo_id_madre, codigo_id_otro];
+        // NOMBRE DEL OTRO ENCARGADO.
+        var nombre_encargado_otro = $("#nombreotro").val();
+        // NUMERO DE TELEFONO PADRE, MADRE U OTRO.
+        var telefono_padre = $("#telefono1").val();
+        var telefono_madre = $("#telefono2").val();
+        var telefono_otro = $("#telefono3").val();
+            const telefono_ = [telefono_padre, telefono_madre, telefono_otro];
+        // actualizar la dirección.
+        var direccion = $("#direccion1").val();
+
+            console.log("Código estudiante: " + codigo_alumno + " Codigo modalidad: " + codigo_modalidad + " Codigo grado: " + codigo_grado + " Codigo año lectivo: " + codigo_annlectivo);
+
+        // CUANDO SE HA SELECCIONADO UN GRADO...
+            url_ajax = '{{url("getDatosMatriculaGuardar")}}' 
+            csrf_token = '{{csrf_token()}}' 
+
+            // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
+            $.ajax({
+                type: "post",
+                url: url_ajax,
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "codigo_alumno": codigo_alumno, 
+                    codigo_annlectivo: codigo_annlectivo,
+                    codigo_modalidad: codigo_modalidad,
+                    codigo_grado: codigo_grado,
+                    codigo_seccion: codigo_seccion,
+                    codigo_turno: codigo_turno,
+                    codigo_familiar: codigo_familiar_,
+                    codigo_id: codigo_id_,
+                    telefono: telefono_,
+                    nombreotro: nombre_encargado_otro,
+                    direccion: direccion
+                },
+                dataType: 'json',
+                success:function(data) {
+                    linea = 0;
+                    // colocar mensaje si existe alguno
+                    // recorrer la matriz que viene del Controlador.
+                    $.each(data, function( key, value) {
+                        // Mostrar mensaje de la matriz.
+                            console.log(value.matricula_mensaje + " Id_alumno_matricula: " + value.id_alumno_matricula + "Calificacion Mensaje: " + value.calificacion_mensaje);
+                    }); // fin del for...eacht...
+                                    // mensaje
+                        // Display an info toast with no title
+                        toastr.info("Matricula creada.", "Sistema");
+                }
+            }); 
+            // FIN DE LA CONSULTA CON AJAX
     }
 // VERIFICAR LA PROMOCION PARA EL CAMBIO DE GRADO SECCION TURNO
 function promocion_verificar(codigo_grado) {

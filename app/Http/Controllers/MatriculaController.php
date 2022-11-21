@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 //
 use App\Models\Tablas\Annlectivo;
+use App\Models\Tablas\Calificaciones;
 use App\Models\Tablas\CatalogoFamiliar;
+use App\Models\Tablas\EstudianteMatricula;
 
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +21,7 @@ class MatriculaController extends Controller
     public function index()
     {
         // vERIFICAR EL AÑO LECTIVO ACTIVO
-        $annlectivo=Annlectivo::where('estatus', true)->orderBy('codigo', 'desc')->pluck('nombre','codigo')->toarray();
+        $annlectivo=Annlectivo::where('estatus', true)->orderBy('codigo', 'asc')->pluck('nombre','codigo')->toarray();
         // vERIFICAR EL AÑO LECTIVO ACTIVO
         $codigo_familiar_0=CatalogoFamiliar::all()->pluck('descripcion','codigo')->toarray();
         // return view
@@ -240,8 +242,24 @@ class MatriculaController extends Controller
     public function getDatosResponsables()
     {
         $codigo_alumno = $_POST['id'];
+        $codigo_modalidad = $_POST['codigo_modalidad'];
+        $codigo_grado = $_POST['codigo_grado'];
+        $codigo_annlectivo = $_POST['codigo_annlectivo'];
+
         $DatosResponsables = array();
 
+        // Eloquiente verificar si ya existe la matricula.
+            $estado_matricular = "no";
+            $EstudianteMatriculaCount = EstudianteMatricula::where('codigo_alumno', '=', $codigo_alumno)
+            ->where('codigo_bach_o_ciclo',"=",$codigo_modalidad)
+            ->where('codigo_grado','=',$codigo_grado)
+            ->where('codigo_ann_lectivo','=',$codigo_annlectivo)
+            ->count();
+        // VALIDAR SI ES IGUAL A CERO.
+            if($EstudianteMatriculaCount != 0){
+                $estado_matricular = "si";
+            }
+        //
             $DatosResponsablesEstudiantes = DB::table('alumno_encargado')
                 ->select('id_alumno_encargado', 'nombres','telefono', 'direccion', 'encargado','codigo_familiar', 'dui')
                 ->where('codigo_alumno', '=', $codigo_alumno)
@@ -266,10 +284,140 @@ class MatriculaController extends Controller
                         "encargado"=>$encargado,
                         "codigo_familiar"=>$codigo_familiar,
                         "dui"=>$dui,
-                        "fila"=>$fila_array
+                        "fila"=>$fila_array,
+                        "estado_matricular"=> $estado_matricular
                     ); 
                     $fila_array++;
                 }
             return $DatosResponsables;
+    }
+
+    public function getDatosMatriculaGuardar()
+    {
+        $codigo_alumno = $_POST['codigo_alumno'];
+        $codigo_modalidad = $_POST['codigo_modalidad'];
+        $codigo_grado = $_POST['codigo_grado'];
+        $codigo_seccion = $_POST['codigo_seccion'];
+        $codigo_turno = $_POST['codigo_turno'];
+        $codigo_annlectivo = $_POST['codigo_annlectivo'];
+        $DatosMatriculaMensaje = array();
+        // datos del familiar.
+        $codigo_id = $_POST["codigo_id"];
+        $codigo_familiar = $_POST["codigo_familiar"];
+        $telefono = $_POST["telefono"];
+        $nombre_encargado_otro = $_POST["nombreotro"];
+        $direccion = $_POST["direccion"];
+
+        // Eloquent
+        $fila_array = 0;
+        $EstudianteMatriculaCount = EstudianteMatricula::where('codigo_alumno', '=', $codigo_alumno)
+                    ->where('codigo_bach_o_ciclo',"=",$codigo_modalidad)
+                    ->where('codigo_grado','=',$codigo_grado)
+                    ->where('codigo_ann_lectivo','=',$codigo_annlectivo)
+                    ->count();
+
+        if($EstudianteMatriculaCount != 0) {
+            //la matricula ya esta realizada.
+            $mensaje_01 = "Ya Matriculado...";
+            $DatosMatriculaMensaje[$fila_array] = array ( 
+                "matricula_mensaje" => $mensaje_01,
+                "fila"=>$fila_array
+            ); 
+            $fila_array++;
+        }else{
+            //la matricula ya esta realizada.
+            $mensaje_01 = "Realizar Matricula...";
+            $DatosMatriculaMensaje[$fila_array] = array ( 
+                "matricula_mensaje" => $mensaje_01,
+                "fila"=>$fila_array
+            ); 
+
+
+            // GUARDAR CODIGO DEL ALUMNO EN LA TABLA ALUMNO MATRICULA.
+            EstudianteMatricula::create([
+                'codigo_alumno' => $codigo_alumno
+            ]);
+            // SELECT EN ALUMNO MATRICULA Y ACTULIZAR CON LOS DATO ENCONTRADOS
+                $consultaIdMatricula = DB::table('alumno_matricula')
+                    ->select('id_alumno_matricula')
+                    ->where('codigo_alumno', '=', $codigo_alumno)
+                    ->orderBy('id_alumno_matricula','asc')
+                    ->get();
+                    foreach($consultaIdMatricula as $response){  //Llenar el arreglo con datos
+                        $id_ultimo = $response->id_alumno_matricula;
+                        $codigo_matricula = $id_ultimo;
+                        $DatosMatriculaMensaje[$fila_array] = array ( 
+                            "id_alumno_matricula" => $id_ultimo
+                        ); 
+                    }
+                // ACTUALIZAR LA TABLA ALUMNOMATRICULA PERO CON LOS DATOS DE CODIGO MODALIDAD - GRADO -SECCION - TURNO
+                    $actual['update'] = DB::update("UPDATE alumno_matricula set codigo_bach_o_ciclo = ?, codigo_grado = ?, codigo_seccion = ?, codigo_turno = ?, codigo_ann_lectivo = ?
+                                                        WHERE id_alumno_matricula = ? and codigo_alumno = ?", 
+                                                            [$codigo_modalidad, $codigo_grado, $codigo_seccion, $codigo_turno, $codigo_annlectivo, $id_ultimo, $codigo_alumno]);
+                // CONSULTAR LA TABLA asignacion de aignaturas por modalidad, grado, seccion y turno.
+                    $consultaIdAA = DB::table('a_a_a_bach_o_ciclo')
+                        ->select('codigo_asignatura','orden')
+                        ->where('codigo_bach_o_ciclo',"=",$codigo_modalidad)
+                        ->where('codigo_grado','=',$codigo_grado)
+                        ->where('codigo_ann_lectivo','=',$codigo_annlectivo)
+                        ->orderBy('orden','asc')
+                        ->get();
+                        foreach($consultaIdAA as $response){  //Llenar el arreglo con datos
+                            $codigo_asignatura = $response->codigo_asignatura;
+                            $orden = $response->orden;
+                                //
+                                // GUARDAR EN LA TABLA NOTA LA INFORMACION CORRESPONDIENTE AL CODIGO ASIGNATURA, CODIGO ALUMNO, CODIGO MATRICULA.
+                                    Calificaciones::create([
+                                        'codigo_alumno' => $codigo_alumno,
+                                        'codigo_matricula' => $codigo_matricula,
+                                        'codigo_asignatura' => $codigo_asignatura,
+                                        'orden' => $orden
+                                    ]);
+                                //
+                                //
+                        }
+                        // Ultimo mensaje.
+                        $calificacion_mensaje = "Códigos de asignaturas guarados...";
+                        $DatosMatriculaMensaje[$fila_array] = array ( 
+                            "calificacion_mensaje" => $calificacion_mensaje
+                        );
+
+                        //
+                        //  FIN DE CONSULTA DE MATRICULA Y GUARADODO DE CALIFICACIONES.
+                        //
+
+                        //
+                        //  ACTUALIZAR DATOS DE LOS RESPONSABLES.
+                        //
+                            for ($i=0; $i < count($codigo_id); $i++) { 
+                                // CONDICIONAR PARA QUE SOLO GUARDE EL NOMBRE4 DEL ENCARGADO.
+                                if($i == 2){
+                                    $actualiar['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, nombres = ?, direccion = ?
+                                    WHERE id_alumno_encargado = ?", 
+                                        [$codigo_familiar[$i], $telefono[$i], $nombre_encargado_otro, $direccion, $codigo_id[$i]]);
+                                }else{
+                                    $actualiar['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, direccion = ?
+                                    WHERE id_alumno_encargado = ?", 
+                                        [$codigo_familiar[$i], $telefono[$i], $direccion, $codigo_id[$i]]);    
+                                }
+                        //
+                        //  ACTUALIZAR DIRECCION DEL ESTUDIANTE.
+                        //
+                            $actualiarles['update'] = DB::update("UPDATE alumno set direccion_alumno = ?
+                            WHERE id_alumno = ?", 
+                                [$direccion, $codigo_alumno]);
+
+                    }
+
+                //
+                //
+                //
+            // fila incrementar.
+                $fila_array++;
+        }   // TERMINA EL COUNT
+
+
+        //retornar valores
+        return $DatosMatriculaMensaje;
     }
 }
