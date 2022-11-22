@@ -134,7 +134,7 @@ use Illuminate\Support\Facades;
                         </div>
                     </div>
                 </div>
-
+                <!-- Estudiantes a Matricular -->
                 <div class="table-responsive-sm">
                     <table class="table" id="TablaNominaEstudiantes">
                       <thead>
@@ -167,6 +167,54 @@ use Illuminate\Support\Facades;
                     </table>
                   </div>
             </div>
+            <div class="card-footer">
+                <tr>
+                    <td colspan = "4" style="text-align: right;">
+                              {{-- <button type="button" class="btn btn-success" id = "goCalificacionGuardar" onclick="GuardarRegistros()">
+                                  Guardar
+                              </button> --}}
+                    </td>
+                </tr>
+            </div>
+          </div>
+    </div>
+    <!-- The PARA LOS DATOS DE LA MATRICULA.-->  
+
+    <div class="bg-info" id="NominaEstudiantesMatriculados" style="display: none;">
+        {{-- {{ csrf_field() }}
+        {{ method_field('PATCH') }} --}}
+        <div class="card">
+            <div class="card-header">
+                <h2>Nómina de Estudiantes matriculados</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <!-- Estudiantes a Matriculados -->
+                        <div class="table-responsive-sm">
+                            <table class="table" id="TablaNominaEstudiantes">
+                                <thead>
+                                    <tr class="bg-secondary">
+                                        <th>N.°</th>
+                                        <th>NIE</th>
+                                        <th>Nombre del Estudiante</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contenidoMatriculados">
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    
+                                </tfoot>
+                            </table>
+                        </div>
+                        </div>                        
+                    </div>
+                </div>                
             <div class="card-footer">
                 <tr>
                     <td colspan = "4" style="text-align: right;">
@@ -233,19 +281,19 @@ use Illuminate\Support\Facades;
                                     <td><input type="hidden" name="id_1" id="id_1" value="">
                                         <label for="">Nombre del Padre: </label><input type="text" class="form-control text-bold text-black" id="nombrep" name="nombrep" readonly>
                                         <textarea name="direccion1" id="direccion1" rows="3" cols="40"></textarea></td>
-                                    <td><input type="text" class="form-control" id="telefono1" name="telefono1" maxlength="9" pattern="[0-9]{4}[-][0-9]{4}" autocomplete="off"></td>
+                                    <td><input type="text" class="form-control" id="telefono1" name="telefono1" maxlength="9" autocomplete="off"></td>
                                 </tr>
                                 <tr class="bg-secondary">
                                     <td>{!! Form::select('codigo_familiar_1', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_01', 'class' => 'form-control']) !!}</td>
                                     <td><input type="hidden" name="id_2" id="id_2" value="">
                                         <label for="">Nombre de la Madre: </label><input type="text" class="form-control text-bold text-black" id="nombrem" name="nombrem" readonly>
-                                    <td><input type="text" class="form-control" id="telefono2" name="telefono2" maxlength="9" pattern="[0-9]{4}[-][0-9]{4}" autocomplete="off"></td>
+                                    <td><input type="text" class="form-control" id="telefono2" name="telefono2" maxlength="9" autocomplete="off"></td>
                                 </tr>
                                 <tr>
                                     <td>{!! Form::select('codigo_familiar_2', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_02', 'class' => 'form-control']) !!}</td>
                                     <td><input type="hidden" name="id_3" id="id_3" value="">
                                         <label for="" >Nombre Otro: </label><input type="text" class="form-control text-bold text-black" id="nombreotro" name="nnombreotroombrep" autocomplete="off">
-                                    <td><input type="text" class="form-control" id="telefono3" name="telefono3" maxlength="9" pattern="[0-9]{4}[-][0-9]{4}" autocomplete="off"></td>
+                                    <td><input type="text" class="form-control" id="telefono3" name="telefono3" maxlength="9" autocomplete="off"></td>
                                 </tr>
                             </form>
                         </tbody>
@@ -355,8 +403,9 @@ use Illuminate\Support\Facades;
             });
         }
         
-
+        //
         // FUNCION PARA PRESENTES O RETIRADOS.
+        //
         function BuscarPorGradoSeccionMatriculaTodos() {
             var codigo_annlectivo = $('#codigo_annlectivo').val();
             var codigo_institucion = $('#codigo_institucion').val();
@@ -518,6 +567,95 @@ use Illuminate\Support\Facades;
             });
             } 
         }
+
+        //
+        // FUNCION PARA PRESENTAR ESTUDIANTES YA MATRICULADOS.
+        //
+        function BuscarPorGradoSeccionMatriculadosTodos() {
+            var codigo_annlectivo = $('#codigo_annlectivo').val();
+            var codigo_institucion = $('#codigo_institucion').val();
+            var codigo_gradoseccionturno = $('#codigo_grado_seccion_turno').val();
+                console.log(codigo_annlectivo + ' ' + codigo_gradoseccionturno);
+            if(codigo_annlectivo == '00' || codigo_gradoseccionturno == '00'){
+                alert('Debe seleccionar Año Lectivo y Grado-Sección-Turno');
+                    $('#codigo_annlectivo').focus();
+            }else{
+                // Botón Otro... visible.
+				    $("#NominaEstudiantesMatriculados").css("display","block");
+                // CUANDO SE HA SELECCIONADO UN GRADO...
+                url_ajax = '{{url("getGradoSeccionMatriculadosTodos")}}' 
+                csrf_token = '{{csrf_token()}}' 
+
+            codigo_personal = $('#codigo_personal').val();
+            codigo_annlectivo = $('#codigo_annlectivo').val();
+            // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
+            $.ajax({
+                type: "post",
+                url: url_ajax,
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id": codigo_personal, 
+                    codigo_annlectivo: codigo_annlectivo,
+                    codigo_institucion: codigo_institucion,
+                    codigo_gradoseccionturno: codigo_gradoseccionturno
+                },
+                dataType: 'json',
+                success:function(data) {
+                    //
+                    // variables a utilizar.
+                    //
+                    var linea = 0; var html= ""; var presentes_ = 0; var retirados_ = 0; var sobreedad_ = 0; var promovidos_ = 0; var no_promovidos_ = 0; var sinsobreedad_ = 0;
+                    var matricula_ = 0;  var cantidad_escala_0 = 0; var cantidad_escala_1 = 0; var cantidad_escala_2 = 0; var cantidad_escala_3 = 0; var matricula = true;
+                        $('#contenidoMatriculados').empty();
+                        $('#contenidoMatriculados').append(data);
+                    // recorrer la matriz que viene del Controlador.
+                    $.each( data, function( key, value ) {
+                        linea = linea + 1;
+                        // validar para cambiar de color la l{inea}
+                        if (linea % 2 === 0) {
+                            fila_color = '<tr style=background:#A5FFA5; text-color:black;>';
+                        }else{
+                            fila_color = '<tr style=background: #FFFFFF; text-color:black;>';
+                        }
+
+                        // ARMAR VARIABLE QUE CONTENGA LOS DATOS PARA PODER OBTENER LA INFORMACION DE LA BOLETA DE CALIFICACIONES
+                        //
+                            var codigo_nie = value.codigo_nie;
+                            var codigo_alumno = value.codigo_alumno;
+                            var nombre_foto = value.foto;
+                            var edad = value.edad;
+                            var retirado = value.retirado;
+                            var sobreedad = value.sobreedad;
+                            var codigo_resultado = value.codigo_resultado;
+                            var codigo_grado = value.codigo_grado;
+                            
+                                /*
+                                <p class="bg-primary text-white">This text is important.</p>
+                                <p class="bg-success text-white">This text indicates success.</p>
+                                <p class="bg-info text-white">This text represents some information.</p>
+                                <p class="bg-warning text-white">This text represents a warning.</p>
+                                <p class="bg-danger text-white">This text represents danger.</p>
+                                <p class="bg-secondary text-white">Secondary background color.</p>
+                                <p class="bg-dark text-white">Dark grey background color.</p>
+                                <p class="bg-light text-dark">Light grey background color.</p>
+                                */
+
+                        // armar el thml de la tabla.
+                        html += fila_color +
+                        '<td>' + linea + 
+                        '<input type="hidden" name="codigo_alumno" value="' + codigo_alumno + '"</td>' +
+                        '<td>' + value.codigo_nie + '</td>' +
+                        '<td>' + value.apellidos_nombres_estudiantes + '</td>' +
+                        '</tr>';
+                    }); // fin del for...eacht...
+                        $('#contenidoMatriculados').html(html);
+                        $('#contenidoMatriculados').focus();
+                            // Display an info toast with no title
+                            toastr.success("Registros Encontrados... " + linea, "Sistema");
+                } 
+            });
+            } 
+        }
     // BUSCAR DATOS DE LA MATRICULA. POR ESTUDIANTE.
     $('#TablaNominaEstudiantes #contenido').on( 'click', '.fixedbutton', function (){
         var currow = $(this).closest('tr');
@@ -555,6 +693,7 @@ use Illuminate\Support\Facades;
                 case '6P': // cambia la modalidad a Primer ciclo y primer grado
                     codigo_grado = '01';
                     codigo_modalidad = '03';
+                    codigo_turno = '01';
                     break;
                 case '01':
                     codigo_grado = '02';

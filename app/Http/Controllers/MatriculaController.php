@@ -270,7 +270,7 @@ class MatriculaController extends Controller
                 foreach($DatosResponsablesEstudiantes as $response){  //Llenar el arreglo con datos
                     $id_encargado_ = $response->id_alumno_encargado; 
                     $nombres = trim($response->nombres); 
-                    $telefono = $response->telefono; 
+                    $telefono = trim($response->telefono); 
                     $direccion = $response->direccion; 
                     $encargado  = $response->encargado; 
                     $codigo_familiar = $response->codigo_familiar; 
@@ -391,14 +391,15 @@ class MatriculaController extends Controller
                         //
                             for ($i=0; $i < count($codigo_id); $i++) { 
                                 // CONDICIONAR PARA QUE SOLO GUARDE EL NOMBRE4 DEL ENCARGADO.
+                                $telefonos = trim($telefono[$i]);
                                 if($i == 2){
-                                    $actualiar['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, nombres = ?, direccion = ?
+                                    $actualiars['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, nombres = ?, direccion = ?
                                     WHERE id_alumno_encargado = ?", 
-                                        [$codigo_familiar[$i], $telefono[$i], $nombre_encargado_otro, $direccion, $codigo_id[$i]]);
+                                        [$codigo_familiar[$i], $telefonos, $nombre_encargado_otro, $direccion, $codigo_id[$i]]);
                                 }else{
-                                    $actualiar['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, direccion = ?
+                                    $actualiars['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, direccion = ?
                                     WHERE id_alumno_encargado = ?", 
-                                        [$codigo_familiar[$i], $telefono[$i], $direccion, $codigo_id[$i]]);    
+                                        [$codigo_familiar[$i], $telefonos, $direccion, $codigo_id[$i]]);    
                                 }
                         //
                         //  ACTUALIZAR DIRECCION DEL ESTUDIANTE.
