@@ -370,6 +370,13 @@ use Illuminate\Support\Facades;
                 let text = $('#codigo_asignatura1 option:selected').text();
                 //@this.set('seleccionado', text);
             })
+        // function onchange
+        $('#lstModalidad').on('change', function(e){
+                //let valor = $('#lstModalidad').select2('val');
+                var codigo_modalidad = $('#lstModalidad option:selected').val();
+                $("#CodigoModalidadMatricula").text(codigo_modalidad);    
+                //@this.set('seleccionado', text);
+            })
   
        // funcion onchange
         function BuscarPorAnnLectivo(AnnLectivo) {
@@ -469,6 +476,7 @@ use Illuminate\Support\Facades;
                             var codigo_resultado = value.codigo_resultado;
                             var codigo_grado = value.codigo_grado;
                             sobreedad_escala = 0;
+                            matricula = true;
                             // validar edad.
                                 
                                 calcular_sobreedad_escala(edad, codigo_grado);
@@ -509,11 +517,11 @@ use Illuminate\Support\Facades;
                                 if(codigo_resultado == "3"){
                                     var td_codigo_resultado = "<td class='bg-primary text-white text-small'> Promovido </td>";
                                     promovidos_++;
-                                    matricula = true;
+                                    //matricula = true;
                                 }else{
                                     var td_codigo_resultado = "<td class='bg-info text-white text-small'> No Promovido </td>";
                                     no_promovidos_++;
-                                    matricula = false;
+                                    //matricula = false;
                                 }
                                 // VALIDARBOTON DE MATRICULA.
                                     if(matricula == true){
@@ -722,11 +730,15 @@ use Illuminate\Support\Facades;
                     codigo_grado = '09';
                     break;
                 case '09':  // cambiar modalidad. puede ser la 10 o la once.
+                    codigo_seccion = '01';
                     codigo_grado = '10';
-                    $("#lstModalidad").show();
+                    codigo_modalidad = '06';
+                    codigo_turno = '01';
+                        $("#lstModalidad").show();
                     break;
                 case '10':  // segundos años sin cambiar modalidad
                     codigo_grado = '11';
+                    codigo_seccion = '01';
                     break;
                 case '11':  // tercer año solo para técnico.
                     codigo_grado = '12';
@@ -742,14 +754,14 @@ use Illuminate\Support\Facades;
             
         }
 
-        if(promocion == "No Promovido"){
+        if(promocion.trim() == "No Promovido"){
             //promocion_verificar(codigo_gradoseccionturno)
             codigo_grado = codigo_gradoseccionturno.substring(0,2);
             codigo_seccion = codigo_gradoseccionturno.substring(2,4);
             codigo_turno = codigo_gradoseccionturno.substring(4,6);
             codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
             // cambios los codigos de grado, modalidad, annlectivo.
-            codigo_annlectivo = parseInt(codigo_annlectivo);
+            codigo_annlectivo = parseInt(codigo_annlectivo) + 1;
 
             $("#AnnLectivoMatricula").text(codigo_annlectivo);
             $("#CodigoModalidadMatricula").text(codigo_modalidad);    
