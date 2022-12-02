@@ -511,7 +511,7 @@ use Illuminate\Support\Facades;
                                 }else{
                                     var td_sobreedad = "<td class='bg-warning text-white text-small'> Sobreedad </td>";
                                     sobreedad_++;
-                                    matricula = false;
+                                    //matricula = false;
                                 }
                                 // Validar Promovido no Promovido.
                                 if(codigo_resultado == "3"){
@@ -742,6 +742,7 @@ use Illuminate\Support\Facades;
                     break;
                 case '11':  // tercer año solo para técnico.
                     codigo_grado = '12';
+                    codigo_modalidad = '09'
                     break;
                 default:
                     break;
