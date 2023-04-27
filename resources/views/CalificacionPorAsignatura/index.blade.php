@@ -43,7 +43,7 @@ use Illuminate\Support\Facades;
         {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
 
         {{ Form::label('LblActividadPorcentaje', 'Actividades (%):') }}
-        {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)'], null, ['id' => 'codigo_actividad_porcentaje','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control']) !!}
+        {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)','04'=>'Recuperación (10%)'], null, ['id' => 'codigo_actividad_porcentaje','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control']) !!}
     </div>
 
 <div class="bg-light" id="NominaEstudiantes" style="display: none;">
@@ -250,6 +250,7 @@ use Illuminate\Support\Facades;
                         miselect.append('<option value=01>Actividad 1 (35%)</option>'); 
                         miselect.append('<option value=02>Actividad 2 (35%)</option>'); 
                         miselect.append('<option value=03>Examen o Prueba Objetiva (30%)</option>'); 
+                        //miselect.append('<option value=04>Recuperación (10%)</option>'); 
                     }
                 
             }else{

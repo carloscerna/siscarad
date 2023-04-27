@@ -239,7 +239,7 @@ class PdfRPGController extends Controller
          print_r($EstudianteBoleta);
          echo "</pre>"; */
      
-            $fila = 1; $fila_asignatura = 0; $fila_numero = 1; $fill = true;
+            $fila = 1; $fila_asignatura = 0; $fila_numero = 1; $fill = true; $ultima_columna = 250;
             $this->fpdf->SetX(30); 
             foreach($EstudianteBoleta as $response){  //Llenar el arreglo con datos
                 // VARIABLES CON LA NFORMACIONES DEL ESTUDIANTE.
@@ -447,7 +447,10 @@ class PdfRPGController extends Controller
         //  DATOS AL FINAL DE LAS CALIFICACIONES
         //
             $ultimo_espaciado = 10; $ultima_fila = 100;
-            //$ultima_columna = $this->fpdf->GetX();
+            if($ultima_columna == null){
+                $ultima_columna = $this->fpdf->GetX();
+            }
+            
             // datos del docente
             $this->fpdf->SetXY($ultima_columna + $ultimo_espaciado,$ultima_fila);
                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal_,0,0,'L');

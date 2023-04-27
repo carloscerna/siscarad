@@ -282,27 +282,33 @@ class CalificacionesPorAsignaturaController extends Controller
 
             $nombre_periodos = array('nota_p_p_','recuperacion','nota_recuperacion_2');
             $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
+            $nombre_recuperaciones = array('nota_r_');
             $nombre_observacion = array('observacion_');
             $numero_periodo = 0;
             switch ($codigo_periodo) {
                 case '01':  // nota_p_p_1
                     $nombre_periodo = $nombre_periodos[0] . '1';
+                    $nombre_recuperacion = $nombre_recuperaciones[0] . '1';
                     $numero_periodo = '1';
                 break;
                 case '02':  // nota_p_p_2
                     $nombre_periodo = $nombre_periodos[0] . '2';
+                    $nombre_recuperacion = $nombre_recuperaciones[0] . '2';
                     $numero_periodo = '2';
                 break;
                 case '03':  // nota_p_p_3
                     $nombre_periodo = $nombre_periodos[0] . '3';
+                    $nombre_recuperacion = $nombre_recuperaciones[0] . '3';
                     $numero_periodo = '3';
                 break;
                 case '04':  // nota_p_p_4
                     $nombre_periodo = $nombre_periodos[0] . '4';
+                    $nombre_recuperacion = $nombre_recuperaciones[0] . '4';
                     $numero_periodo = '4';
                 break;
                 case '05':  // nota_p_p_5
                     $nombre_periodo = $nombre_periodos[0] . '5';
+                    $nombre_recuperacion = $nombre_recuperaciones[0] . '5';
                     $numero_periodo = '5';
                 break;
                 case '06':  // recuperacion
@@ -327,6 +333,9 @@ class CalificacionesPorAsignaturaController extends Controller
                     break;
                     case '03':
                         $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
+                    break;
+                    case '04':
+                        $nombre_actividad = $nombre_recuperaciones[0] .  $numero_periodo;
                     break;
                     case '06':
                         $nombre_actividad = $nombre_periodos[1];
@@ -379,11 +388,13 @@ class CalificacionesPorAsignaturaController extends Controller
                  
                 $nombre_periodos = array('nota_p_p_','recuperacion','nota_recuperacion_2');
                 $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
+                $nombre_recuperaciones = array('nota_r_');
                 $numero_periodo = 0;
 
                     switch ($codigo_periodo) {
                         case '01':  // nota_p_p_1
                             $nombre_periodo = $nombre_periodos[0] . '1';
+                            $nombre_recuperacion = $nombre_recuperaciones[0] . '1';
                             $numero_periodo = '1';
                         break;
                         case '02':  // nota_p_p_2
@@ -426,6 +437,9 @@ class CalificacionesPorAsignaturaController extends Controller
                         case '03':
                             $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
                         break;
+                        case '04':
+                            $nombre_actividad = $nombre_recuperaciones[0] .  $numero_periodo;
+                        break;
                     }
                 }else{
                         // cambiar el nombre de actividad por el nombre del periodo
@@ -434,6 +448,7 @@ class CalificacionesPorAsignaturaController extends Controller
                 $nombre_actividad_1 = $nombre_actividades[0] .  $numero_periodo;
                 $nombre_actividad_2 = $nombre_actividades[1] .  $numero_periodo;
                 $nombre_actividad_3 = $nombre_actividades[2] .  $numero_periodo;
+                $nombre_actividad_r = $nombre_recuperaciones[0] .  $numero_periodo;
                 // FORMAR EL STRING DE EL UPDATE.
                     $actual = array();
                         for ($i=0; $i < $fila; $i++) { 
@@ -470,7 +485,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
-                                                DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
+                                                DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30) + ($nombre_actividad_r * 0.10),0) where id_notas = ?", [$id_notas_]);
                                             }
                                         break;
                                         default:
