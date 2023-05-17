@@ -250,7 +250,7 @@ use Illuminate\Support\Facades;
                         miselect.append('<option value=01>Actividad 1 (35%)</option>'); 
                         miselect.append('<option value=02>Actividad 2 (35%)</option>'); 
                         miselect.append('<option value=03>Examen o Prueba Objetiva (30%)</option>'); 
-                        //miselect.append('<option value=04>Recuperación (10%)</option>'); 
+                        miselect.append('<option value=04>Recuperación</option>'); 
                     }
                 
             }else{
