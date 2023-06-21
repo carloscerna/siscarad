@@ -1,7 +1,7 @@
 <!-- Menu para el ADMINISTRADOR -->
 @role('Administrador')
 <li class="side-menus {{ Request::is('*') ? 'active' : '' }}">
-    <a class="nav-link" href="home">
+    <a class="nav-link" href="{{ url('/home') }}">
         <i class="fas fa-building"></i><span>Tablero</span>
     </a>
     <a class="nav-link" href="usuarios">

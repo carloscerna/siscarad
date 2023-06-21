@@ -608,41 +608,45 @@ class PdfController extends Controller
                 
                 // incremento de variable que controla la fila
                     $fila++;
-            } // FIN DEL FOREACH
-        //
-        //  DATOS AL FINAL DE LAS CALIFICACIONES
-        //
-            $ultima_linea = $this->fpdf->GetY();
-            $this->fpdf->SetY($ultima_linea+40);
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
-            $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal,0,1,'L');
-            
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
-            $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
-                // FOTO DEL ESTUDIANTE.
-                if(!empty($firma_docente)){
-                    if (file_exists('c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente))
-                    {
-                        $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
-                        $this->fpdf->image($img,$this->fpdf->GetX()+10,$this->fpdf->GetY()-30,25,30);
-                    }
-                }
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,1,'L');
-        //  Información del docente responsable de la sección.
 
-        // agregar firma y sello
-            $this->fpdf->image(URL::to($firma_director),15,$ultima_linea+25,40,15);
-            $this->fpdf->image(URL::to($sello_direccion),40,$ultima_linea+20,25,25);
-        // Construir el nombre del archivo.
-           $nombre_archivo = $codigo_nie.'-'.$nombre_completo.'-'.$nombre_modalidad.' '.$nombre_grado . ' ' . $nombre_seccion . ' ' . $nombre_turno . '.pdf';
-        // Salida del pdf.
-        if($crear_archivos == "SI"){
-            $modo = 'D'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
-        }else{
-            $modo = 'I'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
-        }
-            $this->fpdf->Output($nombre_archivo,$modo);
-                exit;
-    }    //
+                        
+                   // de LA BOLETA DE CALIFICACION                                     
+                } // FIN DEL FOREACH
+                //////////////////////////////////
+//
+                        //  DATOS AL FINAL DE LAS CALIFICACIONES
+                        //
+                        $ultima_linea = $this->fpdf->GetY();
+                        $this->fpdf->SetY($ultima_linea+40);
+                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
+                        $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
+                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal,0,1,'L');
+                        
+                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
+                        $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
+                            // FOTO DEL ESTUDIANTE.
+                            if(!empty($firma_docente)){
+                                if (file_exists('c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente))
+                                {
+                                    $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
+                                    $this->fpdf->image($img,$this->fpdf->GetX()+10,$this->fpdf->GetY()-30,25,30);
+                                }
+                            }
+                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,1,'L');
+                    //  Información del docente responsable de la sección.
+
+                    // agregar firma y sello
+                        $this->fpdf->image(URL::to($firma_director),15,$ultima_linea+25,40,15);
+                        $this->fpdf->image(URL::to($sello_direccion),40,$ultima_linea+20,25,25);
+                    // Construir el nombre del archivo.
+                    $nombre_archivo = $codigo_nie.'-'.$nombre_completo.'-'.$nombre_modalidad.' '.$nombre_grado . ' ' . $nombre_seccion . ' ' . $nombre_turno . '.pdf';
+                    // Salida del pdf.
+                    if($crear_archivos == "SI"){
+                        $modo = 'D'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
+                    }else{
+                        $modo = 'I'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
+                    }
+                        $this->fpdf->Output($nombre_archivo,$modo);
+                            exit;
+    }    //pdf controller contenedor
 }

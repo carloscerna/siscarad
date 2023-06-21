@@ -532,7 +532,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                                         DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),1) where id_notas = ?", [$id_notas_]);
                                                     }else{
                                                         // RECALCULAR PROMEDIO EN A1 O A2.
-                                                            if($nombre_actividad_1 > $nombre_actividad_2){
+                                                        if($actividad_1_ > $actividad_2_){
                                                                 DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_recuperacion * 0.35) + ($nombre_actividad_3 * 0.30),1) where id_notas = ?", [$id_notas_]);
                                                             }else{
                                                                 DB::update("UPDATE nota set $nombre_periodo = round(($nombre_recuperacion * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),1) where id_notas = ?", [$id_notas_]);
@@ -560,7 +560,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                                         DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
                                                     }else{
                                                         // RECALCULAR PROMEDIO EN A1 O A2.
-                                                            if($nombre_actividad_1 > $nombre_actividad_2){
+                                                            if($actividad_1_ > $actividad_2_){
                                                                 DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_recuperacion * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
                                                             }else{
                                                                 DB::update("UPDATE nota set $nombre_periodo = round(($nombre_recuperacion * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
