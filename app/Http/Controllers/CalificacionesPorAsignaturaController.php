@@ -208,13 +208,13 @@ class CalificacionesPorAsignaturaController extends Controller
         // Evaluar el codigo modalidad.
         // VALIDAR VARIABGLES PARA MOSTRAR CABECERA Y CALIFICACIONES.
         if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
-            $codigo_modalidad = '03';
+           // $codigo_modalidad = '03';
         }else if($codigo_modalidad >= '06' && $codigo_modalidad <= '09'){   // EDUCACION MEDIA
-            $codigo_modalidad = '06';
+            //$codigo_modalidad = '06';
         }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
-            $codigo_modalidad = '10';
+            //$codigo_modalidad = '10';
         }else{
-            $codigo_modalidad = '03';    // DEFAULT PUEDE SER PARVULARIA
+            //$codigo_modalidad = '03';    // DEFAULT PUEDE SER PARVULARIA
         }
         // Array
         $Periodo = array();
@@ -386,7 +386,6 @@ class CalificacionesPorAsignaturaController extends Controller
                 // echo "<pre>";
                 // print_r($calificacion);
                 //  echo "</pre>";
-                 
                 $nombre_periodos = array('nota_p_p_','recuperacion','nota_recuperacion_2');
                 $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
                 $nombre_recuperaciones = array('nota_r_');
