@@ -151,12 +151,12 @@ class PdfController extends Controller
             // extgraer datos para el encabezado
             $alto_cell = array('5'); $ancho_cell = array('60','6','30','30');
             foreach($EstudianteInformacionInstitucion as $response_i){  //Llenar el arreglo con datos
-                $nombre_institucion = utf8_decode(trim($response_i->nombre_institucion));
-                $nombre_director = utf8_decode(trim($response_i->full_name));
-                $codigo_institucion = utf8_decode(trim($response_i->codigo_institucion));
-                $logo_uno = "/img/".utf8_decode(trim($response_i->logo_uno));
-                $firma_director = "/img/".utf8_decode(trim($response_i->logo_dos));
-                $sello_direccion = "/img/".utf8_decode(trim($response_i->logo_tres));
+                $nombre_institucion = mb_convert_encoding(trim($response_i->nombre_institucion),'ISO-8859-1','UTF-8');
+                $nombre_director = mb_convert_encoding(trim($response_i->full_name),'ISO-8859-1','UTF-8');
+                $codigo_institucion = (trim($response_i->codigo_institucion));
+                $logo_uno = "/img/".mb_convert_encoding(trim($response_i->logo_uno),'ISO-8859-1','UTF-8');
+                $firma_director = "/img/".mb_convert_encoding(trim($response_i->logo_dos),'ISO-8859-1','UTF-8');
+                $sello_direccion = "/img/".mb_convert_encoding(trim($response_i->logo_tres),'ISO-8859-1','UTF-8');
                 // LOGO DE LA INSTITUCIÓN
                     $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
                     $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
@@ -194,15 +194,15 @@ class PdfController extends Controller
             $fila = 1; $fill = true;
             $this->fpdf->SetX(30); 
             foreach($EstudianteBoleta as $response){  //Llenar el arreglo con datos
-                $nombre_completo = utf8_decode(trim($response->full_nombres_apellidos));
-                $codigo_nie = utf8_decode(trim($response->codigo_nie));
-                $nombre_modalidad = utf8_decode(trim($response->nombre_modalidad));  
-                $nombre_grado = utf8_decode(trim($response->nombre_grado));  
-                $nombre_seccion = utf8_decode(trim($response->nombre_seccion));  
-                $nombre_turno = utf8_decode(trim($response->nombre_turno));                
-                $codigo_asignatura = utf8_decode(trim($response->codigo_asignatura));
-                $codigo_area = utf8_decode(trim($response->codigo_area));
-                $nota_final = utf8_decode(trim($response->nota_final));
+                $nombre_completo = mb_convert_encoding(trim($response->full_nombres_apellidos),'ISO-8859-1','UTF-8');
+                $codigo_nie = (trim($response->codigo_nie));
+                $nombre_modalidad = mb_convert_encoding(trim($response->nombre_modalidad),'ISO-8859-1','UTF-8');  
+                $nombre_grado = mb_convert_encoding(trim($response->nombre_grado),'ISO-8859-1','UTF-8');  
+                $nombre_seccion = mb_convert_encoding(trim($response->nombre_seccion),'ISO-8859-1','UTF-8');  
+                $nombre_turno = mb_convert_encoding(trim($response->nombre_turno),'ISO-8859-1','UTF-8');                
+                $codigo_asignatura = (trim($response->codigo_asignatura));
+                $codigo_area = (trim($response->codigo_area));
+                $nota_final = (trim($response->nota_final));
                 $nombre_foto = (trim($response->foto));
                 $codigo_genero = (trim($response->codigo_genero));
                 $correo_estudiante = (trim($response->correo_estudiante));
@@ -277,11 +277,11 @@ class PdfController extends Controller
                     $this->fpdf->Cell(30,$alto_cell[0],"PF->Promedio Final",'LR',1,'L');          
                     // fila de información 
                     $this->fpdf->SetX(30);       
-                    $this->fpdf->Cell(35,$alto_cell[0],utf8_decode("NR1->Nota Recuperación 1"),'LR',0,'L');             
-                    $this->fpdf->Cell(35,$alto_cell[0],utf8_decode("NR2->Nota Recuperación 2"),'LR',0,'L');                
-                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("A->Aprobado"),'LR',0,'L');                
-                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("R->Reprobado"),'LR',0,'L');                
-                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("NF->Nota Final"),'LR',1,'L');                
+                    $this->fpdf->Cell(35,$alto_cell[0],mb_convert_encoding(("NR1->Nota Recuperación 1"),'LR',0,'L'),'ISO-8859-1','UTF-8');             
+                    $this->fpdf->Cell(35,$alto_cell[0],mb_convert_encoding(("NR2->Nota Recuperación 2"),'LR',0,'L'),'ISO-8859-1','UTF-8');                
+                    $this->fpdf->Cell(20,$alto_cell[0],("A->Aprobado"),'LR',0,'L');                
+                    $this->fpdf->Cell(20,$alto_cell[0],("R->Reprobado"),'LR',0,'L');                
+                    $this->fpdf->Cell(20,$alto_cell[0],("NF->Nota Final"),'LR',1,'L');                
                   //  $this->fpdf->ln();
                     // cabecera de la tabla de calificaicone4s por periodo
                     $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"",'LRT',0,'L');

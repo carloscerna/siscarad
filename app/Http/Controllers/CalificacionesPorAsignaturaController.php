@@ -379,6 +379,7 @@ class CalificacionesPorAsignaturaController extends Controller
         $codigo_periodo = $request->codigo_periodo;
         $codigo_area = $request->codigo_area;
         $codigo_modalidad = substr($request->codigo_gradoseccionturno,6,2);
+        $codigo_asignatura = $request->codigo_asignatura;
         // CAMBIAR EL VALOR DE LA VARIABLE "ACTIVIDAD PORCENTAJE" DEPENDIENDO DEL PERIODO
         // 01 - PERIODO 1 ... 05 - PERIODO 5
         // CODIGO ACTIVIDAD
@@ -390,6 +391,7 @@ class CalificacionesPorAsignaturaController extends Controller
                 $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
                 $nombre_recuperaciones = array('nota_r_');
                 $numero_periodo = 0;
+                $numero_p2 = 2; $numero_p3 = 3;
 
                     switch ($codigo_periodo) {
                         case '01':  // nota_p_p_1
@@ -461,28 +463,9 @@ class CalificacionesPorAsignaturaController extends Controller
                             if($calificacion_ == 0 || $calificacion_ == '0'){
                                 $calificacion_ = intval($calificacion_);
                             }
-                            // EXTRAR LA INFORMACION DE LA TABLA NOTA PARA CALCULAR EL NUEVO PROMEDIO. PP
-                                $CalificacionRecuperacion = DB::table('nota')
-                                ->select("$nombre_actividades[0]$numero_periodo as actividad_1","$nombre_actividades[1]$numero_periodo as actividad_2","$nombre_actividades[2]$numero_periodo as actividad_3")
-                                ->where([
-                                    ['id_notas', '=', $id_notas_],
-                                    ])
-                                ->orderBy('id_notas','asc')
-                                ->get();
-                                
-                                $fila_array = 0;
-                                foreach($CalificacionRecuperacion as $response){  //Llenar el arreglo con datos
-                                    $actividad_1_ = trim($response->actividad_1);
-                                    $actividad_2_ = trim($response->actividad_2);
-                                    $actividad_3_ = trim($response->actividad_3);
-                                    $fila_array++;
-                                }
-
-
-
                             //////////////////////////////////////////////////////////////////////////
                             // QUERY DB ACTUALIZAR.
-                                //$actual['update'] = DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
+                            ////////////////////////////////////////////////////////////////////////
                                 if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08' || $codigo_area == '07') 
                                 {
                                     // AGREGAR QUE SEA UN ENTERO YT UN DECIMAL PARA EDUCACION MEDIA.
@@ -492,7 +475,30 @@ class CalificacionesPorAsignaturaController extends Controller
                                             if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
                                                 DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
-                                                DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
+                                                
+                                                if($codigo_asignatura == '235'){
+                                                    DB::update("UPDATE nota set $nombre_actividad = ?, $nombre_actividades[1]$numero_periodo = ?, $nombre_actividades[2]$numero_periodo = ?  where id_notas = ?", [$calificacion_, $calificacion_, $calificacion_, $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
+                                                }else{
+                                                    DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
+                                                }
+                                                //////////////////////////////////////////////////////////////////////////////////////////////////// 
+                                                // EXTRAR LA INFORMACION DE LA TABLA NOTA PARA CALCULAR EL NUEVO PROMEDIO. PP
+                                                ////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                        $CalificacionRecuperacion = DB::table('nota')
+                                                        ->select("$nombre_actividades[0]$numero_periodo as actividad_1","$nombre_actividades[1]$numero_periodo as actividad_2","$nombre_actividades[2]$numero_periodo as actividad_3")
+                                                        ->where([
+                                                            ['id_notas', '=', $id_notas_],
+                                                            ])
+                                                        ->orderBy('id_notas','asc')
+                                                        ->get();
+                                                        
+                                                        $fila_array = 0;
+                                                        foreach($CalificacionRecuperacion as $response){  //Llenar el arreglo con datos
+                                                            $actividad_1_ = trim($response->actividad_1);
+                                                            $actividad_2_ = trim($response->actividad_2);
+                                                            $actividad_3_ = trim($response->actividad_3);
+                                                            $fila_array++;
+                                                        }
                                                 //
                                                 //  EVALUAR SI CODIGO ACTIVIDAD ES IGUAL A "04" QUE ES LA CALIFICACIÓN DE RECUPERACIÓN.
                                                 //
@@ -504,10 +510,8 @@ class CalificacionesPorAsignaturaController extends Controller
                                                         // RECALCULAR PROMEDIO EN A1 O A2.
                                                             if($actividad_1_ > $actividad_2_){
                                                                 DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_recuperacion * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
-                                                                    //$actual['update'] = $nombre_periodo . " = " . $nombre_actividad_1 . " * 35% " . $nombre_recuperacion ." *35% " . $nombre_actividad_3 . " * 30%";
                                                             }else{
                                                                 DB::update("UPDATE nota set $nombre_periodo = round(($nombre_recuperacion * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
-                                                                //$actual['update'] = $nombre_periodo . " = " . $nombre_recuperacion . " * 35% " . $nombre_actividad_2 ." *35% " . $nombre_actividad_3 . " * 30%";
                                                             }
                                                             $actual['update'] = $actividad_1_ . " - " . $actividad_2_ . " - " . $actividad_3_;
                                                     }
@@ -522,6 +526,24 @@ class CalificacionesPorAsignaturaController extends Controller
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
                                                 DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
+                                                //////////////////////////////////////////////////////////////////////////////////////////////////// 
+                                                // EXTRAR LA INFORMACION DE LA TABLA NOTA PARA CALCULAR EL NUEVO PROMEDIO. PP
+                                                ////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                $CalificacionRecuperacion = DB::table('nota')
+                                                ->select("$nombre_actividades[0]$numero_periodo as actividad_1","$nombre_actividades[1]$numero_periodo as actividad_2","$nombre_actividades[2]$numero_periodo as actividad_3")
+                                                ->where([
+                                                    ['id_notas', '=', $id_notas_],
+                                                    ])
+                                                ->orderBy('id_notas','asc')
+                                                ->get();
+                                                
+                                                $fila_array = 0;
+                                                foreach($CalificacionRecuperacion as $response){  //Llenar el arreglo con datos
+                                                    $actividad_1_ = trim($response->actividad_1);
+                                                    $actividad_2_ = trim($response->actividad_2);
+                                                    $actividad_3_ = trim($response->actividad_3);
+                                                    $fila_array++;
+                                                }
                                                 //
                                                 //  EVALUAR SI CODIGO ACTIVIDAD ES IGUAL A "04" QUE ES LA CALIFICACIÓN DE RECUPERACIÓN.
                                                 //
@@ -550,6 +572,24 @@ class CalificacionesPorAsignaturaController extends Controller
                                                 DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
                                                 DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
+                                                                                                //////////////////////////////////////////////////////////////////////////////////////////////////// 
+                                                // EXTRAR LA INFORMACION DE LA TABLA NOTA PARA CALCULAR EL NUEVO PROMEDIO. PP
+                                                ////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                $CalificacionRecuperacion = DB::table('nota')
+                                                ->select("$nombre_actividades[0]$numero_periodo as actividad_1","$nombre_actividades[1]$numero_periodo as actividad_2","$nombre_actividades[2]$numero_periodo as actividad_3")
+                                                ->where([
+                                                    ['id_notas', '=', $id_notas_],
+                                                    ])
+                                                ->orderBy('id_notas','asc')
+                                                ->get();
+                                                
+                                                $fila_array = 0;
+                                                foreach($CalificacionRecuperacion as $response){  //Llenar el arreglo con datos
+                                                    $actividad_1_ = trim($response->actividad_1);
+                                                    $actividad_2_ = trim($response->actividad_2);
+                                                    $actividad_3_ = trim($response->actividad_3);
+                                                    $fila_array++;
+                                                }
                                                 //
                                                 //  EVALUAR SI CODIGO ACTIVIDAD ES IGUAL A "04" QUE ES LA CALIFICACIÓN DE RECUPERACIÓN.
                                                 //
@@ -558,6 +598,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                                     if($calificacion_ == 0){
                                                         DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
                                                     }else{
+
                                                         // RECALCULAR PROMEDIO EN A1 O A2.
                                                             if($actividad_1_ > $actividad_2_){
                                                                 DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_recuperacion * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
