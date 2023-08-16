@@ -277,8 +277,10 @@ class PdfController extends Controller
                     $this->fpdf->Cell(30,$alto_cell[0],"PF->Promedio Final",'LR',1,'L');          
                     // fila de información 
                     $this->fpdf->SetX(30);       
-                    $this->fpdf->Cell(35,$alto_cell[0],mb_convert_encoding(("NR1->Nota Recuperación 1"),'LR',0,'L'),'ISO-8859-1','UTF-8');             
-                    $this->fpdf->Cell(35,$alto_cell[0],mb_convert_encoding(("NR2->Nota Recuperación 2"),'LR',0,'L'),'ISO-8859-1','UTF-8');                
+                    $mensaje_1 = mb_convert_encoding("NR1->Nota Recuperación 1",'ISO-8859-1','UTF-8');
+                    $mensaje_2 = mb_convert_encoding("NR1->Nota Recuperación 2",'ISO-8859-1','UTF-8');
+                    $this->fpdf->Cell(35,$alto_cell[0],$mensaje_1,'LR',0,'L');             
+                    $this->fpdf->Cell(35,$alto_cell[0],$mensaje_2,'LR',0,'L');                
                     $this->fpdf->Cell(20,$alto_cell[0],("A->Aprobado"),'LR',0,'L');                
                     $this->fpdf->Cell(20,$alto_cell[0],("R->Reprobado"),'LR',0,'L');                
                     $this->fpdf->Cell(20,$alto_cell[0],("NF->Nota Final"),'LR',1,'L');                
