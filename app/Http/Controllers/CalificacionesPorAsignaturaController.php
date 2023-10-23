@@ -325,28 +325,37 @@ class CalificacionesPorAsignaturaController extends Controller
             // EVALUAR EL AREA DE LA ASIGNATURA
             if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08')
             {
-                switch ($codigo_actividad) {
-                    case '01':
-                        $nombre_actividad = $nombre_actividades[0] .  $numero_periodo;
-                    break;
-                    case '02':
-                        $nombre_actividad = $nombre_actividades[1] . $numero_periodo;
-                    break;
-                    case '03':
-                        $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
-                    break;
-                    case '04':
-                        $nombre_actividad = $nombre_recuperaciones[0] .  $numero_periodo;
-                    break;
-                    case '06':
-                        $nombre_actividad = $nombre_periodos[1];
-                    break;
-                    case '07':
-                        $nombre_actividad = $nombre_periodos[2];
-                    break;
+                // EVALUAR SOMALENTE MUCI.
+                if($codigo_area == '08' && $codigo_asignatura == '234'){
+                    // cambiar el nombre de actividad por el nombre del periodo
+                    // cuando es LA CONVIVENCIA CIUDADANA O MUCI
+                        $nombre_actividad = $nombre_periodo;
+                }else{
+                    switch ($codigo_actividad) {
+                        case '01':
+                            $nombre_actividad = $nombre_actividades[0] .  $numero_periodo;
+                        break;
+                        case '02':
+                            $nombre_actividad = $nombre_actividades[1] . $numero_periodo;
+                        break;
+                        case '03':
+                            $nombre_actividad = $nombre_actividades[2] .  $numero_periodo;
+                        break;
+                        case '04':
+                            $nombre_actividad = $nombre_recuperaciones[0] .  $numero_periodo;
+                        break;
+                        case '06':
+                            $nombre_actividad = $nombre_periodos[1];
+                        break;
+                        case '07':
+                            $nombre_actividad = $nombre_periodos[2];
+                        break;
+                    }
                 }
+                
             }else{
                 // cambiar el nombre de actividad por el nombre del periodo
+                // cuando es LA CONVIVENCIA CIUDADANA O MUCI
                     $nombre_actividad = $nombre_periodo;
             }
         $EstudiantesMatricula = DB::table('alumno as a')
@@ -472,12 +481,12 @@ class CalificacionesPorAsignaturaController extends Controller
                                     //
                                     switch ($codigo_modalidad) {
                                         case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
-                                            if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
-                                                DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
+                                            if($numero_periodo == '6' || $numero_periodo == '7'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
+                                                DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_,  $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
                                             }else{
                                                 
-                                                if($codigo_asignatura == '235'){
-                                                    DB::update("UPDATE nota set $nombre_actividad = ?, $nombre_actividades[1]$numero_periodo = ?, $nombre_actividades[2]$numero_periodo = ?  where id_notas = ?", [$calificacion_, $calificacion_, $calificacion_, $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
+                                                if($codigo_asignatura == '235' || $codigo_asignatura == '234' || $codigo_area == '07'){
+                                                    DB::update("UPDATE nota set $nombre_actividades[0]$numero_periodo = ?, $nombre_actividades[1]$numero_periodo = ?, $nombre_actividades[2]$numero_periodo = ? where id_notas = ?", [$calificacion_, $calificacion_, $calificacion_, $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
                                                 }else{
                                                     DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
                                                 }

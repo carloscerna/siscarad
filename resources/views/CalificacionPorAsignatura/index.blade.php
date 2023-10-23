@@ -242,11 +242,11 @@ use Illuminate\Support\Facades;
                     // enviar resultados a la consola
                         console.log(valor_periodo.val() + " Texto: "  + valor_periodo.text());
                     //
-                    if(valor_periodo.val() == '06' || valor_periodo.val() == '07'){
-                        miselect.append('<option value=00>Seleccionar...</option>'); 
+                    if(valor_periodo.val() == '06' || valor_periodo.val() == '07' || codigo_asignatura == '234'){
+                        miselect.append('<option value=00 selected>Seleccionar...</option>'); 
                         miselect.append('<option value='+valor_periodo.val()+'>'+valor_periodo.text()+'</option>'); 
                     }else{
-                        miselect.append('<option value=00>Seleccionar...</option>'); 
+                        miselect.append('<option value=00 selected>Seleccionar...</option>'); 
                         miselect.append('<option value=01>Actividad 1 (35%)</option>'); 
                         miselect.append('<option value=02>Actividad 2 (35%)</option>'); 
                         miselect.append('<option value=03>Examen o Prueba Objetiva (30%)</option>'); 
@@ -262,7 +262,7 @@ use Illuminate\Support\Facades;
                 //
                 miselect = $("#codigo_actividad_porcentaje");
                 miselect.empty();
-                miselect.append('<option value=00>Seleccionar...</option>'); 
+                miselect.append('<option value=00 selected>Seleccionar...</option>'); 
                 miselect.append('<option value='+valor_periodo.val()+'>'+valor_periodo.text()+'</option>'); 
                     // Llamar a la funciond e busqueda
                     BuscarPorActividadPorcentaje(Periodo);

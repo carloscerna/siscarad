@@ -229,7 +229,7 @@ class PdfRPGController extends Controller
                             ['am.retirado', '=', 'f'],
                             ])
                         ->orderBy('full_name','asc')
-                        ->orderBy('orden','asc')
+                        ->orderBy('n.orden','asc')
                         ->get();
             //  ************************************************************************************************************
             //  INICIA EL PROCESO DE RECORRER LA INFORMACION PARA LA BOLETA DE CALIFICACIONES.
