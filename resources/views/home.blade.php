@@ -119,17 +119,34 @@ use Illuminate\Support\Facades;
         <div class="jumbotron p-1">
             <h3 class="display-5">Reportes</h3>
                 <div class="row">
-                    <div class="col col-md-4 col-lg-4 col-xl-4">
+                    <div class="col col-md-3 col-lg-3 col-xl-3">
                         {{-- card  REPORTES--}}
-                        <div class="card text-black bg-default mb-3 p-1" style="max-width: 13rem;">
+                        <div class="card text-black bg-default m-1 p-1">
                             <div class="card-header p-1"><h5>Calificaciones</h5></div>
                                 <div class="card-body p-1">
                                     <h5 class="card-title"></h5>
                                     <p class="card-text">
-                                        <h2><i class="fas fa-search"></i></h2>
                                     </p>
-                                            {{-- BOTON DE INFORMACION --}}
-                                            <button type="button" class="btn btn-dark btn-block" id="BuscarReportePorGrado" onclick="ReportePorGrado()">Por Grado</button>
+                                        {{-- BOTON DE INFORMACION --}}
+                                        <button type="button" class="btn btn-dark btn-block" id="BuscarReportePorGrado" onclick="ReportePorGrado()" title="Informe">
+                                            <h2><i class="fas fa-search"></i></h2>    Por Grado
+                                        </button>
+                                </div>
+                        </div> 
+                    </div>  {{-- COL --}}
+
+                    <div class="col col-md-3 col-lg-3 col-xl-3">
+                        {{-- card  REPORTES--}}
+                        <div class="card text-black bg-default m-1 p-1">
+                            <div class="card-header p-1"><h5>Licencias y Permisos</h5></div>
+                                <div class="card-body p-1">
+                                    <h5 class="card-title"></h5>
+                                    <p class="card-text">
+                                    </p>
+                                        {{-- BOTON DE INFORMACION --}}
+                                        <button type="button" class="btn btn-dark btn-block" id="BuscarReportePorGrado" onclick="ReporteLicenciasPermisos()" title="Informe">
+                                            <h2><i class="fas fa-search"></i></h2>Ver
+                                        </button>
                                 </div>
                         </div> 
                     </div>  {{-- COL --}}
@@ -441,20 +458,10 @@ use Illuminate\Support\Facades;
             codigo_institucion = $("#codigo_institucion").val();
             tablero = "Tablero";
 
-            if(codigo_annlectivo == "00"){
-                return;
+            if(codigo_annlectivo == "00" || codigo_grado_seccion_turno == "00"){
+                toastr.warning("Debe Seleccionar Año Lectivo y Grado-Sección-Turno", "Sistema");
+                    return;
             }
-            //var codigo_asignatura_area = $("#codigo_asignatura").val();
-            /*
-            var conteo_codigo_asignatura = codigo_asignatura_area.length;
-            if(conteo_codigo_asignatura == 4){
-                codigo_asignatura = codigo_asignatura_area.substring(0,2);
-                codigo_area = codigo_asignatura_area.substring(2,4);
-            }else{
-                codigo_asignatura = codigo_asignatura_area.substring(0,3);
-                codigo_area = codigo_asignatura_area.substring(3,5);
-            }
-*/
             var datos_estudiantes = tablero + "-" + codigo_grado_seccion_turno + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;
             // ARMAR URL
                 var url = '{{ url("/pdfRPG", "id") }}';
