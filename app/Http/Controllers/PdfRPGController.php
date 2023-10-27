@@ -26,16 +26,28 @@ class PdfRPGController extends Controller
             $this->fpdf->SetX(30);
         // NIE - ID - CODIGO MATRICULOA - (CODIGO GRADO - SECCION - TURNO -MODALIDAD) - ANNLECTIVO
             $EstudianteMatricula = explode("-",$id);
-            $codigo_gradoseccionturnomodalidad = $EstudianteMatricula[0];
-            $codigo_modalidad = substr($codigo_gradoseccionturnomodalidad,6,2);
-            $codigo_turno = substr($codigo_gradoseccionturnomodalidad,4,2);
-            $codigo_seccion = substr($codigo_gradoseccionturnomodalidad,2,2);
-            $codigo_grado = substr($codigo_gradoseccionturnomodalidad,0,2);
-            $codigo_annlectivo = $EstudianteMatricula[1];
-            $codigo_institucion = $EstudianteMatricula[2];
-            $codigo_asignatura = $EstudianteMatricula[3];
-            $codigo_area_asignatura = $EstudianteMatricula[4];
-            $codigo_personal = $EstudianteMatricula[5];
+        // Examninar la palabra...
+            if($EstudianteMatricula[0] == "Tablero"){
+                $codigo_gradoseccionturnomodalidad = $EstudianteMatricula[1];
+                $codigo_modalidad = substr($codigo_gradoseccionturnomodalidad,6,2);
+                $codigo_turno = substr($codigo_gradoseccionturnomodalidad,4,2);
+                $codigo_seccion = substr($codigo_gradoseccionturnomodalidad,2,2);
+                $codigo_grado = substr($codigo_gradoseccionturnomodalidad,0,2);
+                $codigo_annlectivo = $EstudianteMatricula[2];
+                $codigo_personal = $EstudianteMatricula[3];
+                $codigo_institucion = $EstudianteMatricula[4];
+            }else{
+                $codigo_gradoseccionturnomodalidad = $EstudianteMatricula[0];
+                $codigo_modalidad = substr($codigo_gradoseccionturnomodalidad,6,2);
+                $codigo_turno = substr($codigo_gradoseccionturnomodalidad,4,2);
+                $codigo_seccion = substr($codigo_gradoseccionturnomodalidad,2,2);
+                $codigo_grado = substr($codigo_gradoseccionturnomodalidad,0,2);
+                $codigo_annlectivo = $EstudianteMatricula[1];
+                $codigo_institucion = $EstudianteMatricula[2];
+                $codigo_asignatura = $EstudianteMatricula[3];
+                $codigo_area_asignatura = $EstudianteMatricula[4];
+                $codigo_personal = $EstudianteMatricula[5];
+            }
             ////////////////////////////////////////////////////////////////////
             //////// crear matriz para la tabla CATALOGO_AREA_ASIGNATURA.
             //////////////////////////////////////////////////////////////////

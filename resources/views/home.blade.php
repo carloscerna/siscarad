@@ -47,7 +47,7 @@ use Illuminate\Support\Facades;
     </div>
 
     <div class="section-body">
-        <div class="jumbotron p-3">
+        <div class="jumbotron p-1">
             <h3 class="display-5">Indicadores Educativos</h3>
                 <div class="row">
                     <div class="col col-md-4 col-lg-4 col-xl-4">
@@ -115,6 +115,25 @@ use Illuminate\Support\Facades;
                             </div>
                     </div>                             {{-- card  TOTAL DE ESTUDIANTES RETIRADOS--}}
                 </div>  {{-- row --}}
+        </div> {{-- JUMBOTRON --}}
+        <div class="jumbotron p-1">
+            <h3 class="display-5">Reportes</h3>
+                <div class="row">
+                    <div class="col col-md-4 col-lg-4 col-xl-4">
+                        {{-- card  REPORTES--}}
+                        <div class="card text-black bg-default mb-3 p-1" style="max-width: 13rem;">
+                            <div class="card-header p-1"><h5>Calificaciones</h5></div>
+                                <div class="card-body p-1">
+                                    <h5 class="card-title"></h5>
+                                    <p class="card-text">
+                                        <h2><i class="fas fa-search"></i></h2>
+                                    </p>
+                                            {{-- BOTON DE INFORMACION --}}
+                                            <button type="button" class="btn btn-dark btn-block" id="BuscarReportePorGrado" onclick="ReportePorGrado()">Por Grado</button>
+                                </div>
+                        </div> 
+                    </div>  {{-- COL --}}
+                </div> {{-- DIV ROW --}}
         </div> {{-- JUMBOTRON --}}
     </div> 
 
@@ -278,6 +297,7 @@ use Illuminate\Support\Facades;
 
             codigo_personal = $('#codigo_personal').val();
             codigo_annlectivo = $('#codigo_annlectivo').val();
+            codigo_grado_seccion_turno = $('#codigo_grado_seccion_turno').val();
             // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
             $.ajax({
                 type: "post",
@@ -298,7 +318,10 @@ use Illuminate\Support\Facades;
                                     " Retirados Masculino: " + value.total_retirado_masculino + 
                                     " Retirados Masculino: " + value.total_retirado_femenino + 
                                     " Sobreedad: " + value.sobreedad +
-                                    " Repitentes: " + value.repitentes);
+                                    " Repitentes: " + value.repitentes + 
+                                    " Codigo Personal: " + codigo_personal + 
+                                    " Año Lectivo: " + codigo_annlectivo + 
+                                    " Grado-Sección-Turno-Ciclo: " + codigo_grado_seccion_turno);
                                      // TOTAL DE ALUMNOS MASCULINO Y FEMENINO
                                             var masculino = Number(value.total_masculino);
                                             var femenino = Number(value.total_femenino);
@@ -409,5 +432,41 @@ use Illuminate\Support\Facades;
             });
             } 
         }
+
+        // Reporte de Calificaciones por Grado.
+        function ReportePorGrado() {
+            codigo_personal = $('#codigo_personal').val();
+            codigo_annlectivo = $('#codigo_annlectivo').val();
+            codigo_grado_seccion_turno = $('#codigo_grado_seccion_turno').val();
+            codigo_institucion = $("#codigo_institucion").val();
+            tablero = "Tablero";
+
+            if(codigo_annlectivo == "00"){
+                return;
+            }
+            //var codigo_asignatura_area = $("#codigo_asignatura").val();
+            /*
+            var conteo_codigo_asignatura = codigo_asignatura_area.length;
+            if(conteo_codigo_asignatura == 4){
+                codigo_asignatura = codigo_asignatura_area.substring(0,2);
+                codigo_area = codigo_asignatura_area.substring(2,4);
+            }else{
+                codigo_asignatura = codigo_asignatura_area.substring(0,3);
+                codigo_area = codigo_asignatura_area.substring(3,5);
+            }
+*/
+            var datos_estudiantes = tablero + "-" + codigo_grado_seccion_turno + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;
+            // ARMAR URL
+                var url = '{{ url("/pdfRPG", "id") }}';
+                url = url.replace('id', datos_estudiantes);
+            // abrir ventana emergente con el pdf de las califiaciones por asignatura.
+                AbrirVentana(url);
+        }
+        // Abrir ventana por el URL
+        function AbrirVentana(url)
+            {
+                window.open(url, '_blank');
+                return false;
+            }
     </script>
 @endsection
