@@ -469,6 +469,25 @@ use Illuminate\Support\Facades;
             // abrir ventana emergente con el pdf de las califiaciones por asignatura.
                 AbrirVentana(url);
         }
+        // Reporte Licencias y Permisos.
+        function ReporteLicenciasPermisos() {
+            codigo_personal = $('#codigo_personal').val();
+            codigo_annlectivo = $('#codigo_annlectivo').val();
+            nombre_annlectivo = $('#codigo_annlectivo option:selected').html();
+            codigo_institucion = $("#codigo_institucion").val();
+            tablero = "Tablero";
+
+            if(codigo_annlectivo == "00" || codigo_grado_seccion_turno == "00"){
+                toastr.warning("Debe Seleccionar Año Lectivo y Grado-Sección-Turno", "Sistema");
+                    return;
+            }
+            var datos_personal = tablero + "-" + nombre_annlectivo.trim() + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;
+            // ARMAR URL
+                var url = '{{ url("/pdfRLyP", "id") }}';
+                url = url.replace('id', datos_personal);
+            // abrir ventana emergente con el pdf de las califiaciones por asignatura.
+                AbrirVentana(url);
+        }
         // Abrir ventana por el URL
         function AbrirVentana(url)
             {

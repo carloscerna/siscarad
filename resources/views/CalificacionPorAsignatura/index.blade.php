@@ -449,7 +449,6 @@ use Illuminate\Support\Facades;
             // abrir ventana emergente con el pdf de las califiaciones por asignatura.
                 AbrirVentana(url);
         }
-
         // Reporte de Calificaciones por asignatura.
         function ReportePorGrado() {
             var codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
@@ -474,6 +473,7 @@ use Illuminate\Support\Facades;
                 AbrirVentana(url);
         }
         // Reporte de calificaciones por asingatura
+
         // funcionar para guardar las calificaciones.
         function GuardarRegistros() {
             csrf_token = '{{csrf_token()}}';

@@ -11,7 +11,8 @@ use App\Http\Controllers\MatriculaController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PdfRPAController;
 use App\Http\Controllers\PdfRPGController;
-use App\Http\Controllers\PdfRPGEstuidanteController;
+use App\Http\Controllers\PdfRLyPController;
+use App\Http\Controllers\PdfRPGEstudianteController;
 
 // emailes
 use App\Mail\BoletaEstudiantes;
@@ -88,12 +89,15 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::get('pdfRPA/{id}', [PdfRPAController::class, 'index']);
     // REPORTES boleta de califiación por asignatura
     Route::get('pdfRPG/{id}', [PdfRPGController::class, 'index']);
+    // REPORTES para Licencias y Permisos
+    Route::get('pdfRLyP/{id}', [PdfRLyPController::class,'index']);
     // REPORTES INFORMACIÓN DEL ESTUDIANTE Y ENCARGADO.
-    Route::get('pdfRPGEstudiante/{id}', [PdfRPGEstudianteController::class, 'index']);
+    Route::get('pdfRPGEstudiante/{id}', ['\App\Http\Controllers\PdfRPGEstudianteController::class', 'index']);
     // helpers
     Route::resource('funcion','PdfController');
     Route::resource('funcion','PdfRPAController');
     Route::resource('funcion','PdfRPGController');
+    Route::resource('funcion','PdfRLyPController');
     Route::resource('funcion','matricula/index');
     // Emails
     //  Route::get('/boleta', function(){

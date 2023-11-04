@@ -104,11 +104,11 @@ class PdfRPGController extends Controller
                 // print_r($AsignacionAsignatura);
                 // echo "</pre>";
                 foreach($AsignacionAsignatura as $response_i){  //Llenar el arreglo con datos
-                    $nombre_asignatura_a = utf8_decode(trim($response_i->nombre_asignatura));
-                    $codigo_asignatura_a = utf8_decode(trim($response_i->codigo_asignatura));
-                    $concepto_calificacion_a = utf8_decode(trim($response_i->concepto_calificacion));
-                    $codigo_area_a = utf8_decode(trim($response_i->codigo_area));
-                    $nombre_area_a = utf8_decode(trim($response_i->nombre_area));
+                    $nombre_asignatura_a = mb_convert_encoding(trim($response_i->nombre_asignatura),"ISO-8859-1","UTF-8");
+                    $codigo_asignatura_a = mb_convert_encoding(trim($response_i->codigo_asignatura),"ISO-8859-1","UTF-8");
+                    $concepto_calificacion_a = mb_convert_encoding(trim($response_i->concepto_calificacion),"ISO-8859-1","UTF-8");
+                    $codigo_area_a = mb_convert_encoding(trim($response_i->codigo_area),"ISO-8859-1","UTF-8");
+                    $nombre_area_a = mb_convert_encoding(trim($response_i->nombre_area),"ISO-8859-1","UTF-8");
 
                     $count_asignaturas[] = $codigo_area_a;
                     $datos_asignatura["codigo"][$fila_array_asignatura] = $codigo_asignatura_a;
@@ -165,9 +165,9 @@ class PdfRPGController extends Controller
                 ->get();
 
                 foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
-                    $codigo_personal_ = utf8_decode(trim($response_eg->id_personal));
-                    $nombre_personal_ = utf8_decode(trim($response_eg->full_name));
-                    $firma_docente = utf8_decode(trim($response_eg->firma));
+                    $codigo_personal_ = mb_convert_encoding(trim($response_eg->id_personal),"ISO-8859-1","UTF-8");
+                    $nombre_personal_ = mb_convert_encoding(trim($response_eg->full_name),"ISO-8859-1","UTF-8");
+                    $firma_docente = mb_convert_encoding(trim($response_eg->firma),"ISO-8859-1","UTF-8");
                 } // FIN DEL FOREACH para los datos de la insitucion.
 
                         // Cabecera - DOCENE ENCARGADO DE LA SECCION
@@ -182,8 +182,8 @@ class PdfRPGController extends Controller
                         ->get();
             
                         foreach($EncargadoAsignatura as $response_eg){  //Llenar el arreglo con datos
-                            $codigo_personal_ = utf8_decode(trim($response_eg->id_personal));
-                            $nombre_personal_ea = utf8_decode(trim($response_eg->full_name));
+                            $codigo_personal_ = mb_convert_encoding(trim($response_eg->id_personal),"ISO-8859-1","UTF-8");
+                            $nombre_personal_ea = mb_convert_encoding(trim($response_eg->full_name),"ISO-8859-1","UTF-8");
                         } // FIN DEL FOREACH para los datos de la insitucion.
 
             // Cabecera - INFORMACION GENERAL DE LA INSTITUCION
@@ -201,12 +201,12 @@ class PdfRPGController extends Controller
                 ->get();
                 // extgraer datos para el encabezado INFORMACION DE LA INSTITUCION
                 foreach($EstudianteInformacionInstitucion as $response_i){  //Llenar el arreglo con datos
-                    $nombre_institucion = utf8_decode(trim($response_i->nombre_institucion));
-                    $nombre_director = utf8_decode(trim($response_i->full_name));
-                    $codigo_institucion = utf8_decode(trim($response_i->codigo_institucion));
-                    $logo_uno = "/img/".utf8_decode(trim($response_i->logo_uno));
-                    $firma_director = "/img/".utf8_decode(trim($response_i->logo_dos));
-                    $sello_direccion = "/img/".utf8_decode(trim($response_i->logo_tres));
+                    $nombre_institucion = mb_convert_encoding(trim($response_i->nombre_institucion),"ISO-8859-1","UTF-8");
+                    $nombre_director = mb_convert_encoding(trim($response_i->full_name),"ISO-8859-1","UTF-8");
+                    $codigo_institucion = mb_convert_encoding(trim($response_i->codigo_institucion),"ISO-8859-1","UTF-8");
+                    $logo_uno = "/img/".mb_convert_encoding(trim($response_i->logo_uno),"ISO-8859-1","UTF-8");
+                    $firma_director = "/img/".mb_convert_encoding(trim($response_i->logo_dos),"ISO-8859-1","UTF-8");
+                    $sello_direccion = "/img/".mb_convert_encoding(trim($response_i->logo_tres),"ISO-8859-1","UTF-8");
                     // LOGO DE LA INSTITUCIÓN
                         $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
                         $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
@@ -255,18 +255,18 @@ class PdfRPGController extends Controller
             $this->fpdf->SetX(30); 
             foreach($EstudianteBoleta as $response){  //Llenar el arreglo con datos
                 // VARIABLES CON LA NFORMACIONES DEL ESTUDIANTE.
-                    $nombre_completo = utf8_decode(trim($response->full_nombres_apellidos));
-                    $nombre_estudiante = utf8_decode(trim($response->full_name));
-                    $codigo_nie = utf8_decode(trim($response->codigo_nie));
-                    $nombre_modalidad = utf8_decode(trim($response->nombre_modalidad));  
-                    $nombre_grado = utf8_decode(trim($response->nombre_grado));  
-                    $nombre_seccion = utf8_decode(trim($response->nombre_seccion));  
-                    $nombre_turno = utf8_decode(trim($response->nombre_turno));                
-                    $codigo_asignatura = utf8_decode(trim($response->codigo_asignatura));
-                    $codigo_area = utf8_decode(trim($response->codigo_area));
-                    $nota_final = utf8_decode(trim($response->nota_final));
-                    $nota_recuperacion_1 = utf8_decode(trim($response->recuperacion));
-                    $nota_recuperacion_2 = utf8_decode(trim($response->nota_recuperacion_2));
+                    $nombre_completo = mb_convert_encoding(trim($response->full_nombres_apellidos),"ISO-8859-1","UTF-8");
+                    $nombre_estudiante = mb_convert_encoding(trim($response->full_name),"ISO-8859-1","UTF-8");
+                    $codigo_nie = mb_convert_encoding(trim($response->codigo_nie),"ISO-8859-1","UTF-8");
+                    $nombre_modalidad = mb_convert_encoding(trim($response->nombre_modalidad),"ISO-8859-1","UTF-8");  
+                    $nombre_grado = mb_convert_encoding(trim($response->nombre_grado),"ISO-8859-1","UTF-8");  
+                    $nombre_seccion = mb_convert_encoding(trim($response->nombre_seccion),"ISO-8859-1","UTF-8");  
+                    $nombre_turno = mb_convert_encoding(trim($response->nombre_turno),"ISO-8859-1","UTF-8");                
+                    $codigo_asignatura = mb_convert_encoding(trim($response->codigo_asignatura),"ISO-8859-1","UTF-8");
+                    $codigo_area = mb_convert_encoding(trim($response->codigo_area),"ISO-8859-1","UTF-8");
+                    $nota_final = mb_convert_encoding(trim($response->nota_final),"ISO-8859-1","UTF-8");
+                    $nota_recuperacion_1 = mb_convert_encoding(trim($response->recuperacion),"ISO-8859-1","UTF-8");
+                    $nota_recuperacion_2 = mb_convert_encoding(trim($response->nota_recuperacion_2),"ISO-8859-1","UTF-8");
                     $nombre_foto = (trim($response->foto));
                     $codigo_genero = (trim($response->codigo_genero));
                 // NOTA ACTIVIDAD 1, 2 Y PO, NOTA PERIODO 1
@@ -288,13 +288,13 @@ class PdfRPGController extends Controller
                     if($fila == 1){
                         // DATOS DE LA PRIMERA LINEA
                             $this->fpdf->SetX(30); 
-                            $this->fpdf->Cell(40,$alto_cell[0],utf8_decode("Nivel"),1,0,'L');       
+                            $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Nivel","ISO-8859-1","UTF-8"),1,0,'L');       
                             $this->fpdf->Cell(135,$alto_cell[0],$nombre_modalidad,1,1,'L');       
                             $this->fpdf->SetX(30); 
                             $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L');       
                             $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado,1,0,'L');       
 
-                            $this->fpdf->Cell(15,$alto_cell[0],utf8_decode("Sección"),1,0,'L');       
+                            $this->fpdf->Cell(15,$alto_cell[0],mb_convert_encoding("Sección","ISO-8859-1","UTF-8"),1,0,'L');       
                             $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion,1,0,'C');       
                             
                             $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L');       
@@ -334,7 +334,7 @@ class PdfRPGController extends Controller
                                 $this->fpdf->ln();
                         // TITULO 3
                             // INFORMACION DE LAS ASIGNATURAS. NOMBRES y definir el ancho para ASIGNATURAS Y AREAS.
-                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[1],utf8_decode('N.º'),1,0,'C',false);            
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[1],mb_convert_encoding('N.º',"ISO-8859-1","UTF-8"),1,0,'C',false);            
                                 $this->fpdf->Cell($ancho_cell[4],$alto_cell[1],'NIE',1,0,'C',false);            
                                 $this->fpdf->Cell($ancho_cell[0],$alto_cell[1],"NOMINA DE ESTUDIANTES",1,0,'C');       
                             // nombre de asignaturas
