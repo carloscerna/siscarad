@@ -69,7 +69,26 @@ class PdfRLyPController extends Controller
                     $this->fpdf->Cell(205, $alto_cell[0],"CONTROL DE LICENCIAS Y PERMISOS DEL PERSONAL DOCENTE",0,1,'C');       
                 $this->fpdf->SetFont('Arial','',10);
                 $this->fpdf->Cell(205, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,0,1,'C');       
+                $this->fpdf->Cell(205, $alto_cell[0],mb_convert_encoding("Tipo de Contratación: " .  " - Turno: ","ISO-8859-1","UTF-8"),0,1,'C');       
          } // FIN DEL FOREACH para los datos de la insitucion.
+         
+            // Cabecera - DOCENTE TIPO DE CONTRATACIÓN.
+            $EncargadoGrado = DB::table('personal_salario as ps')
+            ->join('personal as p','p.id_personal','=','ps.codigo_docente')
+            ->select('p.id_personal', 
+                    DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
+                    )
+            ->where([
+                ['p.id_personal', '=', $codigo_personal]
+                ])
+            ->orderBy('p.id_personal','asc')
+            ->get();
+
+            foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
+                $codigo_personal_ = mb_convert_encoding(trim($response_eg->id_personal),"ISO-8859-1","UTF-8");
+                $nombre_personal_ = mb_convert_encoding(trim($response_eg->full_name),"ISO-8859-1","UTF-8");
+                $firma_docente = mb_convert_encoding(trim($response_eg->firma),"ISO-8859-1","UTF-8");
+            } // FIN DEL FOREACH para los datos de la insitucion.
     // Cierre y exit.
         $this->fpdf->Output();
             exit;
