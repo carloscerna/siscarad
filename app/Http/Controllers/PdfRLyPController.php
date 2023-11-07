@@ -63,9 +63,12 @@ class PdfRLyPController extends Controller
              $firma_director = "/img/".mb_convert_encoding(trim($response_i->logo_dos),"ISO-8859-1","UTF-8");
              $sello_direccion = "/img/".mb_convert_encoding(trim($response_i->logo_tres),"ISO-8859-1","UTF-8");
              // LOGO DE LA INSTITUCIÓN
-                 $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
-                 $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
-                 $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,1,1,'L');       
+                $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
+                $this->fpdf->SetX(5);
+                $this->fpdf->SetFont('Arial','I',14);
+                    $this->fpdf->Cell(205, $alto_cell[0],"CONTROL DE LICENCIAS Y PERMISOS DEL PERSONAL DOCENTE",0,1,'C');       
+                $this->fpdf->SetFont('Arial','',10);
+                $this->fpdf->Cell(205, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,0,1,'C');       
          } // FIN DEL FOREACH para los datos de la insitucion.
     // Cierre y exit.
         $this->fpdf->Output();
