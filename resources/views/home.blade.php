@@ -478,7 +478,7 @@ use Illuminate\Support\Facades;
             tablero = "Tablero";
 
             if(codigo_annlectivo == "00" || codigo_grado_seccion_turno == "00"){
-                toastr.warning("Debe Seleccionar Año Lectivo y Grado-Sección-Turno", "Sistema");
+                toastr.warning("Debe Seleccionar Año Lectivo", "Sistema");
                     return;
             }
             var datos_personal = tablero + "-" + nombre_annlectivo.trim() + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;

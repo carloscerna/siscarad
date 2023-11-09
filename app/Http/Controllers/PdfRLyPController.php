@@ -38,7 +38,7 @@ class PdfRLyPController extends Controller
 
         }
         //  CREACION DE MATRIZ CON ANCHO Y ALTO DE CADA CELDA.
-            $alto_cell = array('5','40'); $ancho_cell = array('60','6','24','30','12');        
+            $alto_cell = array('5','40','12'); $ancho_cell = array('60','6','24','30','12');        
         // extraer los datos de tipo contratacion, turno.
 
          // Cabecera - INFORMACION GENERAL DE LA INSTITUCION
@@ -69,13 +69,30 @@ class PdfRLyPController extends Controller
                     $this->fpdf->Cell(205, $alto_cell[0],"CONTROL DE LICENCIAS Y PERMISOS DEL PERSONAL DOCENTE",0,1,'C');       
                 $this->fpdf->SetFont('Arial','',10);
                 $this->fpdf->Cell(205, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,0,1,'C');       
-                $this->fpdf->Cell(205, $alto_cell[0],mb_convert_encoding("Tipo de Contratación: " .  " - Turno: ","ISO-8859-1","UTF-8"),0,1,'C');       
+                //$this->fpdf->Cell(205, $alto_cell[0],mb_convert_encoding("Tipo de Contratación: " .  " - Turno: ","ISO-8859-1","UTF-8"),0,1,'C');       
          } // FIN DEL FOREACH para los datos de la insitucion.
-         
+         //
+        // Cabecera - INFORMACION SOBRE LOS CODIGOS DE LIENCIAS Y PERMISOS
+        	//	variables array.							
+		    $codigo_licencia_o_permiso = array(); $saldo_licencia_o_permiso = array(); $imprimir = array(); $num=0;
+            //
+            $LicenciasPermisos = DB::table('tipo_licencia_o_permiso')
+            ->select('codigo','nombre','saldo','minutos')
+            ->orderBy('codigo','asc')
+            ->get();
+            foreach($LicenciasPermisos as $response_lyp){  //Llenar el arreglo con datos
+                $codigo_licencia_o_permiso[] = mb_convert_encoding(trim($response_lyp->codigo),"ISO-8859-1","UTF-8");
+                $saldo_licencia_o_permiso[] = $response_lyp->saldo;
+                $minutos_licencia_o_permiso[] = $response_lyp->minutos;
+            } // FIN DEL FOREACH para los datos de la insitucion.
+            //
+            //
             // Cabecera - DOCENTE TIPO DE CONTRATACIÓN.
-            $EncargadoGrado = DB::table('personal_salario as ps')
-            ->join('personal as p','p.id_personal','=','ps.codigo_docente')
-            ->select('p.id_personal', 
+            $PersonalContratacion = DB::table('personal_salario as ps')
+            ->join('personal as p','p.id_personal','=','ps.codigo_personal')
+            ->join('turno as tur','tur.codigo','=','ps.codigo_turno')
+            ->join('tipo_contratacion as tc','tc.codigo','=','ps.codigo_tipo_contratacion')
+            ->select('p.id_personal', 'p.firma', 'tur.nombre as nombre_turno', 'tc.nombre as nombre_contratacion','ps.codigo_tipo_contratacion','codigo_turno',
                     DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
                     )
             ->where([
@@ -83,12 +100,67 @@ class PdfRLyPController extends Controller
                 ])
             ->orderBy('p.id_personal','asc')
             ->get();
-
-            foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
+            // recorriendo el array
+            $nombre_contratacion = array(); $nombre_turno = array();
+            foreach($PersonalContratacion as $response_eg){  //Llenar el arreglo con datos
                 $codigo_personal_ = mb_convert_encoding(trim($response_eg->id_personal),"ISO-8859-1","UTF-8");
                 $nombre_personal_ = mb_convert_encoding(trim($response_eg->full_name),"ISO-8859-1","UTF-8");
                 $firma_docente = mb_convert_encoding(trim($response_eg->firma),"ISO-8859-1","UTF-8");
+                $codigo_turno[] = mb_convert_encoding(trim($response_eg->codigo_turno),"ISO-8859-1","UTF-8");
+                $nombre_turno[] = mb_convert_encoding(trim($response_eg->nombre_turno),"ISO-8859-1","UTF-8");
+                $nombre_contratacion[] = mb_convert_encoding(trim($response_eg->nombre_contratacion),"ISO-8859-1","UTF-8");
+                $codigo_contratacion[] = mb_convert_encoding(trim($response_eg->codigo_tipo_contratacion),"ISO-8859-1","UTF-8");
+
+
             } // FIN DEL FOREACH para los datos de la insitucion.
+            // recorrer la matriz para colocar los datos de cada licencia o permiso.
+            for ($PersonalArray=0; $PersonalArray < count($codigo_contratacion); $PersonalArray++) { 
+                	// Calcular el Disponible segùn Tipo de Contratación.
+                $calculo_horas = 5;
+                if($codigo_contratacion[$PersonalArray] == "05"){ // PAGADOS POR EL CDE.
+                    $calculo_horas = 8;
+                }
+                $this->fpdf->Cell(205, $alto_cell[0],mb_convert_encoding("Tipo de Contratación: $nombre_contratacion[$PersonalArray] - Turno: $nombre_turno[$PersonalArray]","ISO-8859-1","UTF-8"),0,1,'C');       
+                $this->fpdf->Cell(205, $alto_cell[2],"$nombre_personal_ - $nombre_annlectivo",1,1,'C');   
+                // BUSCAR SEGUN EL CONDIGO CONTRATACION EN LAS DIFERENTESLICENCIAS.
+                for ($LineaLicencia=0; $LineaLicencia < count($codigo_licencia_o_permiso) ; $LineaLicencia++) { 
+                    // Cabecera - DOCENTE TIPO DE CONTRATACIÓN (personal_licencias permisos).
+                    $PersonalLicenciasPermisos = DB::table('personal_licencias_permisos as lp')
+                    ->join('personal as p','p.id_personal','=','lp.codigo_personal')
+                    ->join('turno as tur','tur.codigo','=','lp.codigo_turno')
+                    ->join('tipo_contratacion as tc','tc.codigo','=','lp.codigo_contratacion')
+                    ->join('tipo_licencia_o_permiso as tlp','tlp.codigo','=','lp.codigo_licencia_permiso')
+                    ->select('p.id_personal', 'p.firma', 'tur.nombre as nombre_turno', 'tc.nombre as nombre_contratacion','ps.codigo_tipo_contratacion','codigo_turno',
+                            DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
+                            )
+                    ->where([
+                        ['lp.codigo_personal', '=', $codigo_personal],
+                        ['lp.codigo_contratacion', '=', $codigo_contratacion[$PersonalArray]],
+                        ['lp.codigo_turno', '=', $codigo_turno[$PersonalArray]]
+                        ])
+                    ->orderBy('p.id_personal','asc')
+                    ->get();
+                }   // fin del for de la busqueda de registros por licencias y permisos.
+
+                // Variables.
+						/*$num++;
+						$dia = $row_print['dia'];
+						$hora = $row_print['hora'];
+						$minutos = $row_print['minutos'];
+						$nombre_licencia_permiso = mb_convert_encoding(trim($row_print['nombre_licencia_permiso']),'ISO-8859-1','UTF-8'); 
+						$nombre_turno = mb_convert_encoding(trim($row_print['nombre_turno']),'ISO-8859-1','UTF-8');
+						
+						$fecha = cambiaf_a_normal($row_print['fecha']);
+						$pdf->Cell($w[0],5.8,$num,1,0,'L',$fill);  // NUM
+						$pdf->Cell($w[1],5.8,$nombre_licencia_permiso,1,0,'L',$fill);  // tipo de licencia o permiso.
+						$pdf->Cell($w[2],5.8,$nombre_turno,1,0,'C',$fill);  // nombre turno
+						$pdf->Cell($w[3],5.8,$fecha,1,0,'L',$fill);  // fecha
+						$pdf->Cell($w[4],5.8,$row_print['dia'],1,0,'C',$fill);  // dia
+						$pdf->Cell($w[5],5.8,$row_print['hora'],1,0,'C',$fill);  // hora
+						$pdf->Cell($w[6],5.8,$row_print['minutos'],1,0,'C',$fill);  // minutos
+						$pdf->Ln();*/
+            }
+
     // Cierre y exit.
         $this->fpdf->Output();
             exit;
