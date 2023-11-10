@@ -1,5 +1,13 @@
 <?php
-
+// funcion para los promedios finales de todos los niveles.
+/**
+ * Summary of resultado_final
+ * @param mixed $codigo_modalidad
+ * @param mixed $nota_recuperacion_1
+ * @param mixed $nota_recuperacion_2
+ * @param mixed $nota_promedio_final
+ * @return array
+ */
 function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_promedio_final){
     $resultado_por_asignatura = array('A','0');
     /// VALIDAR PRIMERO A QUE MODALIDAD PERTENECE
@@ -93,7 +101,13 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
 				return $resultado_por_asignatura;
     
 }
-
+// funcion que cambiar el resultado segun sea el nivel y la calificacion.
+/**
+ * Summary of resultado_concepto
+ * @param mixed $codigo_modalidad
+ * @param mixed $nota_promedio
+ * @return string
+ */
 function resultado_concepto($codigo_modalidad, $nota_promedio){
     $resultado_concepto = "R";
     switch ($codigo_modalidad) {
@@ -131,8 +145,13 @@ function resultado_concepto($codigo_modalidad, $nota_promedio){
     return $resultado_concepto;
     
 }
-
 // ESCALA DE SOBREEDAD.
+/**
+ * Summary of calcular_sobreedad_escala
+ * @param mixed $edad
+ * @param mixed $grado
+ * @return int
+ */
 function calcular_sobreedad_escala($edad,$grado)
 	{
 		global $sobreedad_escala;
@@ -284,3 +303,14 @@ function calcular_sobreedad_escala($edad,$grado)
 		
 		return $sobreedad_escala;
 	}
+////////////////////////////////////////////////////
+//Convierte fecha de mysql a normal
+////////////////////////////////////////////////////
+function cambiaf_a_normal($fecha)
+{
+	if(empty($fecha)){$fecha = '2000-01-01';}
+    $cad = preg_split('/ /',$fecha);
+    $sub_cad = preg_split('/-/',$cad[0]);
+    $fecha_formateada = $sub_cad[2].'/'.$sub_cad[1].'/'.$sub_cad[0];
+    return $fecha_formateada;
+}
