@@ -46,7 +46,7 @@ class PdfController extends Controller
             //////////////////////////////////////////////////////////////////
             $catalogo_area_asignatura_codigo = array();	// matriz para los diferentes código y descripción.
             $catalogo_area_asignatura_area = array();
-            $catalogo_area_basica = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
+            $catalogo_area_basica = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNA-TURAS.
             $catalogo_area_formativa = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
             $catalogo_area_tecnica = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
             $catalogo_area_edps = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
@@ -89,10 +89,10 @@ class PdfController extends Controller
                 "codigo_area" => [""]
             ];                   
             foreach($AsignacionAsignatura as $response_i){  //Llenar el arreglo con datos
-                $nombre_asignatura_a = utf8_decode(trim($response_i->nombre_asignatura));
-                $codigo_asignatura_a = utf8_decode(trim($response_i->codigo_asignatura));
-                $concepto_calificacion_a = utf8_decode(trim($response_i->concepto_calificacion));
-                $codigo_area_a = utf8_decode(trim($response_i->codigo_area));
+                $nombre_asignatura_a = mb_convert_encoding(trim($response_i->nombre_asignatura),"ISO-8859-1","UTF-8");
+                $codigo_asignatura_a = mb_convert_encoding(trim($response_i->codigo_asignatura),"ISO-8859-1","UTF-8");
+                $concepto_calificacion_a = mb_convert_encoding(trim($response_i->concepto_calificacion),"ISO-8859-1","UTF-8");
+                $codigo_area_a = mb_convert_encoding(trim($response_i->codigo_area),"ISO-8859-1","UTF-8");
 
                     $datos_asignatura["codigo"][$fila_array_asignatura] = $codigo_asignatura_a;
                     $datos_asignatura["nombre"][$fila_array_asignatura] = $nombre_asignatura_a;
@@ -120,9 +120,9 @@ class PdfController extends Controller
             ->get();
 
             foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
-                $codigo_personal = utf8_decode(trim($response_eg->id_personal));
-                $nombre_personal = utf8_decode(trim($response_eg->full_name));
-                $firma_docente = utf8_decode(trim($response_eg->firma));
+                $codigo_personal = mb_convert_encoding(trim($response_eg->id_personal),"ISO-8859-1","UTF-8");
+                $nombre_personal = mb_convert_encoding(trim($response_eg->full_name),"ISO-8859-1","UTF-8");
+                $firma_docente = mb_convert_encoding(trim($response_eg->firma),"ISO-8859-1","UTF-8");
             } // FIN DEL FOREACH para los datos de la insitucion.
         /*
         print_r($datos_asignatura);
@@ -235,16 +235,16 @@ class PdfController extends Controller
                     $this->fpdf->Cell(40,$alto_cell[0],"Estudiante",1,0,'L');       
                     $this->fpdf->Cell(135,$alto_cell[0],$codigo_nie . " - " . $nombre_completo,1,1,'L');       
                     $this->fpdf->SetX(30); 
-                    $this->fpdf->Cell(40,$alto_cell[0],utf8_decode("Correo Electrónico"),1,0,'L');       
+                    $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Correo Electrónico","ISO-8859-1","UTF-8"),1,0,'L');       
                     $this->fpdf->Cell(135,$alto_cell[0],$correo_estudiante,1,1,'L');       
                     $this->fpdf->SetX(30); 
-                    $this->fpdf->Cell(40,$alto_cell[0],utf8_decode("Nivel"),1,0,'L');       
+                    $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Nivel","ISO-8859-1","UTF-8"),1,0,'L');       
                     $this->fpdf->Cell(135,$alto_cell[0],$nombre_modalidad,1,1,'L');       
                     $this->fpdf->SetX(30); 
                     $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L');       
                     $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado,1,0,'L');       
 
-                    $this->fpdf->Cell(15,$alto_cell[0],utf8_decode("Sección"),1,0,'L');       
+                    $this->fpdf->Cell(15,$alto_cell[0],mb_convert_encoding("Sección","ISO-8859-1","UTF-8"),1,0,'L');       
                     $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion,1,0,'C');       
                     
                     $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L');       
@@ -340,29 +340,29 @@ class PdfController extends Controller
                     // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
                         if($catalogo_area_asignatura_codigo[0] == $codigo_area){
                             if($catalogo_area_basica == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[0])),1,1,'L',true);
+                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[0],"ISO-8859-1","UTF-8")),1,1,'L',true);
                                 $catalogo_area_basica = false;
                             }
                         }
-                        //$this->fpdf->Cell(203,6,strtoupper(utf8_decode($encabezado_)),1,1,'L',true);
+                        //$this->fpdf->Cell(203,6,strtoupper(mb_convert_encoding($encabezado_)),1,1,'L',true);
                         // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
                         if($catalogo_area_asignatura_codigo[1] == $codigo_area){
                             if($catalogo_area_formativa == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[1])),1,1,'L',true);
+                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[1],"ISO-8859-1","UTF-8")),1,1,'L',true);
                                 $catalogo_area_formativa = false;
                             }
                         }
                         // LINEA DE DIVISIÓN - PARA EL ÁREA TÉCNICA.
                         if($catalogo_area_asignatura_codigo[2] == $codigo_area){
                             if($catalogo_area_tecnica == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[2])),1,1,'L',true);
+                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[2],"ISO-8859-1","UTF-8")),1,1,'L',true);
                                 $catalogo_area_tecnica = false;
                             }
                         }
                         // LINEA DE DIVISIÓN - PARA EL ÁREA COMPETENCIAS CIUDADANAS.
                         if($catalogo_area_asignatura_codigo[6] == $codigo_area){
                             if($catalogo_area_cc == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[6])),1,1,'L',true);
+                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[6],"ISO-8859-1","UTF-8")),1,1,'L',true);
                                 $catalogo_area_cc = false;
                             }
                         }
@@ -370,7 +370,7 @@ class PdfController extends Controller
                         // LINEA DE DIVISIÓN - PARA EL ÁREA COMPLEMENTARIA.
                         if($catalogo_area_asignatura_codigo[7] == $codigo_area){
                             if($catalogo_area_complementaria == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[7])),1,1,'L',true);
+                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[7],"ISO-8859-1","UTF-8")),1,1,'L',true);
                                 $catalogo_area_complementaria = false;
                             }
                         }
@@ -480,28 +480,28 @@ class PdfController extends Controller
                         // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
                       /* if($catalogo_area_asignatura_codigo[0] == $codigo_area){
                             if($catalogo_area_basica == true){
-                                $this->fpdf->Cell(203,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[0])),1,1,'L',true);
+                                $this->fpdf->Cell(203,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[0])),1,1,'L',true);
                                 $catalogo_area_basica = false;
                             }
                         }*/
                         // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
                         if($catalogo_area_asignatura_codigo[1] == $codigo_area){
                             if($catalogo_area_formativa == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[1])),1,1,'L',true);
+                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[1],"ISO-8859-1","UTF-8")),1,1,'L',true);
                                 $catalogo_area_formativa = false;
                             }
                         }
                         // LINEA DE DIVISIÓN - PARA EL ÁREA TÉCNICA.
                         if($catalogo_area_asignatura_codigo[2] == $codigo_area){
                             if($catalogo_area_tecnica == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[2])),1,1,'L',true);
+                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[2],"ISO-8859-1","UTF-8")),1,1,'L',true);
                                 $catalogo_area_tecnica = false;
                             }
                         }
                         // LINEA DE DIVISIÓN - PARA EL ÁREA COMPETENCIAS CIUDADANAS.
                         if($catalogo_area_asignatura_codigo[6] == $codigo_area){
                             if($catalogo_area_cc == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[6])),1,1,'L',true);
+                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[6],"ISO-8859-1","UTF-8")),1,1,'L',true);
                                 $catalogo_area_cc = false;
                             }
                         }
@@ -509,7 +509,7 @@ class PdfController extends Controller
                         // LINEA DE DIVISIÓN - PARA EL ÁREA COMPLEMENTARIA.
                         if($catalogo_area_asignatura_codigo[7] == $codigo_area){
                             if($catalogo_area_complementaria == true){
-                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(utf8_decode($catalogo_area_asignatura_area[7])),1,1,'L',true);
+                                $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[7],"ISO-8859-1","UTF-8")),1,1,'L',true);
                                 $catalogo_area_complementaria = false;
                             }
                         }

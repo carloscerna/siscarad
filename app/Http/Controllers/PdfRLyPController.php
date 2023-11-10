@@ -22,8 +22,12 @@ class PdfRLyPController extends Controller
         $this->fpdf->SetFont('Arial', 'B', 9);
         $this->fpdf->AddPage();
         $this->fpdf->SetMargins(5, 5, 5);
-        $this->fpdf->SetAutoPageBreak(true,5);
+        $this->fpdf->SetAutoPageBreak(true,20);
         $this->fpdf->SetX(30);
+// DECLARAR VARIABLES PARA LAS MATRICES.
+//
+$numero = 1; $margen_inferior = 10; $margen_superior = 20;
+//
         //(numero, tipo de permiso, turno, fecha, dia, hora, minutos)
             $w=array(5,90,30,20,15,15,15); //determina el ancho de las columnas
             $w2=array(40,45); //determina el ancho de las columnas
@@ -31,7 +35,7 @@ class PdfRLyPController extends Controller
             $this->fpdf->SetFillColor(230,227,227);
             $fill=false; $num=1;
             $fill2=true;
-        
+            $header=array('Nº','Tipo de Licencia o Permiso','Turno','Fecha','Día','Hora','Minutos');        
     // TABLERO - NOMBRE ANNLECTIVO - CODIGO_ANNLECTIVO - CODIGO PERSONAL - CONDIGO INSTITUCION
         $PersonalContratacion = explode("-",$id);
     // Examninar la palabra...
@@ -68,13 +72,6 @@ class PdfRLyPController extends Controller
              $logo_uno = "/img/".mb_convert_encoding(trim($response_i->logo_uno),"ISO-8859-1","UTF-8");
              $firma_director = "/img/".mb_convert_encoding(trim($response_i->logo_dos),"ISO-8859-1","UTF-8");
              $sello_direccion = "/img/".mb_convert_encoding(trim($response_i->logo_tres),"ISO-8859-1","UTF-8");
-             // LOGO DE LA INSTITUCIÓN
-                $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
-                $this->fpdf->SetX(5);
-                $this->fpdf->SetFont('Arial','I',14);
-                    $this->fpdf->Cell(205, $alto_cell[0],"CONTROL DE LICENCIAS Y PERMISOS DEL PERSONAL DOCENTE",0,1,'C');       
-                $this->fpdf->SetFont('Arial','',10);
-                $this->fpdf->Cell(205, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,0,1,'C');       
                 //$this->fpdf->Cell(205, $alto_cell[0],mb_convert_encoding("Tipo de Contratación: " .  " - Turno: ","ISO-8859-1","UTF-8"),0,1,'C');       
          } // FIN DEL FOREACH para los datos de la insitucion.
          //
@@ -126,8 +123,33 @@ class PdfRLyPController extends Controller
                 if($codigo_contratacion[$PersonalArray] == "05"){ // PAGADOS POR EL CDE.
                     $calculo_horas = 8;
                 }
-                $this->fpdf->Cell(205, $alto_cell[0],mb_convert_encoding("Tipo de Contratación: $nombre_contratacion[$PersonalArray] - Turno: $nombre_turno[$PersonalArray]","ISO-8859-1","UTF-8"),0,1,'C');       
-                $this->fpdf->Cell(205, $alto_cell[2],"$nombre_personal_ - $nombre_annlectivo",1,1,'C');   
+                // CABECERA POR TIPO DE CONTRATACIÓN.
+                // LOGO DE LA INSTITUCIÓN
+                $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
+                $this->fpdf->SetX(5);
+                $this->fpdf->SetFont('Arial','I',14);
+                    $this->fpdf->Cell(205, $alto_cell[0],"CONTROL DE LICENCIAS Y PERMISOS DEL PERSONAL DOCENTE",0,1,'C');       
+                $this->fpdf->SetFont('Arial','',10);
+                $this->fpdf->Cell(205, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,0,1,'C');       
+                //Colores, ancho de línea y fuente en negrita
+                $this->fpdf->SetFillColor(255,255,255);$this->fpdf->SetTextColor(0);$this->fpdf->SetDrawColor(0,0,0);
+                $this->fpdf->SetLineWidth(.3);
+                    $this->fpdf->Cell(205, $alto_cell[0],mb_convert_encoding("Tipo de Contratación: $nombre_contratacion[$PersonalArray] - Turno: $nombre_turno[$PersonalArray]","ISO-8859-1","UTF-8"),0,1,'C');       
+                    $this->fpdf->Cell(205, $alto_cell[2],"$nombre_personal_ - $nombre_annlectivo",1,1,'C');   
+                ///
+                    $this->fpdf->SetFont('','B',9);
+                        for($i=0;$i<count($header);$i++)
+                        {
+                            $this->fpdf->Cell($w[$i],7,mb_convert_encoding(($header[$i]),'ISO-8859-1','UTF-8'),1,0,'C',1);
+                        }
+                    $this->fpdf->Ln();
+                    //Restauración de colores y fuentes
+                    $this->fpdf->SetLineWidth(.3);
+                    $this->fpdf->SetFillColor(255,255,255);$this->fpdf->SetTextColor(0);
+                    $this->fpdf->SetFont('','',9);
+                    //Datos
+                    $fill=false;
+                    ///
                 // BUSCAR SEGUN EL CONDIGO CONTRATACION EN LAS DIFERENTESLICENCIAS.
                 for ($LineaLicencia=0; $LineaLicencia < count($codigo_licencia_o_permiso) ; $LineaLicencia++) { 
                     // Cabecera - DOCENTE TIPO DE CONTRATACIÓN (personal_licencias permisos).
@@ -137,62 +159,96 @@ class PdfRLyPController extends Controller
                     ->join('tipo_contratacion as tc','tc.codigo','=','lp.codigo_contratacion')
                     ->join('tipo_licencia_o_permiso as tlp','tlp.codigo','=','lp.codigo_licencia_permiso')
                     ->select('p.id_personal', 'p.firma', 'tur.nombre as nombre_turno', 'tc.nombre as nombre_contratacion','lp.codigo_contratacion','lp.codigo_turno',
-                                'lp.fecha','lp.dia','lp.hora','lp.minutos', 'tlp.nombre as nombre_licencia_permiso',
+                                'lp.fecha','lp.dia','lp.hora','lp.minutos', 'tlp.nombre as nombre_licencia_permiso', 
                             DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
+                            DB::raw("TO_CHAR(lp.fecha,'YYYY') as DBannlectivo"),
                             )
                     ->where([
                         ['lp.codigo_personal', '=', $codigo_personal],
                         ['lp.codigo_contratacion', '=', $codigo_contratacion[$PersonalArray]],
                         ['lp.codigo_turno', '=', $codigo_turno[$PersonalArray]],
+                        ['lp.codigo_licencia_permiso', '=', $codigo_licencia_o_permiso[$LineaLicencia]],
                         ])
+                    ->where(DB::raw("TO_CHAR(lp.fecha,'YYYY')"), $nombre_annlectivo)
                     ->orderBy('lp.fecha','asc')
                     ->get();
+            		// declarar matrices.
+				        $tramite_dia = array(); $tramite_hora = array(); $tramite_minutos = array();   
+                    //
+                        $valor_y = $this->fpdf->GetY();
+                        $pagina_alto = $this->fpdf->GetPageHeight();
                     // recorrer la matriz con los datos del docente que ha consumido por cada una de las licencias. o permisos.
-                    foreach($PersonalLicenciasPermisos as $response_plp){  //Llenar el arreglo con datos
-						$num++;
-						$dia = $response_plp->dia;
-						$hora = $response_plp->hora;
-						$minutos = $response_plp->minutos;
-						$nombre_licencia_permiso = mb_convert_encoding($response_plp->nombre_licencia_permiso,"ISO-8859-1","UTF-8"); 
-						$nombre_turno_ = $nombre_turno[$PersonalArray]; 
-                        $fecha = cambiaf_a_normal($response_plp->fecha);
-                        // valores en pantalla.
-                        $this->fpdf->Cell($w[0],5.8,$num,1,0,'L',$fill);  // NUM
-						$this->fpdf->Cell($w[1],5.8,$nombre_licencia_permiso,1,0,'L',$fill);  // tipo de licencia o permiso.
-						$this->fpdf->Cell($w[2],5.8,$nombre_turno_,1,0,'C',$fill);  // nombre turno
-						$this->fpdf->Cell($w[3],5.8,$fecha,1,0,'L',$fill);  // fecha
-						$this->fpdf->Cell($w[4],5.8,$dia,1,0,'C',$fill);  // dia
-						$this->fpdf->Cell($w[5],5.8,$hora,1,0,'C',$fill);  // hora
-						$this->fpdf->Cell($w[6],5.8,$minutos,1,0,'C',$fill);  // minutos
-						$this->fpdf->Ln();
-                    }   // fin del for de la busqueda de registros por licencias y permisos.
+                        foreach($PersonalLicenciasPermisos as $response_plp){  //Llenar el arreglo con datos
+                            $num++;
+                            $dia = $response_plp->dia;
+                            $hora = $response_plp->hora;
+                            $minutos = $response_plp->minutos;
+                            $nombre_licencia_permiso = mb_convert_encoding($response_plp->nombre_licencia_permiso,"ISO-8859-1","UTF-8"); 
+                            $nombre_turno_ = $nombre_turno[$PersonalArray]; 
+                            $fecha = cambiaf_a_normal($response_plp->fecha);
+                            // valores en pantalla.
+                            $this->fpdf->Cell($w[0],5.8,$num,1,0,'L',$fill);  // NUM
+                            $this->fpdf->Cell($w[1],5.8,$nombre_licencia_permiso,1,0,'L',$fill);  // tipo de licencia o permiso.
+                            $this->fpdf->Cell($w[2],5.8,$nombre_turno_,1,0,'C',$fill);  // nombre turno
+                            $this->fpdf->Cell($w[3],5.8,$fecha,1,0,'L',$fill);  // fecha
+                            $this->fpdf->Cell($w[4],5.8,$dia,1,0,'C',$fill);  // dia
+                            $this->fpdf->Cell($w[5],5.8,$hora,1,0,'C',$fill);  // hora
+                            $this->fpdf->Cell($w[6],5.8,$minutos,1,0,'C',$fill);  // minutos
+                            $this->fpdf->Ln();
+                            //
+                            $valor_y = $this->fpdf->GetY();
+                            // Calculos de dia, horas, minutos.
+                            $total_minutos = ($dia*$calculo_horas*60) + ($hora*60) + ($minutos);
+                            //
+                            $tramite_dia[] = segundosToCadenaD($total_minutos,$calculo_horas);
+                            $tramite_hora[] = segundosToCadenaH($total_minutos, $calculo_horas);
+                            $tramite_minutos[] = segundosToCadenaM($total_minutos, $calculo_horas);
+                            // 
+                            // Salto de página.
+								//SaltoPagina($valor_y);
+                        }   // fin del foreach de la busqueda de registros en la tabla Personal Lciencias Permisos.
+                        ///////
+                            $sub_sin_dia = array_sum($tramite_dia);
+                            $sub_sin_hora = array_sum($tramite_hora);
+                            $sub_sin_minutos = array_sum($tramite_minutos);
+                                        
+                            $minutos_x_dias = $minutos_licencia_o_permiso[$LineaLicencia];
+                            $minutos_subtotal = ($sub_sin_dia*$calculo_horas*60) + ($sub_sin_hora*60) + ($sub_sin_minutos);
+                            $minutos = $minutos_x_dias - $minutos_subtotal;
+                            $utilizado = mb_convert_encoding(segundosToCadena($minutos_subtotal, $calculo_horas,$formato=2),'ISO-8859-1','UTF-8');
+                            $saldo_disponible = mb_convert_encoding(segundosToCadena($minutos, $calculo_horas, $formato=2),'ISO-8859-1','UTF-8');
+                            $DiasLicencia = mb_convert_encoding(segundosToCadena($minutos_x_dias, $calculo_horas, $formato=2),'ISO-8859-1','UTF-8');
+                            // validar para que los dstos se impriman en pantalla.
+                            if($sub_sin_dia > 0 || $sub_sin_hora > 0 || $sub_sin_minutos > 0 ){
+                                $this->fpdf->SetFillColor(230,227,227);
+                                $this->fpdf->SetFont('Arial','B',8);														
+                                $this->fpdf->Cell($w[0],5.8,'',1,0,'L',$fill2);  // numero
+                                $this->fpdf->Cell($w[1],5.8,'Licencia: ' . $DiasLicencia,1,0,'L',$fill2);  // licencia
+                                $this->fpdf->SetFont('Arial','B',7);					
+                                $this->fpdf->Cell($w[2] + $w[3],5.8,'Disponible: ' . $saldo_disponible,1,0,'L',$fill2);  // turno y fecha
+                                $this->fpdf->Cell($w2[1],5.8,'Utilizado: ' . $utilizado,1,1,'C',$fill2);  // dia
+                                $this->fpdf->SetFont('Arial','',9);
+                                $this->fpdf->SetFillColor(255,255,255);
+                            }
+                        ////
+                        // regresar el valor de num a 0.
+							$valor_y = $this->fpdf->GetY();
+							$num = 0;
+                        // Eliminar los elmentos de la array que acumula los dia, minutos y horas.
+						    unset($tramite_dia, $tramite_hora, $tramite_minutos);
+                }   // for que que hace la busqueda de los registros de Tipo Licencia o Permiso.
+                // Salto de Pa´gina.
+                $AltoActual = $valor_y + $margen_inferior + $margen_superior;
+                if($AltoActual > $this->fpdf->GetPageHeight()){
+                    $this->fpdf->AddPage();
+                    $this->fpdf->SetXY(10,24);
+                    $valor_y = $this->fpdf->GetY();
+                    // colores del fondo, texto, línea.
+                    $this->fpdf->SetFillColor(230,227,227);
                 }
-            }
+            }   // for que recorre la tabla Personal Salario.
     // Cierre y exit.
         $this->fpdf->Output();
             exit;
     }
-    function Footer(){
-        // Establecer formato para la fecha.
-          date_default_timezone_set('America/El_Salvador');
-          setlocale(LC_TIME, 'spanish');						
-          //Posición: a 1,5 cm del final
-          $this->fpdf->SetY(-20);
-          //Arial italic 8
-          $this->fpdf->SetFont('Arial','I',8);
-           //Crear una línea de la primera firma.
-          $this->fpdf->Line(15,270,90,270);
-          //Crear una línea de la segunda firma.
-          $this->fpdf->Line(130,270,190,270);
-          //Crear ubna línea
-          $this->fpdf->Line(10,285,200,285);
-          //Número de página
-          $fecha = date("l, F jS Y "); $this->fpdf->Cell(0,10,'Page '.$this->fpdf->PageNo().'/{nb}       '.$fecha,0,0,'C');
-              //Nombre Subdirector(a)
-          $this->fpdf->SetXY(40,270);
-          $this->fpdf->Cell(20,6,'Subdirector(a)',0,0,'C');
-              //Nombre Director
-          $this->fpdf->SetXY(150,270);
-          $this->fpdf->Cell(20,6,'Director',0,0,'C');
-          }
 }
