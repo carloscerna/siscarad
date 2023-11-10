@@ -92,7 +92,7 @@ class PdfRLyPController extends Controller
             ->join('personal as p','p.id_personal','=','ps.codigo_personal')
             ->join('turno as tur','tur.codigo','=','ps.codigo_turno')
             ->join('tipo_contratacion as tc','tc.codigo','=','ps.codigo_tipo_contratacion')
-            ->select('p.id_personal', 'p.firma', 'tur.nombre as nombre_turno', 'tc.nombre as nombre_contratacion','ps.codigo_tipo_contratacion','codigo_turno',
+            ->select('p.id_personal', 'p.firma', 'tur.nombre as nombre_turno', 'tc.nombre as nombre_contratacion','ps.codigo_tipo_contratacion','ps.codigo_turno',
                     DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
                     )
             ->where([
@@ -130,16 +130,27 @@ class PdfRLyPController extends Controller
                     ->join('turno as tur','tur.codigo','=','lp.codigo_turno')
                     ->join('tipo_contratacion as tc','tc.codigo','=','lp.codigo_contratacion')
                     ->join('tipo_licencia_o_permiso as tlp','tlp.codigo','=','lp.codigo_licencia_permiso')
-                    ->select('p.id_personal', 'p.firma', 'tur.nombre as nombre_turno', 'tc.nombre as nombre_contratacion','ps.codigo_tipo_contratacion','codigo_turno',
+                    ->select('p.id_personal', 'p.firma', 'tur.nombre as nombre_turno', 'tc.nombre as nombre_contratacion','lp.codigo_contratacion','lp.codigo_turno',
+                                'lp.dia','lp.hora','lp.minutos', 'tlp.nombre as nombre_licencia_permiso',
                             DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
                             )
                     ->where([
                         ['lp.codigo_personal', '=', $codigo_personal],
                         ['lp.codigo_contratacion', '=', $codigo_contratacion[$PersonalArray]],
-                        ['lp.codigo_turno', '=', $codigo_turno[$PersonalArray]]
+                        ['lp.codigo_turno', '=', $codigo_turno[$PersonalArray]],
                         ])
                     ->orderBy('p.id_personal','asc')
                     ->get();
+
+                    // recorrer la matriz con los datos del docente que ha consumido por cada una de las licencias. o permisos.
+                    foreach($PersonalLicenciasPermisos as $response_plp){  //Llenar el arreglo con datos
+						$num++;
+						$dia = $response_plp->dia;
+						$hora = $response_plp->hora;
+						$minutos = $response_plp->minutos;
+						$nombre_licencia_permiso = $response_plp->nombre_licencia_permiso; 
+						$nombre_turno_ = $nombre_turno[$PersonalArray]; 
+                    }
                 }   // fin del for de la busqueda de registros por licencias y permisos.
 
                 // Variables.
