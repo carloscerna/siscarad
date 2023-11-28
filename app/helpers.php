@@ -69,7 +69,7 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
                 // RESUTLADO Y ENVIAR
                     if($nota_promedio_final < 6 || $nota_promedio_final == 0){$resultado_por_asignatura[0] ="R";}
             break;
-            case ($codigo_modalidad >= '10' || $codigo_modalidad <= '12'):
+            case ($codigo_modalidad == '10'):
 				if($nota_recuperacion_1 <> 0 ){
 					// consultar si es menor que la nota_final.
 						if($nota_recuperacion_1 > $nota_promedio_final){
@@ -91,6 +91,29 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
                 }
                 // RESUTLADO Y ENVIAR
                     if($nota_promedio_final < 5){$resultado_por_asignatura[0] ="R";}
+            break;
+			case ($codigo_modalidad >= '11' || $codigo_modalidad <= '12'): //NOCTURNA
+				if($nota_recuperacion_1 <> 0 ){
+					// consultar si es menor que la nota_final.
+						if($nota_recuperacion_1 > $nota_promedio_final){
+							$nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_1) / 2,0);
+						}
+                    if($nota_promedio_final < 5){
+                        if($nota_recuperacion_2 <> 0){
+							// consultar si es menor que la nota_final.
+								if($nota_recuperacion_2 > $nota_promedio_final){
+                            		$nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_2) / 2,0);
+								}
+                        }
+                    }
+                }elseif ($nota_recuperacion_2 <> 0) {
+						// consultar si es menor que la nota_final.
+						if($nota_recuperacion_2 > $nota_promedio_final){
+                    		$nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_2) / 2,0);
+						}
+                }
+                // RESUTLADO Y ENVIAR
+                    if($nota_promedio_final < 6){$resultado_por_asignatura[0] ="R";}
             break;
             default:
                 $resultado_por_asignatura[0] ="R";
@@ -129,7 +152,7 @@ function resultado_concepto($codigo_modalidad, $nota_promedio){
                 $resultado_concepto = "E";
             }
         break;
-        case ($codigo_modalidad >= '10' && $codigo_modalidad <= '12'):
+        case ($codigo_modalidad >= '10' && $codigo_modalidad <= '12'):	// NOCTURNA
             if($nota_promedio >= 5 && $nota_promedio <= 6 ){
                 $resultado_concepto = "B";
             }elseif ($nota_promedio >= 7 && $nota_promedio <= 8 ){
@@ -139,7 +162,6 @@ function resultado_concepto($codigo_modalidad, $nota_promedio){
             }
         break;
         default:
-            
             break;
     }
     return $resultado_concepto;

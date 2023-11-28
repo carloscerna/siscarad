@@ -475,10 +475,8 @@ class PdfRPGController extends Controller
                         $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
                         $this->fpdf->image($img,$this->fpdf->GetX(),$this->fpdf->GetY()-30,25,30);
                     }
-                }
-                    
+                }          
         //
-
             // información del director
             $this->fpdf->SetXY($ultima_columna + $ultimo_espaciado,$this->fpdf->GetY()+40);
                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
