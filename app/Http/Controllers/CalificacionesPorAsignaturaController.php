@@ -530,7 +530,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                                 }
                                             }
                                         break;
-                                        case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):  // EDUCACION MEDIA.*********//////
+                                        case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09' || $codigo_modalidad == '15'):  // EDUCACION MEDIA.*********//////
                                             if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
@@ -642,7 +642,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                         case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
                                             DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3)/3,0) where id_notas = ?", [$id_notas_]);                                        
                                         break;
-                                        case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
+                                        case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'  || $codigo_modalidad == '15'):
                                             DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4)/4,0) where id_notas = ?", [$id_notas_]);                                                                                
                                         break;
                                         case ($codigo_modalidad >= '10' && $codigo_modalidad <= '12'):
