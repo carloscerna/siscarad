@@ -23,7 +23,7 @@ class PdfController extends Controller
         // Configurar PDF.
             $this->fpdf->SetFont('Arial', 'B', 9);
             $this->fpdf->AddPage();
-            $this->fpdf->SetMargins(5, 5, 5);
+            $this->fpdf->SetMargins(15, 5, 5);
             $this->fpdf->SetAutoPageBreak(true,5);
             $this->fpdf->SetX(30);
         // Variables
@@ -137,7 +137,7 @@ class PdfController extends Controller
             echo 'Mi amigo ' . $Nombre. ' tiene ' . $Edad . ' años y vinve en ' . $Ciudad;*/
         // Cabecera - INFORMACION GENERAL DE LA INSTITUCION
             $EstudianteInformacionInstitucion = DB::table('informacion_institucion as inf')
-            ->leftjoin('personal as p','p.codigo_cargo','=','inf.nombre_director')
+            ->leftjoin('personal as p','p.id_personal','=',DB::raw("CAST(inf.nombre_director AS INTEGER)")) 
             ->select('inf.id_institucion','inf.codigo_institucion','inf.nombre_institucion','inf.telefono_uno','inf.logo_uno','inf.direccion_institucion','inf.nombre_director',
                         'inf.logo_dos','inf.logo_tres',
                     DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
@@ -158,7 +158,7 @@ class PdfController extends Controller
                 $firma_director = "/img/".mb_convert_encoding(trim($response_i->logo_dos),'ISO-8859-1','UTF-8');
                 $sello_direccion = "/img/".mb_convert_encoding(trim($response_i->logo_tres),'ISO-8859-1','UTF-8');
                 // LOGO DE LA INSTITUCIÓN
-                    $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
+                    $this->fpdf->image(URL::to($logo_uno),10,15,20,25);
                     $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
                     $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,1,1,'L');       
             } // FIN DEL FOREACH para los datos de la insitucion.
@@ -253,16 +253,16 @@ class PdfController extends Controller
                         if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
                             {
                                 $img = 'c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
-                                $this->fpdf->image($img,180,5,25,30);
+                                $this->fpdf->image($img,190,10,35,45);
                             }else if($codigo_genero == '01'){
                                     $fotos = 'avatar_masculino.png';
                                     $img = '/img/'.$fotos;
-                                    $this->fpdf->image(URL::to($img),180,5,25,30);
+                                    $this->fpdf->image(URL::to($img),190,10,35,45);
                                 }
                                 else{
                                     $fotos = 'avatar_femenino.png';
                                     $img = '/img/'.$fotos;
-                                    $this->fpdf->image(URL::to($img),180,5,25,30);
+                                    $this->fpdf->image(URL::to($img),190,10,35,45);
                                 }
                     //
                     //$this->fpdf->ln();
