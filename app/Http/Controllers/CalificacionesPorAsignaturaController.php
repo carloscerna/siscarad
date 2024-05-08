@@ -326,7 +326,7 @@ class CalificacionesPorAsignaturaController extends Controller
             if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08')
             {
                 // EVALUAR SOMALENTE MUCI.
-                if($codigo_area == '08' && $codigo_asignatura == '234'){
+                if($codigo_area == '08' && $codigo_asignatura == '234' || $codigo_asignatura == '736'){
                     // cambiar el nombre de actividad por el nombre del periodo
                     // cuando es LA CONVIVENCIA CIUDADANA O MUCI
                         $nombre_actividad = $nombre_periodo;
