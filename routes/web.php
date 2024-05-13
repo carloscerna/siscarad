@@ -100,8 +100,8 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::resource('funcion','PdfRLyPController');
     Route::resource('funcion','matricula/index');
     // Emails
-    //  Route::get('/boleta', function(){
-    //      return new BoletaEstudiantes("yonYOn");
-    //  });
+      //Route::get('/boleta', function(){
+        //  return new BoletaEstudiantes("yonYOn");
+      //});
 
 });

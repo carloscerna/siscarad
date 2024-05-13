@@ -439,3 +439,8 @@ function conversor_segundos($seg_ini) {
 		$segundos = $seg_ini-($horas*3600)-($minutos*60);
 //echo $horas.?h:?.$minutos.?m:?.$segundos.?s';
 }
+
+function convertirTexto($Texto){
+	$texto = mb_convert_encoding($Texto,"ISO-8859-1","UTF-8");
+	return $texto;
+}
