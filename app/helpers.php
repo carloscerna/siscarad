@@ -45,7 +45,7 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
                 // RESUTLADO Y ENVIAR
                     if($nota_promedio_final < 5){$resultado_por_asignatura[0] ="R";}
             break;
-            case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
+            case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09' || $codigo_modalidad == "15"):
                 if($nota_recuperacion_1 <> 0 ){
 					// consultar si es menor que la nota_final.
 					if($nota_recuperacion_1 > $nota_promedio_final){
@@ -143,7 +143,7 @@ function resultado_concepto($codigo_modalidad, $nota_promedio){
                 $resultado_concepto = "E";
             }
         break;
-        case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
+        case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09' || $codigo_modalidad == "15"):
             if($nota_promedio >= 5 && $nota_promedio <= 6 ){
                 $resultado_concepto = "B";
             }elseif ($nota_promedio >= 7 && $nota_promedio <= 8 ){
