@@ -50,8 +50,8 @@
             </a>
         </li>
         <li>
-            <a href="anecdotica"><i class="fa fa-arrow-right" aria-hidden="true"></i>
-                <span>Anecdótica</span>
+            <a href="asistenciaDiaria"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+                <span>Asistencia Diaria</span>
             </a>
         </li>
         <li>
