@@ -127,12 +127,13 @@ class asistenciaDiariaController extends Controller
                 ->join('grado_ano','carga_docente.codigo_grado','=','grado_ano.codigo')
                 ->join('seccion', 'carga_docente.codigo_seccion', '=', 'seccion.codigo')                
                 ->join('turno','carga_docente.codigo_turno', '=', 'turno.codigo')
+                ->join('encargado_grado','carga_docente.codigo_docente','=','encargado_grado.codigo_docente')
                 ->select('codigo_bachillerato', 'codigo_grado','codigo_seccion', 'codigo_turno', 'codigo_docente','bachillerato_ciclo.nombre as nombre_bachillerato', 'grado_ano.nombre as nombre_grado'
                 ,'seccion.nombre as nombre_seccion', 'turno.nombre as nombre_turno')
-                ->where('codigo_docente', '=', $codigo_personal)
                 ->where([
                     ['codigo_docente', '=', $codigo_personal],
                     ['codigo_ann_lectivo', '=', $codigo_annlectivo],
+                    ['encargado', '=','true'],
                     ])
                 ->get();
                 
