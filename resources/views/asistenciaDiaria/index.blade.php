@@ -33,36 +33,66 @@ use Illuminate\Support\Facades;
         {!! Form::select('codigo_annlectivo', ['placeholder'=>'Selecciona'] + $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control']) !!}
 
         {{ Form::label('LblGradoSeccionTurno', 'Grado-Sección-Turno:') }}
-        {!! Form::select('codigo_grado_seccion_turno', ['placeholder'=>'Selecciona'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionAsignaturas(this.value)', 'class' => 'form-control']) !!}
+        {!! Form::select('codigo_grado_seccion_turno', ['placeholder'=>'Selecciona'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionIndicadores(this.value)', 'class' => 'form-control']) !!}
     </div>
 
-<div class="bg-light" id="NominaEstudiantes" style="display: none;">
-    {{-- {{ csrf_field() }}
-    {{ method_field('PATCH') }} --}}
-    <div class="card">
-        <div class="card-header">
-            <h3>Estudiantes</h3>
-            <button type="button" class="btn btn-info" id = "goReportePorAsignatura" onclick="ReportePorAsignatura()">
-                Reporte por Asignatura
-            </button>
-            <button type="button" class="btn btn-info" id = "goReportePorGrado" onclick="ReportePorGrado()">
-                Reporte por Grado
-            </button>
-        </div>
-        <div class="card-body">
+    <div class="section-body">
+        <div class="jumbotron p-1">
+            <h3 class="display-5">Asistencia Diaria.</h3>
+                <div class="row">
+                    <div class="col col-md-4 col-lg-4 col-xl-4">
+                        {{-- card  TOTAL DE ESTUDIANTES--}}
+                        <div class="card text-white bg-primary mb-3 p-1" style="max-width: 13rem;">
+                            <div class="card-header p-1"><h5>Total de Estudiantes</h5></div>
+                                <div class="card-body p-1">
+                                    <h5 class="card-title"></h5>
+                                    <p class="card-text">
+                                        <h2 class="text-right"><i class="fa fa-user-friends f-left float-left"></i><label for="totalEstudiantes">#</label></h2>
+                                    </p>
+                                        <div class="float-md-left">
+                                            <i class="fas fa-male"></i>  <label for="totalEstudiantesMasculino"></label>
+                                        </div>
 
-        </div>
-        <div class="card-footer">
-            <tr>
-                <td colspan = "4" style="text-align: right;">
-                          <button type="button" class="btn btn-success" id = "goCalificacionGuardar" onclick="GuardarRegistros()">
-                              Guardar
-                          </button>
-                </td>
-            </tr>
-        </div>
-      </div>
-</div>
+                                        <div class="float-md-right">
+                                            <i class="fas fa-female"></i>  <label for="totalEstudiantesFemenino"></label>
+                                        </div>
+                                        <div class="">
+                                            <button type="button" class="btn btn-info btn-sm" style="display: none;" id="VerEstudiantes">Ver más...</button>
+                                        </div>
+                                </div>
+                        </div> 
+                    </div>  {{-- --}}
+                    <div class="col col-md-8 col-lg-8 col-xl-8">
+                        {{-- card  TOTAL DE ESTUDIANTES PRESENTES--}}
+                        <div class="card text-white bg-info mb-3 p-1" style="max-width: 30rem;">
+                            <div class="card-header p-1"><h5>Presentes</h5></div>
+                                <div class="card-body p-1">
+                                    <div class="input-group input-group-sm mb-3">
+                                        <div class="input-group-prepend">
+                                          <span class="input-group-text" id="FechaAsistencia">Fecha</span>
+                                        </div>
+                                        <input class="form-control" type="date" name="FechaAsistencia" id="FechaAsistencia">
+                                    </div>
+
+                                      <div class="float-md-left">
+                                        <i class="fas fa-male"></i>  <label for="AsistenciaMasculino"></label>
+                                        <input class="form-control" type="number" name="AsistenciaMasculino" id="AsistenciaMasculino">
+                                    </div>
+                                    <div class="float-md-right">
+                                        <i class="fas fa-female"></i>  <label for="AsistenciaFemenino"></label>
+                                        <input class="form-control" type="number" name="AsistenciaFemenino" id="AsistenciaFemenino">
+                                    </div>
+                                </div>
+                                <p class="card-text">
+                                    <h2 class="text-right"><i class="fa fa-user-check f-left float-left"></i><label for="totalEstudiantesPresentes">#</label></h2>
+                                </p>
+                                {{-- BOTON DE INFORMACION --}}
+                                <button type="button" class="btn btn-dark" id="BuscarEstudiantesPresentes">Guardar</button>
+                            </div>
+                    </div>  {{-- card  TOTAL DE ESTUDIANTES PRESENTES--}}
+                </div>  {{-- row --}}
+        </div> {{-- JUMBOTRON --}}
+    </div> 
 @endsection
 
 
@@ -80,7 +110,7 @@ use Illuminate\Support\Facades;
   
         // funcion onchange
         function BuscarPorAnnLectivo(AnnLectivo) {
-            url_ajax = '{{url("getGradoSeccion")}}' 
+            url_ajax = '{{url("getGradoSeccionAsistenciaDiaria")}}' 
             csrf_token = '{{csrf_token()}}' 
 
             codigo_personal = $('#codigo_personal').val();

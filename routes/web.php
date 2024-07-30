@@ -60,6 +60,9 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::resource("asistenciaDiaria",asistenciaDiariaController::class);
     //Route::get('gradoseccion/{id}', 'CalificacionesPorAsignaturaController@getGradoSeccion');
     //Route::get('buscarGradoSeccion','AsignaturaController@getGradoSeccion');
+    // para Asistencia Diaria
+    Route::post("getGradoSeccionAsistenciaDiaria", "App\Http\Controllers\AsistenciaDiariaController@getGradoSeccionAsistenciaDiaria")->name('getGradoSeccionAsistenciaDiaria');
+    //para Calificaciones por Asignatura.
     Route::post("getGradoSeccion", "App\Http\Controllers\CalificacionesPorAsignaturaController@getGradoSeccion")->name('getGradoSeccion');
     Route::post("getGradoSeccionAsignaturas", "App\Http\Controllers\CalificacionesPorAsignaturaController@getGradoSeccionAsignaturas")->name('getGradoSeccionAsignaturas');
     Route::post("getGradoSeccionCalificacionesAsignaturas", "App\Http\Controllers\CalificacionesPorAsignaturaController@getGradoSeccionCalificacionesAsignaturas")->name('getGradoSeccionCalificacionesAsignaturas');
