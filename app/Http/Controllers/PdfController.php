@@ -660,11 +660,11 @@ class PdfController extends Controller
             //
             $ultima_linea = $this->fpdf->GetY();
             $this->fpdf->SetY($ultima_linea+40);
-            //$this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
             $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
-            //$this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal,0,1,'L');
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal,0,1,'L');
             
-            //$this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
+            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
             $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
                 // FOTO DEL ESTUDIANTE.
                 if(!empty($firma_docente)){

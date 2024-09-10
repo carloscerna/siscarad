@@ -3,9 +3,9 @@
     Inicio de Sesión
 @endsection
 @section('content')
-    <div class="card card-primary">
-        <div class="card-header"><h4>Inicio de Sesión</h4></div>
-
+    <div class="card">
+        <div class="card-header bg-info"><label for="">Iniciar sesión</label></div>
+        <div class="card-title"></div>
         <div class="card-body">
             <form method="POST" action="{{ route('login') }}">
                 @csrf
@@ -64,5 +64,6 @@
                 </div>
             </form>
         </div>
+        <div class="card-footer bg-dark"></div>
     </div>
 @endsection
