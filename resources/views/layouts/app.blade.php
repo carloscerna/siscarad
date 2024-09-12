@@ -5,6 +5,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <title>@yield('title') | {{ config('app.name') }}</title>
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
+    <link rel="icon" href="{{ asset('img/admin.ico') }}">
     <!-- Bootstrap 4.1.1 -->
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css"/>
     <!-- Ionicons -->
@@ -16,10 +17,10 @@
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" type="text/css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css" integrity="sha512-3pIirOrwegjM6erE5gPSwkUzO+3cTjpnV9lexlNZqvupR64iZBnOOTiiLPb9M36zpMScbmUNIcHUqKD47M719g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-@yield('page_css')
-<!-- Template CSS -->
-    <link rel="stylesheet" href="{{ asset('web/css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('web/css/components.css')}}">
+    @yield('page_css')
+    <!-- Template CSS -->
+        <link rel="stylesheet" href="{{ asset('web/css/style.css') }}">
+        <link rel="stylesheet" href="{{ asset('web/css/components.css')}}">
     @yield('page_css')
 
     @yield('css')
@@ -29,9 +30,8 @@
 <div id="app">
     <div class="main-wrapper main-wrapper-1">
         <div class="navbar-bg"></div>
-        <nav class="navbar navbar-expand-lg main-navbar">
+        <nav class="navbar main-navbar p-0">
             @include('layouts.header')
-
         </nav>
         <div class="main-sidebar main-sidebar-postion" style="/* RGB Gradient */
             background: -moz-linear-gradient(top, #5F98D6 0%, #1B2B3D 100%);
@@ -46,9 +46,7 @@
         background: linear-gradient(to bottom, #0099FF 0%, #B6E1FF 100%);">
             @yield('content')
         </div>
-        <footer class="main-footer" style="    background: -moz-linear-gradient(top, #010203 0%, #042637 100%);
-        background: -webkit-linear-gradient(top, #010203 0%, #042637 100%);
-        background: linear-gradient(to bottom, #010203 0%, #042637 100%);">
+        <footer class="main-footer p-1 bg-dark text-white text-right">
             @include('layouts.footer')
         </footer>
     </div>

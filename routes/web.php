@@ -18,6 +18,7 @@ use App\Http\Controllers\PdfRPGEstudianteController;
 // emailes
 use App\Mail\BoletaEstudiantes;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderShipped;
 
 /*
 
@@ -30,7 +31,6 @@ use Illuminate\Support\Facades\Mail;
 | contains the "web" middleware group. Now create something great!
 |
 */
-
 Route::get('/', function () {
     //return view('welcome');
     return redirect()->route('login');

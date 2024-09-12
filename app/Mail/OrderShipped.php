@@ -10,24 +10,26 @@ use Illuminate\Queue\SerializesModels;
 class OrderShipped extends Mailable
 {
     use Queueable, SerializesModels;
+    public $name;
+
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct()
-    {
-        //
-    }
-
     /**
      * Build the message.
      *
      * @return $this
      */
+     public function __construct($name)
+     {
+         $this->name = $name;
+     }
+
     public function build()
     {
-        return $this->view('view.name');
+        return $this->view('mails.CorreoNuevo');
     }
 }
