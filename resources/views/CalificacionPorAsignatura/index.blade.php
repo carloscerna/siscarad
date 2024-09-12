@@ -25,7 +25,7 @@ use Illuminate\Support\Facades;
     </div>
 </section>
 @endrole
-
+<!-- INICIO DEL FORMUALRIO DE LOS DATOS -->
     <div class="form-group text-black p-0">
         {!! Form::hidden('codigo_personal', $codigo_personal,['id'=>'codigo_personal', 'class'=>'form-control']) !!}
         {!! Form::hidden('codigo_institucion', $codigo_institucion,['id'=>'codigo_institucion', 'class'=>'form-control']) !!}
@@ -45,23 +45,29 @@ use Illuminate\Support\Facades;
         {{ Form::label('LblActividadPorcentaje', 'Actividades (%):') }}
         {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)','04'=>'Recuperación (10%)'], null, ['id' => 'codigo_actividad_porcentaje','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control']) !!}
     </div>
-
-<div class="bg-light" id="NominaEstudiantes" style="display: none;">
+<!-- NOMINA DE DATOS REPRESENTADO EN UN DIV YT UNA TABLA. -->
+<div class="bg-gray" id="NominaEstudiantes" style="display: none;">
     {{-- {{ csrf_field() }}
     {{ method_field('PATCH') }} --}}
     <div class="card">
-        <div class="card-header">
-            <h3>Estudiantes</h3>
-            <button type="button" class="btn btn-info" id = "goReportePorAsignatura" onclick="ReportePorAsignatura()">
-                Reporte por Asignatura
-            </button>
-            <button type="button" class="btn btn-info" id = "goReportePorGrado" onclick="ReportePorGrado()">
-                Reporte por Grado
-            </button>
+        <div class="card-header bg-dark flex-auto text-white p-0">
+            <div class="col-12 col-md-6">
+                <h4>Nómina de Estudiantes</h4>
+            </div>
+            <div class="col-12 col-md-6 justify-content-lg-end d-flex">
+                <h4>Reportes:</h4>
+                <button type="button" class="btn btn-info" id = "goReportePorAsignatura" onclick="ReportePorAsignatura()" title="Por Asignatura">
+                    <i class="fad fa-clipboard-list"></i> Por Asignatura
+                </button>
+                <button type="button" class="btn btn-dark" id = "goReportePorGrado" onclick="ReportePorGrado()" title="Por Grado">
+                    <i class="fad fa-clipboard-list"></i> Por Grado
+                </button>
+            </div>
+            
         </div>
         <div class="card-body">
-            <div class="table-responsive-sm">
-                <table class="table" id="TablaNominaEstudiantes">
+            <div class="table-responsive" style="width:100%;overflow:auto; max-height:600px;">
+                <table class="table table-sm table-bordered table-condensed table-hover" id="TablaNominaEstudiantes">
                   <thead>
                       <tr class="bg-secondary">
                         <th>N.°</th>
@@ -87,19 +93,21 @@ use Illuminate\Support\Facades;
         <div class="card-footer">
             <tr>
                 <td colspan = "4" style="text-align: right;">
-                          <button type="button" class="btn btn-success" id = "goCalificacionGuardar" onclick="GuardarRegistros()">
-                              Guardar
-                          </button>
+                    <button type="button" class="btn btn-success" id = "goCalificacionGuardar" onclick="GuardarRegistros()">
+                        Guardar
+                    </button>
                 </td>
             </tr>
         </div>
       </div>
 </div>
 @endsection
-
-
-
-
+<!-- PARTE DEL ESCRIPT -->
+@section('css')
+#collapse{
+    max-height:300px;
+    }
+@endsection
 @section('scripts')
 
     <script type="text/javascript">
@@ -231,7 +239,6 @@ use Illuminate\Support\Facades;
                 codigo_asignatura = codigo_asignatura_area.substring(0,3);
                 codigo_area = codigo_asignatura_area.substring(3,5);
             }
-            
             if(codigo_area == '01' || codigo_area == '02' || codigo_area == '03' || codigo_area == '08'){
                 miselect = $("#codigo_actividad_porcentaje");
                 miselect.empty();
@@ -252,7 +259,6 @@ use Illuminate\Support\Facades;
                         miselect.append('<option value=03>Examen o Prueba Objetiva (30%)</option>'); 
                         miselect.append('<option value=04>Recuperación</option>'); 
                     }
-                
             }else{
                 // Extraer datos del periodo
                 codigo_periodo = $("#codigo_periodo").val();
@@ -275,7 +281,6 @@ use Illuminate\Support\Facades;
                 $('#codigo_actividad_porcentaje').val('00');
                 $('#contenido').empty();
         }
-
         // funcion onchange. CUANDO SELECCIONO EL PERIODO
         function BuscarPorActividadPorcentaje(ActividadPorcentaje) {
 			// Botón Otro... visible.
@@ -314,7 +319,7 @@ use Illuminate\Support\Facades;
             //
                 if(codigo_asignatura_area == ""){
                     // Display an info toast with no title
-                        toastr.info("!Seleccione la Asignatura!", "Sistema");
+                        toastr.error("!Seleccione la Asignatura!", "Sistema");
                         exit;
                 }
             $.ajax({
@@ -338,7 +343,7 @@ use Illuminate\Support\Facades;
                         linea = linea + 1;
                         // validar para cambiar de color la l{inea}
                         if (linea % 2 === 0) {
-                            fila_color = '<tr style=background:#A5FFA5; text-color:black;>';
+                            fila_color = '<tr style=background:#E2EAF4; text-color:black;>';
                         }else{
                             fila_color = '<tr style=background: #FFFFFF; text-color:black;>';
                         }
@@ -387,8 +392,8 @@ use Illuminate\Support\Facades;
                                             "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
                                                 "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
                                                 "<input type=hidden name=_method value=PUT>"+"</td>" +
-                                                '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
-                                                '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
+                                                '<td><a class="btn btn-info btn-sm" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
+                                                '<a class="btn btn-secondary btn-sm" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
                                             '</tr>';
                                     }
                                 // validar matricula final. EDUCACIÓN MEDIA
@@ -400,8 +405,8 @@ use Illuminate\Support\Facades;
                                             "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
                                                 "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
                                                 "<input type=hidden name=_method value=PUT>"+"</td>" +
-                                                '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
-                                                '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
+                                                '<td><a class="btn btn-info btn-sm" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
+                                                '<a class="btn btn-secondary btn-sm" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
                                             '</tr>';
                                     }
                             }else{
@@ -412,8 +417,8 @@ use Illuminate\Support\Facades;
                                 "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
                                     "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
                                     "<input type=hidden name=_method value=PUT>"+"</td>" +
-                                    '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
-                                    '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
+                                    '<td><a class="btn btn-info btn-sm" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
+                                    '<a class="btn btn-secondary btn-sm" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
                                 '</tr>';
                             }
                             
@@ -425,7 +430,6 @@ use Illuminate\Support\Facades;
                 } 
             });
         }
-
         // Reporte de Calificaciones por asignatura.
         function ReportePorAsignatura() {
             var codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
@@ -473,7 +477,6 @@ use Illuminate\Support\Facades;
                 AbrirVentana(url);
         }
         // Reporte de calificaciones por asingatura
-
         // funcionar para guardar las calificaciones.
         function GuardarRegistros() {
             csrf_token = '{{csrf_token()}}';
@@ -526,11 +529,10 @@ use Illuminate\Support\Facades;
                 success:function(data) {
                    $('#codigo_annlectivo').focus();
                     // Display an info toast with no title
-                    toastr.info("Registros Actualizados... ", "Sistema");
+                    toastr.success("Registros Actualizados... ", "Sistema");
                 } 
             });
         }
-
 
         function maxLengthNumber(valor) {
             console.log(valor.value);
