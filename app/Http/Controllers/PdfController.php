@@ -708,6 +708,7 @@ class PdfController extends Controller
                 ->join('seccion AS sec', 'sec.codigo','=','am.codigo_seccion')
                 ->join('turno AS tur', 'tur.codigo','=','am.codigo_turno')
                 ->join('asignatura AS asig','asig.codigo','=','n.codigo_asignatura')
+                ->join('ann_lectivo AS ann','ann.codigo','=','am.codigo_ann_lectivo')
                 ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno', 'a.foto', 'a.codigo_genero', 'a.direccion_email as correo_estudiante',
                             'am.id_alumno_matricula as codigo_matricula','n.id_notas','n.codigo_asignatura',
                             'bach.nombre AS nombre_modalidad', 'gr.nombre as nombre_grado', 'sec.nombre as nombre_seccion','tur.nombre as nombre_turno',
@@ -718,6 +719,7 @@ class PdfController extends Controller
                             'n.nota_a1_5', 'n.nota_a2_5', 'n.nota_a3_5', 'nota_r_5', 'n.nota_p_p_5', 
                             'n.nota_final', 'n.recuperacion', 'n.nota_recuperacion_2',
                             'asig.codigo_area',
+                            'ann.nombre as nombre_annlectivo',
                         DB::raw("TRIM(CONCAT(BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno), CAST(' ' AS VARCHAR), BTRIM(a.nombre_completo))) as full_name"),
                         DB::raw("TRIM(CONCAT(BTRIM(a.nombre_completo), CAST(' ' AS VARCHAR), BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno))) as full_nombres_apellidos")
                         )
@@ -746,6 +748,7 @@ if($EstudianteMatricula[0] == "Tablero"){
                 $nombre_grado = mb_convert_encoding(trim($response->nombre_grado),'ISO-8859-1','UTF-8');  
                 $nombre_seccion = mb_convert_encoding(trim($response->nombre_seccion),'ISO-8859-1','UTF-8');  
                 $nombre_turno = mb_convert_encoding(trim($response->nombre_turno),'ISO-8859-1','UTF-8');                
+                $nombre_annlectivo = mb_convert_encoding(trim($response->nombre_annlectivo),'ISO-8859-1','UTF-8');                
                 $codigo_asignatura = (trim($response->codigo_asignatura));
                 $codigo_area = (trim($response->codigo_area));
                 $nota_final = (trim($response->nota_final));
@@ -788,18 +791,23 @@ if($EstudianteMatricula[0] == "Tablero"){
                         $this->fpdf->SetX(30); 
                         $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Correo Electrónico","ISO-8859-1","UTF-8"),1,0,'L');       
                         $this->fpdf->Cell(135,$alto_cell[0],$correo_estudiante,1,1,'L');       
+                        //Nivel
                         $this->fpdf->SetX(30); 
                         $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Nivel","ISO-8859-1","UTF-8"),1,0,'L');       
-                        $this->fpdf->Cell(135,$alto_cell[0],$nombre_modalidad,1,1,'L');       
+                        $this->fpdf->Cell(115,$alto_cell[0],$nombre_modalidad,1,1,'L');       
+                        // Grado
                         $this->fpdf->SetX(30); 
                         $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L');       
                         $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado,1,0,'L');       
-
+                        // Sección.
                         $this->fpdf->Cell(15,$alto_cell[0],mb_convert_encoding("Sección","ISO-8859-1","UTF-8"),1,0,'L');       
                         $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion,1,0,'C');       
-                        
+                        // Turno
                         $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L');       
-                        $this->fpdf->Cell(30,$alto_cell[0],$nombre_turno,1,1,'C');       
+                        $this->fpdf->Cell(30,$alto_cell[0],$nombre_turno,1,0,'C');       
+                        // Año Lectivo
+                        $this->fpdf->Cell(20,$alto_cell[0],"Año Lectivo",1,0,'L');       
+                        $this->fpdf->Cell(10,$alto_cell[0],$nombre_annlectivo,1,1,'C');       
                         // FOTO DEL ESTUDIANTE.
                             if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
                                 {
