@@ -84,10 +84,10 @@ class PdfRPAController extends Controller
                     "codigo_area" => [""]
                 ];                   
             foreach($AsignacionAsignatura as $response_i){  //Llenar el arreglo con datos
-                $nombre_asignatura_a = utf8_decode(trim($response_i->nombre_asignatura));
-                $codigo_asignatura_a = utf8_decode(trim($response_i->codigo_asignatura));
-                $concepto_calificacion_a = utf8_decode(trim($response_i->concepto_calificacion));
-                $codigo_area_a = utf8_decode(trim($response_i->codigo_area));
+                $nombre_asignatura_a = convertirTexto(trim($response_i->nombre_asignatura));
+                $codigo_asignatura_a = convertirTexto(trim($response_i->codigo_asignatura));
+                $concepto_calificacion_a = convertirTexto(trim($response_i->concepto_calificacion));
+                $codigo_area_a = convertirTexto(trim($response_i->codigo_area));
 
                     $datos_asignatura["codigo"][$fila_array_asignatura] = $codigo_asignatura_a;
                     $datos_asignatura["nombre"][$fila_array_asignatura] = $nombre_asignatura_a;
@@ -120,9 +120,9 @@ class PdfRPAController extends Controller
             ->get();
 
             foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
-                $codigo_personal_ = utf8_decode(trim($response_eg->id_personal));
-                $nombre_personal_ = utf8_decode(trim($response_eg->full_name));
-                $firma_docente = utf8_decode(trim($response_eg->firma));
+                $codigo_personal_ = convertirTexto(trim($response_eg->id_personal));
+                $nombre_personal_ = convertirTexto(trim($response_eg->full_name));
+                $firma_docente = convertirTexto(trim($response_eg->firma));
             } // FIN DEL FOREACH para los datos de la insitucion.
 
                         // Cabecera - DOCENE ENCARGADO DE LA SECCION
@@ -137,8 +137,8 @@ class PdfRPAController extends Controller
                         ->get();
             
                         foreach($EncargadoAsignatura as $response_eg){  //Llenar el arreglo con datos
-                            $codigo_personal_ = utf8_decode(trim($response_eg->id_personal));
-                            $nombre_personal_ea = utf8_decode(trim($response_eg->full_name));
+                            $codigo_personal_ = convertirTexto(trim($response_eg->id_personal));
+                            $nombre_personal_ea = convertirTexto(trim($response_eg->full_name));
                         } // FIN DEL FOREACH para los datos de la insitucion.
 
         // Cabecera - INFORMACION GENERAL DE LA INSTITUCION
@@ -157,12 +157,12 @@ class PdfRPAController extends Controller
             // extgraer datos para el encabezado
             $alto_cell = array('5'); $ancho_cell = array('60','6','30','30','15');
             foreach($EstudianteInformacionInstitucion as $response_i){  //Llenar el arreglo con datos
-                $nombre_institucion = utf8_decode(trim($response_i->nombre_institucion));
-                $nombre_director = utf8_decode(trim($response_i->full_name));
-                $codigo_institucion = utf8_decode(trim($response_i->codigo_institucion));
-                $logo_uno = "/img/".utf8_decode(trim($response_i->logo_uno));
-                $firma_director = "/img/".utf8_decode(trim($response_i->logo_dos));
-                $sello_direccion = "/img/".utf8_decode(trim($response_i->logo_tres));
+                $nombre_institucion = convertirTexto(trim($response_i->nombre_institucion));
+                $nombre_director = convertirTexto(trim($response_i->full_name));
+                $codigo_institucion = convertirTexto(trim($response_i->codigo_institucion));
+                $logo_uno = "/img/".convertirTexto(trim($response_i->logo_uno));
+                $firma_director = "/img/".convertirTexto(trim($response_i->logo_dos));
+                $sello_direccion = "/img/".convertirTexto(trim($response_i->logo_tres));
                 // LOGO DE LA INSTITUCIÓN
                     $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
                     $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
@@ -207,16 +207,16 @@ class PdfRPAController extends Controller
             $fila = 1;             
             $this->fpdf->SetX(30); 
             foreach($EstudianteBoleta as $response){  //Llenar el arreglo con datos
-                $nombre_completo = utf8_decode(trim($response->full_nombres_apellidos));
-                $nombre_estudiante = utf8_decode(trim($response->full_name));
-                $codigo_nie = utf8_decode(trim($response->codigo_nie));
-                $nombre_modalidad = utf8_decode(trim($response->nombre_modalidad));  
-                $nombre_grado = utf8_decode(trim($response->nombre_grado));  
-                $nombre_seccion = utf8_decode(trim($response->nombre_seccion));  
-                $nombre_turno = utf8_decode(trim($response->nombre_turno));                
-                $codigo_asignatura = utf8_decode(trim($response->codigo_asignatura));
-                $codigo_area = utf8_decode(trim($response->codigo_area));
-                $nota_final = utf8_decode(trim($response->nota_final));
+                $nombre_completo = convertirTexto(trim($response->full_nombres_apellidos));
+                $nombre_estudiante = convertirTexto(trim($response->full_name));
+                $codigo_nie = convertirTexto(trim($response->codigo_nie));
+                $nombre_modalidad = convertirTexto(trim($response->nombre_modalidad));  
+                $nombre_grado = convertirTexto(trim($response->nombre_grado));  
+                $nombre_seccion = convertirTexto(trim($response->nombre_seccion));  
+                $nombre_turno = convertirTexto(trim($response->nombre_turno));                
+                $codigo_asignatura = convertirTexto(trim($response->codigo_asignatura));
+                $codigo_area = convertirTexto(trim($response->codigo_area));
+                $nota_final = convertirTexto(trim($response->nota_final));
                 $nombre_foto = (trim($response->foto));
                 $codigo_genero = (trim($response->codigo_genero));
                 // NOTA ACTIVIDAD 1, 2 Y PO, NOTA PERIODO 1
@@ -237,6 +237,8 @@ class PdfRPAController extends Controller
                     $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 186;
                 }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
                     $valor_periodo = 4; $valor_actividades = 25; $ancho_area_asignatura = 210;
+                }else if($codigo_modalidad == '15'){
+                    $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 186;
                 }else{
                     $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 162;    // DEFAULT PUEDE SER PARVULARIA
                 }
@@ -248,13 +250,13 @@ class PdfRPAController extends Controller
                     //                   $this->fpdf->Cell(40,$alto_cell[0],"Estudiante",1,0,'L');       
                     //                    $this->fpdf->Cell(135,$alto_cell[0],$codigo_nie . " - " . $nombre_completo,1,1,'L');       
                     $this->fpdf->SetX(30); 
-                    $this->fpdf->Cell(40,$alto_cell[0],utf8_decode("Nivel"),1,0,'L');       
+                    $this->fpdf->Cell(40,$alto_cell[0],convertirTexto("Nivel"),1,0,'L');       
                     $this->fpdf->Cell(135,$alto_cell[0],$nombre_modalidad,1,1,'L');       
                     $this->fpdf->SetX(30); 
                     $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L');       
                     $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado,1,0,'L');       
 
-                    $this->fpdf->Cell(15,$alto_cell[0],utf8_decode("Sección"),1,0,'L');       
+                    $this->fpdf->Cell(15,$alto_cell[0],convertirTexto("Sección"),1,0,'L');       
                     $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion,1,0,'C');       
                     
                     $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L');       
@@ -284,11 +286,11 @@ class PdfRPAController extends Controller
                     $this->fpdf->Cell(30,$alto_cell[0],"PF->Promedio Final",'LR',1,'L');          
                     // fila de información 
                     $this->fpdf->SetX(30);       
-                    $this->fpdf->Cell(35,$alto_cell[0],utf8_decode("NR1->Nota Recuperación 1"),'LR',0,'L');             
-                    $this->fpdf->Cell(35,$alto_cell[0],utf8_decode("NR2->Nota Recuperación 2"),'LR',0,'L');                
-                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("A->Aprobado"),'LR',0,'L');                
-                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("R->Reprobado"),'LR',0,'L');                
-                    $this->fpdf->Cell(20,$alto_cell[0],utf8_decode("NF->Nota Final"),'LR',1,'L');                
+                    $this->fpdf->Cell(35,$alto_cell[0],convertirTexto("NR1->Nota Recuperación 1"),'LR',0,'L');             
+                    $this->fpdf->Cell(35,$alto_cell[0],convertirTexto("NR2->Nota Recuperación 2"),'LR',0,'L');                
+                    $this->fpdf->Cell(20,$alto_cell[0],convertirTexto("A->Aprobado"),'LR',0,'L');                
+                    $this->fpdf->Cell(20,$alto_cell[0],convertirTexto("R->Reprobado"),'LR',0,'L');                
+                    $this->fpdf->Cell(20,$alto_cell[0],convertirTexto("NF->Nota Final"),'LR',1,'L');                
                     $this->fpdf->ln();
 
                     // n.º, NIE. NOMBRE DEL ESTUDIANTE
@@ -305,7 +307,7 @@ class PdfRPAController extends Controller
                     }
                     // COMPONENTE DE ESTUDIO Y PRIMER FILA DE LAS ACTIVIDADES Y PROMEDIOS
                     // n.º, NIE. NOMBRE DEL ESTUDIANTE
-                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],utf8_decode('N.º'),1,0,'L',false);            
+                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],convertirTexto('N.º'),1,0,'L',false);            
                     $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'NIE',1,0,'L',false);            
                     $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"NOMINA DE ESTUDIANTES",'LRB',0,'C');             
                     //
