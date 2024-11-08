@@ -621,7 +621,8 @@ class CalificacionesPorAsignaturaController extends Controller
                                             }
                                         break;
                                         case ($codigo_modalidad == '15'): // EDUCACIÓN MEDIA TÉCNICA MODULAR PRIMER AÑO//
-                                            if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
+                                            if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7' || $codigo_asignatura = '726'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
+                                                
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
                                                 DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
