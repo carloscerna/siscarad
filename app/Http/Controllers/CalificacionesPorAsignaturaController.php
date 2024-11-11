@@ -254,7 +254,7 @@ class CalificacionesPorAsignaturaController extends Controller
                 }
             return $Periodo;
     }
-
+    // 
     public function getGradoSeccionCalificacionesAsignaturas()
     {
         $codigo_annlectivo = $_POST['codigo_annlectivo'];
@@ -280,8 +280,7 @@ class CalificacionesPorAsignaturaController extends Controller
                 ESTAS MOSTRARAN SOLO EL PERIODO OSEA NOTA_P_P_1...
                 04 - 05 - 06 - 07 - 09
             */
-
-            $nombre_periodos = array('nota_p_p_','recuperacion','nota_recuperacion_2');
+            $nombre_periodos = array('nota_p_p_','recuperacion','nota_recuperacion_2',"nota_final");
             $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
             $nombre_recuperaciones = array('nota_r_');
             $nombre_observacion = array('observacion_');
@@ -320,6 +319,10 @@ class CalificacionesPorAsignaturaController extends Controller
                     $nombre_periodo = $nombre_periodos[2];
                     $numero_periodo = '7';
                 break;
+                case '08':  // nota_FINAL - para el bachillerato tecnico auxiliar contable.
+                    $nombre_periodo = $nombre_periodos[3];
+                    $numero_periodo = '8';
+                break;
             }
             // ACTIVIDADES
             // EVALUAR EL AREA DE LA ASIGNATURA
@@ -329,6 +332,8 @@ class CalificacionesPorAsignaturaController extends Controller
                 if($codigo_area == '08' && $codigo_asignatura == '234' || $codigo_asignatura == '736'){
                     // cambiar el nombre de actividad por el nombre del periodo
                     // cuando es LA CONVIVENCIA CIUDADANA O MUCI
+                        $nombre_actividad = $nombre_periodo;
+                }else if($codigo_area == "03" and $codigo_modalidad == "15"){
                         $nombre_actividad = $nombre_periodo;
                 }else{
                     switch ($codigo_actividad) {
@@ -349,6 +354,9 @@ class CalificacionesPorAsignaturaController extends Controller
                         break;
                         case '07':
                             $nombre_actividad = $nombre_periodos[2];
+                        break;
+                        case '08':
+                            $nombre_actividad = $nombre_periodos[3];
                         break;
                     }
                 }
@@ -396,7 +404,7 @@ class CalificacionesPorAsignaturaController extends Controller
                 // echo "<pre>";
                 // print_r($calificacion);
                 //  echo "</pre>";
-                $nombre_periodos = array('nota_p_p_','recuperacion','nota_recuperacion_2');
+                $nombre_periodos = array('nota_p_p_','recuperacion','nota_recuperacion_2',"nota_final");
                 $nombre_actividades = array('nota_a1_','nota_a2_','nota_a3_');
                 $nombre_recuperaciones = array('nota_r_');
                 $numero_periodo = 0;
@@ -436,6 +444,10 @@ class CalificacionesPorAsignaturaController extends Controller
                             $nombre_periodo = $nombre_periodos[2];
                             $numero_periodo = '7';
                         break;
+                        case '08':  // nota_recuperacion_2
+                            $nombre_periodo = $nombre_periodos[3];
+                            $numero_periodo = '8';
+                        break;
                     }
                 // EVALUAR EL AREA DE LA ASIGNATURA
                     $calcular_promedio = false;
@@ -454,6 +466,9 @@ class CalificacionesPorAsignaturaController extends Controller
                         break;
                         case '04':
                             $nombre_actividad = $nombre_recuperaciones[0] .  $numero_periodo;
+                        break;
+                        case '08':
+                            $nombre_actividad = $nombre_periodo;
                         break;
                     }
                 }else{
@@ -530,7 +545,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                                 }
                                             }
                                         break;
-                                        case ($codigo_modalidad == '06' || $codigo_modalidad == '07' || $codigo_modalidad == '08' || $codigo_modalidad == '09'|| $codigo_modalidad == '15'):  // EDUCACION MEDIA.*********//////
+                                        case ($codigo_modalidad == '06' || $codigo_modalidad == '07' || $codigo_modalidad == '08' || $codigo_modalidad == '09'):  // EDUCACION MEDIA.*********//////
                                             if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
@@ -620,6 +635,52 @@ class CalificacionesPorAsignaturaController extends Controller
                                                     DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),0) where id_notas = ?", [$id_notas_]);
                                                 }
                                             }
+                                        break;
+                                        case ($codigo_modalidad == '15'):  // EDUCACION MEDIA TECNICO ADMINISTRATIVO CONTABLE
+                                            if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7' || $codigo_area == "03"){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
+                                                $actual['update'] = DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
+                                            }else{
+                                                DB::update("UPDATE nota set $nombre_actividad = ? where id_notas = ?", [$calificacion_ , $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
+                                                //////////////////////////////////////////////////////////////////////////////////////////////////// 
+                                                // EXTRAR LA INFORMACION DE LA TABLA NOTA PARA CALCULAR EL NUEVO PROMEDIO. PP
+                                                ////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                $CalificacionRecuperacion = DB::table('nota')
+                                                ->select("$nombre_actividades[0]$numero_periodo as actividad_1","$nombre_actividades[1]$numero_periodo as actividad_2","$nombre_actividades[2]$numero_periodo as actividad_3")
+                                                ->where([
+                                                    ['id_notas', '=', $id_notas_],
+                                                    ])
+                                                ->orderBy('id_notas','asc')
+                                                ->get();
+                                                
+                                                $fila_array = 0;
+                                                foreach($CalificacionRecuperacion as $response){  //Llenar el arreglo con datos
+                                                    $actividad_1_ = trim($response->actividad_1);
+                                                    $actividad_2_ = trim($response->actividad_2);
+                                                    $actividad_3_ = trim($response->actividad_3);
+                                                    $fila_array++;
+                                                }
+                                                //
+                                                //  EVALUAR SI CODIGO ACTIVIDAD ES IGUAL A "04" QUE ES LA CALIFICACIÓN DE RECUPERACIÓN.
+                                                //
+                                                if($codigo_actividad == '04'){
+                                                    // ACTUALIZAR PROMEDIO DEL PERIODO
+                                                    if($calificacion_ == 0){
+                                                        DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),1) where id_notas = ?", [$id_notas_]);
+                                                    }else{
+                                                        // RECALCULAR PROMEDIO EN A1 O A2.
+                                                        if($actividad_1_ > $actividad_2_){
+                                                                DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_recuperacion * 0.35) + ($nombre_actividad_3 * 0.30),1) where id_notas = ?", [$id_notas_]);
+                                                            }else{
+                                                                DB::update("UPDATE nota set $nombre_periodo = round(($nombre_recuperacion * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),1) where id_notas = ?", [$id_notas_]);
+                                                            }
+                                                            $actual['update'] = $nombre_periodo . " - " . $nombre_actividad_1 . " - " . $nombre_recuperacion ." - " . $nombre_actividad_3;
+                                                    }
+                                                }else{
+                                                    // actualizar cuando el periodo es normal
+                                                    DB::update("UPDATE nota set $nombre_periodo = round(($nombre_actividad_1 * 0.35) + ($nombre_actividad_2 * 0.35) + ($nombre_actividad_3 * 0.30),1) where id_notas = ?", [$id_notas_]);
+                                                }
+                                            }
+                                            
                                         break;
                                         default:
                                                 break;

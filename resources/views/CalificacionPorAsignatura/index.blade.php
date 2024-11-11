@@ -39,7 +39,7 @@ use Illuminate\Support\Facades;
         {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control', 'id' => 'codigo_asignatura', 'onchange' => 'BuscarPorAsignatura(this.value)']) !!}
         {!! Form::hidden('codigo_area', '00',['id'=>'codigo_area', 'class'=>'form-control']) !!}
 
-        {{ Form::label('LblPeriodoTrimestre', 'Período o Trimestre:') }}
+        {{ Form::label('LblPeriodoTrimestre', 'Período:') }}
         {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control']) !!}
 
         {{ Form::label('LblActividadPorcentaje', 'Actividades (%):') }}
@@ -117,7 +117,6 @@ use Illuminate\Support\Facades;
                 let text = $('#codigo_asignatura1 option:selected').text();
                 //@this.set('seleccionado', text);
             })
-  
         // funcion onchange
         function BuscarPorAnnLectivo(AnnLectivo) {
             url_ajax = '{{url("getGradoSeccion")}}' 
@@ -159,7 +158,7 @@ use Illuminate\Support\Facades;
         function BuscarPorGradoSeccionAsignaturas(GradoSeccion) {
             url_ajax = '{{url("getGradoSeccionAsignaturas")}}' 
             csrf_token = '{{csrf_token()}}' 
-
+            // VARIABLES
             codigo_personal = $('#codigo_personal').val();
             codigo_annlectivo = $('#codigo_annlectivo').val();
             // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
@@ -226,7 +225,6 @@ use Illuminate\Support\Facades;
                 } 
             });
         }
-
         // funcion onchange
         function BuscarPorPeriodo(Periodo) {
             codigo_asignatura_area = $("#codigo_asignatura").val();
@@ -249,7 +247,7 @@ use Illuminate\Support\Facades;
                     // enviar resultados a la consola
                         console.log(valor_periodo.val() + " Texto: "  + valor_periodo.text());
                     //
-                    if(valor_periodo.val() == '06' || valor_periodo.val() == '07' || codigo_asignatura == '234'){
+                    if(valor_periodo.val() == '06' || valor_periodo.val() == '07' || codigo_asignatura == '234' || valor_periodo.val() == '08'){
                         miselect.append('<option value=00 selected>Seleccionar...</option>'); 
                         miselect.append('<option value='+valor_periodo.val()+'>'+valor_periodo.text()+'</option>'); 
                     }else{
@@ -533,14 +531,32 @@ use Illuminate\Support\Facades;
                 } 
             });
         }
-
+        // MAXIM DE NUMEROS DEPENDE DE LA CALIFIACIÓN.
         function maxLengthNumber(valor) {
+            // Extraer el codigo area y codigo modalidad.
+                codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
+                codigo_asignatura_area = $("#codigo_asignatura").val();
+                conteo_codigo_asignatura = codigo_asignatura_area.length;
+                var MaximaValorCalificacion = 10;
+            // comprar para extraer codigo area.
+                if(conteo_codigo_asignatura == 4){
+                    codigo_asignatura = codigo_asignatura_area.substring(0,2);
+                    codigo_area = codigo_asignatura_area.substring(2,4);
+                }else{
+                    codigo_asignatura = codigo_asignatura_area.substring(0,3);
+                    codigo_area = codigo_asignatura_area.substring(3,5);
+                }
+            //
+            if(codigo_area == '03' && codigo_modalidad == "15"){
+                MaximaValorCalificacion = 5;
+            }
+            //
             console.log(valor.value);
             {
 		    var amount = valor.value;
 		    console.log(amount);
-                   //d+ permite caracteres enteros
-                   //si hay un caracter que no es dígito entonces evalua lo que está en paréntesis (?) significa opcional
+            //d+ permite caracteres enteros
+            //si hay un caracter que no es dígito entonces evalua lo que está en paréntesis (?) significa opcional
 		    var patron = /^(\d+(.{1}\d{1})?)$/;     		    
                     if (!patron.test(amount))
 		   		 	{
@@ -548,7 +564,7 @@ use Illuminate\Support\Facades;
 		        		valor.value = "";
 		        		return false;
         			}
-		   			 else if(amount > 10){
+		   			 else if(amount > MaximaValorCalificacion){
                      console.log('cantidad ingresada incorrectamente');
                      valor.value = "";
                      return false;
@@ -557,7 +573,7 @@ use Illuminate\Support\Facades;
 		        		return true;}
 		  }
         }
-
+        // ABRIR NUEVA PESTAÑA PARA LOS DIFERENTES INFORMES.
         function AbrirVentana(url)
             {
                 window.open(url, '_blank');
