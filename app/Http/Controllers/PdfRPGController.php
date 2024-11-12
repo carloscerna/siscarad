@@ -375,7 +375,7 @@ class PdfRPGController extends Controller
                         $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$nombre_estudiante,1,0,'L',$fill); 
                     // VERIFICAR SI LA CALIFIACION ES MENOR A 5 O 6 SEGUN MODALIDAD
                         if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08'){
-                            $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final);                                
+                            $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final,$codigo_area);                                
                             if($result[0] == "R"){
                                 $this->fpdf->SetTextColor(255,0,0);
                                 $this->fpdf->SetFillColor(197,225,165);
@@ -405,7 +405,7 @@ class PdfRPGController extends Controller
                     }else{
                         // VERIFICAR SI LA CALIFIACION ES MENOR A 5 O 6 SEGUN MODALIDAD
                         if($codigo_area == '01' || $codigo_area == '02' || $codigo_area == '03' || $codigo_area == '08'){
-                            $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final);                                
+                            $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final,$codigo_area);                                
                             if($result[0] == "R"){
                                 $this->fpdf->SetTextColor(255,0,0);
                                 $this->fpdf->SetFillColor(197,225,165);

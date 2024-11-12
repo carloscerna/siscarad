@@ -411,7 +411,7 @@ class PdfRPAController extends Controller
                             }
                             else{
                                 // CALCULAR SI ES APROBADO O REPROBRADO
-                                $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28]);
+                                $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28],$codigo_area);
                                 
                                     if($result[0] == "R"){
                                         $this->fpdf->SetTextColor(255,0,0);
@@ -526,7 +526,7 @@ class PdfRPAController extends Controller
                             }
                             else{
                                 // CALCULAR SI ES APROBADO O REPROBRADO
-                                    $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28]);
+                                    $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28],$codigo_area);
                                         if($result[0] == "R"){
                                             $this->fpdf->SetTextColor(255,0,0);
                                         } 
