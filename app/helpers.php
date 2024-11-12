@@ -6,9 +6,10 @@
  * @param mixed $nota_recuperacion_1
  * @param mixed $nota_recuperacion_2
  * @param mixed $nota_promedio_final
+ * @param mixed $codigo_area
  * @return array
  */
-function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_promedio_final){
+function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_promedio_final, $codigo_area){
     $resultado_por_asignatura = array('A','0');
     /// VALIDAR PRIMERO A QUE MODALIDAD PERTENECE
         // 03 -> PRIMER CICLO
@@ -45,7 +46,7 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
                 // RESUTLADO Y ENVIAR
                     if($nota_promedio_final < 5){$resultado_por_asignatura[0] ="R";}
             break;
-            case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09' || $codigo_modalidad == "15"):
+            case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'):
                 if($nota_recuperacion_1 <> 0 ){
 					// consultar si es menor que la nota_final.
 					if($nota_recuperacion_1 > $nota_promedio_final){
@@ -115,6 +116,57 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
                 // RESUTLADO Y ENVIAR
                     if($nota_promedio_final < 6){$resultado_por_asignatura[0] ="R";}
             break;
+            case ($codigo_modalidad == '15'):
+				print $codigo_area;
+				// VALIDAR CUANDO SEA EL AREA TECNICA POR MODULOS.
+				if($codigo_area == '03'){
+					if($nota_recuperacion_1 <> 0 ){
+						// consultar si es menor que la nota_final.
+						if($nota_recuperacion_1 > $nota_promedio_final){
+							$nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_1) / 2,0);
+						}
+	
+							if($nota_promedio_final < 3){
+								if($nota_recuperacion_2 <> 0){
+									// consultar si es menor que la nota_final.
+									if($nota_recuperacion_2 > $nota_promedio_final){
+										$nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_2) / 2,0);
+									}
+								}
+							}
+					}elseif ($nota_recuperacion_2 <> 0) {
+						// consultar si es menor que la nota_final.
+						if($nota_recuperacion_2 > $nota_promedio_final){
+							$nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_2) / 2,0);
+						}
+					}
+					// RESUTLADO Y ENVIAR
+						if($nota_promedio_final < 3 || $nota_promedio_final == 0){$resultado_por_asignatura[0] ="R";}
+				}else{
+					if($nota_recuperacion_1 <> 0 ){
+						// consultar si es menor que la nota_final.
+						if($nota_recuperacion_1 > $nota_promedio_final){
+							$nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_1) / 2,0);
+						}
+	
+							if($nota_promedio_final < 6){
+								if($nota_recuperacion_2 <> 0){
+									// consultar si es menor que la nota_final.
+									if($nota_recuperacion_2 > $nota_promedio_final){
+										$nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_2) / 2,0);
+									}
+								}
+							}
+					}elseif ($nota_recuperacion_2 <> 0) {
+						// consultar si es menor que la nota_final.
+						if($nota_recuperacion_2 > $nota_promedio_final){
+							$nota_promedio_final = round(($nota_promedio_final + $nota_recuperacion_2) / 2,0);
+						}
+					}
+					// RESUTLADO Y ENVIAR
+						if($nota_promedio_final < 6 || $nota_promedio_final == 0){$resultado_por_asignatura[0] ="R";}
+				}
+            break;
             default:
                 $resultado_por_asignatura[0] ="R";
                 break;
@@ -122,7 +174,6 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
         // nota final con las recuperaciones.
             $resultado_por_asignatura[1] = $nota_promedio_final;
 				return $resultado_por_asignatura;
-    
 }
 // funcion que cambiar el resultado segun sea el nivel y la calificacion.
 /**

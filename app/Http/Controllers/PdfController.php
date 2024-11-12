@@ -68,7 +68,6 @@ class PdfController extends Controller
             $catalogo_area_complementaria = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
             $catalogo_area_cc = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
             $catalogo_area_alertas = true;		// Variable lógica para colocar el SEPRADOR DE ASIGNATURAS.
-
             // CATALOGO ASIGNATURA
             //
             $CatalogoAreaAsignatura = DB::table('catalogo_area_asignatura')
@@ -131,7 +130,7 @@ class PdfController extends Controller
                 ])
             ->orderBy('p.id_personal','asc')
             ->get();
-
+                //
             foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
                 $codigo_personal = mb_convert_encoding(trim($response_eg->id_personal),"ISO-8859-1","UTF-8");
                 $nombre_personal = mb_convert_encoding(trim($response_eg->full_name),"ISO-8859-1","UTF-8");
@@ -162,7 +161,8 @@ class PdfController extends Controller
             ->limit(1)
             ->get();
              // extgraer datos para el encabezado
-             $alto_cell = array('5'); $ancho_cell = array('60','6','30','30');
+             $alto_cell = array('5'); $ancho_cell = array('60','6','30','30','180');
+             $NumeroAnchoColumna = 0;
              foreach($EstudianteInformacionInstitucion as $response_i){  //Llenar el arreglo con datos
                  $nombre_institucion = mb_convert_encoding(trim($response_i->nombre_institucion),'ISO-8859-1','UTF-8');
                  $nombre_director = mb_convert_encoding(trim($response_i->full_name),'ISO-8859-1','UTF-8');
@@ -333,7 +333,7 @@ class PdfController extends Controller
                     $this->fpdf->Cell(20,$alto_cell[0],("A->Aprobado"),'LR',0,'L');                
                     $this->fpdf->Cell(20,$alto_cell[0],("R->Reprobado"),'LR',0,'L');                
                     $this->fpdf->Cell(20,$alto_cell[0],("NF->Nota Final"),'LR',1,'L');                
-                //  $this->fpdf->ln();
+                    //  $this->fpdf->ln();
                     // cabecera de la tabla de calificaicone4s por periodo
                     $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"",'LRT',0,'L');
                     for ($pp=0; $pp <= $valor_periodo; $pp++) { 
@@ -437,7 +437,15 @@ class PdfController extends Controller
                                 $Nombre = $datos_asignatura['nombre'][$buscar];
                                 $Codigo = $datos_asignatura['codigo'][$buscar];
                                 $Concepto = $datos_asignatura['concepto'][$buscar];
-                                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$codigo_asignatura . "-" . substr($Nombre,0,60),1,0,'L');     
+                    //  DEFINIR EL ANCHO DE LA COLUMNA. SEGUN BACHILLERATO TECNICO VOCACIONAL AUXILIAR CONTABLE.
+                        if($codigo_area == "03" and $codigo_modalidad == "15"){
+                            $NumeroAnchoColumna = 4;
+                            $NombreStringAncho = 120;
+                        }else{
+                            $NumeroAnchoColumna = 0;
+                            $NombreStringAncho = 60;
+                        }
+                            $this->fpdf->Cell($ancho_cell[$NumeroAnchoColumna],$alto_cell[0],$codigo_asignatura . "-".substr($Nombre,0,$NombreStringAncho),1,0,'L');     
                     //  validar la calificación promedio.
                         for ($na=1; $na <= $valor_actividades; $na++) { 
                             if($na == 5 || $na == 10 || $na == 15 || $na == 20 || $na == 25){
@@ -489,7 +497,7 @@ class PdfController extends Controller
                             }
                             else{
                                 // CALCULAR SI ES APROBADO O REPROBRADO
-                                $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28]);
+                                $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28],$codigo_area);
                                 
                                     if($result[0] == "R"){
                                         $this->fpdf->SetTextColor(255,0,0);
@@ -576,68 +584,82 @@ class PdfController extends Controller
                                 $Nombre = $datos_asignatura['nombre'][$buscar];
                                 $Codigo = $datos_asignatura['codigo'][$buscar];
                                 $Concepto = $datos_asignatura['concepto'][$buscar];
-                                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$codigo_asignatura . "-" . substr($Nombre,0,40),1,0,'L');     
-                    //
-                        for ($na=1; $na <= $valor_actividades; $na++) { 
-                            if($na == 5 || $na == 10 || $na == 15 || $na == 20 || $na == 25){
-                                $this->fpdf->SetFillColor(218,215,215);
-                                $this->fpdf->SetFont('Arial', 'B', '7');
-                                // Cerificar si la calicación es igual a 0
-                                    if($nota_actividades_0[$na] == 0){
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
-                                    }else{
-                                        //
-                                        // ASIGNATURA ACOMPETENCIA CIUDADANA
-                                        //
-                                        if($codigo_area == '07'){
-                                            $result_concepto = resultado_concepto($codigo_modalidad, $nota_actividades_0[$na]);
-                                            // $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
-                                            //$this->fpdf->SetX
-                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result_concepto,1,'TB','R',true);                                     
-                                        }else{
-                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
-                                        }
-                                        
-                                    }
-                                $this->fpdf->SetFont('Arial', '', '7');
-                                $this->fpdf->SetFillColor(255,255,255);
-                            }else{
-                                $this->fpdf->SetFont('Arial', '', '7');
-                                $this->fpdf->SetFillColor(255,255,255);
-                                // Cerificar si la calicación es igual a 0
-                                // VALIDAR CUANDO LA ASIGNATURA ES COMPETENCIA CIUDADANA
-                                // BUENO, MUY BUENO, EXCELENTE O VACIO
-                                if($nota_actividades_0[$na] == 0){
-                                        if($codigo_area == '07'){
-                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','TB',0,'C',true);
-                                        }else{
-                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
-                                        }
-                                    
-                                }else{
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
-                                }
-                            }
-                                
+                    //  DEFINIR EL ANCHO DE LA COLUMNA. SEGUN BACHILLERATO TECNICO VOCACIONAL AUXILIAR CONTABLE.
+                        if($codigo_area == "03" and $codigo_modalidad == "15"){
+                            $NumeroAnchoColumna = 4;
+                            $NombreStringAncho = 120;
+                        }else{
+                            $NumeroAnchoColumna = 0;
+                            $NombreStringAncho = 60;
                         }
-                            // NOTA PROMEDIO FINAL.
-                            $this->fpdf->SetFont('Arial', 'B', '7');
-                            // NOTA PROMEDIO FINAL
-                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[28],1,0,'C');
-                            // NOTA RECUPERACION  1
-                                if($nota_actividades_0[26] == 0){
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                            $this->fpdf->Cell($ancho_cell[$NumeroAnchoColumna],$alto_cell[0],$codigo_asignatura . "-".substr($Nombre,0,$NombreStringAncho),1,0,'L');     
+                    //
+                        //  DEFINIR QUE SEAN DIFERENTES AL BACHILLERATO TVC administrativo contable
+                        if($codigo_area == "03" and $codigo_modalidad == "15"){
+
+                        }else{
+                            for ($na=1; $na <= $valor_actividades; $na++) { 
+                                if($na == 5 || $na == 10 || $na == 15 || $na == 20 || $na == 25){
+                                    $this->fpdf->SetFillColor(218,215,215);
+                                    $this->fpdf->SetFont('Arial', 'B', '7');
+                                    // Cerificar si la calicación es igual a 0
+                                        if($nota_actividades_0[$na] == 0){
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
+                                        }else{
+                                            //
+                                            // ASIGNATURA COMPETENCIA CIUDADANA
+                                            //
+                                            if($codigo_area == '07'){
+                                                $result_concepto = resultado_concepto($codigo_modalidad, $nota_actividades_0[$na]);
+                                                // $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                                //$this->fpdf->SetX
+                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result_concepto,1,'TB','R',true);                                     
+                                            }else{
+                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                            }
+                                            
+                                        }
+                                    $this->fpdf->SetFont('Arial', '', '7');
+                                    $this->fpdf->SetFillColor(255,255,255);
+                                }else{
+                                    $this->fpdf->SetFont('Arial', '', '7');
+                                    $this->fpdf->SetFillColor(255,255,255);
+                                    // Cerificar si la calicación es igual a 0
+                                    // VALIDAR CUANDO LA ASIGNATURA ES COMPETENCIA CIUDADANA
+                                    // BUENO, MUY BUENO, EXCELENTE O VACIO
+                                    if($nota_actividades_0[$na] == 0){
+                                            if($codigo_area == '07'){
+                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','TB',0,'C',true);
+                                            }else{
+                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
+                                            }
+                                        
+                                    }else{
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                    }
                                 }
-                                else{
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[26],1,0,'C');
-                                }
-                            // NOTA RECUPERACION  2
-                                if($nota_actividades_0[27] == 0){
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
-                                }
-                                else{
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[27],1,0,'C');
-                                }
+                                    
+                            }
+                        }
+                                // NOTA PROMEDIO FINAL.
+                                $this->fpdf->SetFont('Arial', 'B', '7');
+                                // NOTA PROMEDIO FINAL
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[28],1,0,'C');
+                                // NOTA RECUPERACION  1
+                                    if($nota_actividades_0[26] == 0){
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                    }
+                                    else{
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[26],1,0,'C');
+                                    }
+                                // NOTA RECUPERACION  2
+                                    if($nota_actividades_0[27] == 0){
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                    }
+                                    else{
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[27],1,0,'C');
+                                    }
+                            
                             // NOTA PROMEDIO FINAL.
                             if($nota_actividades_0[28] == 0){
                                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
@@ -645,7 +667,7 @@ class PdfController extends Controller
                             }
                             else{
                                 // CALCULAR SI ES APROBADO O REPROBRADO
-                                    $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28]);
+                                    $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28],$codigo_area);
                                         if($result[0] == "R"){
                                             $this->fpdf->SetTextColor(255,0,0);
                                         } 
@@ -700,11 +722,6 @@ class PdfController extends Controller
                     }
                         $this->fpdf->Output($nombre_archivo,$modo);
                             exit;
-
-
-
-
-
             }else{
                 $EstudianteBoleta = DB::table('alumno as a')
                 ->join('alumno_matricula AS am','a.id_alumno','=','am.codigo_alumno')
@@ -739,482 +756,500 @@ class PdfController extends Controller
 //
 //  creación de la boleta segùn el dato de la matricula.
 //
-if($EstudianteMatricula[0] == "Tablero"){
+    if($EstudianteMatricula[0] == "Tablero"){
 
-}else{
-            // variales de entorno para mostrar la información.
-            // agregar pagina
-            $this->fpdf->AddPage();
-            $fila = 1; $fill = true;
-            $this->fpdf->SetX(30); 
-            foreach($EstudianteBoleta as $response){  //Llenar el arreglo con datos
-                $nombre_completo = convertirTexto(trim($response->full_nombres_apellidos));
-                $codigo_nie = (trim($response->codigo_nie));
-                $nombre_modalidad = mb_convert_encoding(trim($response->nombre_modalidad),'ISO-8859-1','UTF-8');  
-                $nombre_grado = mb_convert_encoding(trim($response->nombre_grado),'ISO-8859-1','UTF-8');  
-                $nombre_seccion = mb_convert_encoding(trim($response->nombre_seccion),'ISO-8859-1','UTF-8');  
-                $nombre_turno = mb_convert_encoding(trim($response->nombre_turno),'ISO-8859-1','UTF-8');                
-                $nombre_annlectivo = mb_convert_encoding(trim($response->nombre_annlectivo),'ISO-8859-1','UTF-8');                
-                $codigo_asignatura = (trim($response->codigo_asignatura));
-                $codigo_area = (trim($response->codigo_area));
-                $nota_final = (trim($response->nota_final));
-                $nombre_foto = (trim($response->foto));
-                $codigo_genero = (trim($response->codigo_genero));
-                $correo_estudiante = (trim($response->correo_estudiante));
-                // NOTA ACTIVIDAD 1, 2 Y PO, NOTA PERIODO 1
-                $nota_actividades_0 = array('',
-                            $response->nota_a1_1, $response->nota_a2_1, $response->nota_a3_1, $response->nota_r_1, $response->nota_p_p_1, // 5
-                            $response->nota_a1_2, $response->nota_a2_2, $response->nota_a3_2, $response->nota_r_2, $response->nota_p_p_2, // 10
-                            $response->nota_a1_3, $response->nota_a2_3, $response->nota_a3_3, $response->nota_r_3, $response->nota_p_p_3, // 15
-                            $response->nota_a1_4, $response->nota_a2_4, $response->nota_a3_4, $response->nota_r_4, $response->nota_p_p_4, // 20
-                            $response->nota_a1_5, $response->nota_a2_5, $response->nota_a3_5, $response->nota_r_5, $response->nota_p_p_5, // 25
-                            $response->recuperacion, $response->nota_recuperacion_2, $response->nota_final);      // 26, 27, 28.
-                    // MATRICES
-                    $periodos_a = array('PERIODO 1', 'PERIODO 2', 'PERIODO 3', 'PERIODO 4', 'PERIODO 5', 'PROMEDIO FINAL', 'R');
-                    $actividad_periodo = array('A1','A2','PO','R','PP','PF');
-                    // VALIDAR VARIABGLES PARA MOSTRAR CABECERA Y CALIFICACIONES.
-                    if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
-                        $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 180;
-                    }else if($codigo_modalidad >= '06' && $codigo_modalidad <= '09' || $codigo_modalidad == '15'){   // EDUCACION MEDIA
-                        $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
-                    }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
-                        $valor_periodo = 4; $valor_actividades = 25; $ancho_area_asignatura = 240;
-                    }else{
-                        $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 186;    // DEFAULT PUEDE SER PARVULARIA
-                    }
-
-                    if($fila == 1){
-                        // LOGO DE LA INSTITUCIÓN
-                            $this->fpdf->image(URL::to($logo_uno),10,10,20,25);
-                            $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
-                            $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,1,1,'L');       
-                        // LLAMAR A LA FUNCION QUE POSEE EL ENCAVEZADO DE CADA REA DE LA ASIGNTURA
-                        // EncabezadoCatalogoAreaAsignatura($codigo_area);
-                        //
-                        $this->fpdf->SetX(30); 
-                        $this->fpdf->Cell(40,$alto_cell[0],"Estudiante",1,0,'L');       
-                        $this->fpdf->Cell(135,$alto_cell[0],$codigo_nie . " - " . $nombre_completo,1,1,'L');       
-                        $this->fpdf->SetX(30); 
-                        $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Correo Electrónico","ISO-8859-1","UTF-8"),1,0,'L');       
-                        $this->fpdf->Cell(135,$alto_cell[0],$correo_estudiante,1,1,'L');       
-                        //Nivel
-                        $this->fpdf->SetX(30); 
-                        $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Nivel","ISO-8859-1","UTF-8"),1,0,'L');       
-                        $this->fpdf->Cell(115,$alto_cell[0],$nombre_modalidad,1,1,'L');       
-                        // Grado
-                        $this->fpdf->SetX(30); 
-                        $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L');       
-                        $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado,1,0,'L');       
-                        // Sección.
-                        $this->fpdf->Cell(15,$alto_cell[0],mb_convert_encoding("Sección","ISO-8859-1","UTF-8"),1,0,'L');       
-                        $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion,1,0,'C');       
-                        // Turno
-                        $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L');       
-                        $this->fpdf->Cell(30,$alto_cell[0],$nombre_turno,1,0,'C');       
-                        // Año Lectivo
-                        $this->fpdf->Cell(22,$alto_cell[0],mb_convert_encoding("Año Lectivo","ISO-8859-1","UTF-8"),1,0,'L');       
-                        $this->fpdf->Cell(10,$alto_cell[0],mb_convert_encoding($nombre_annlectivo,"ISO-8859-1","UTF-8"),1,1,'C');       
-                        // FOTO DEL ESTUDIANTE.
-                            if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
-                                {
-                                    $img = 'c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
-                                    $this->fpdf->image($img,240,5,35,40);
-                                }else if($codigo_genero == '01'){
-                                        $fotos = 'avatar_masculino.png';
-                                        $img = '/img/'.$fotos;
-                                        $this->fpdf->image(URL::to($img),240,5,35,40);
-                                    }
-                                    else{
-                                        $fotos = 'avatar_femenino.png';
-                                        $img = '/img/'.$fotos;
-                                        $this->fpdf->image(URL::to($img),240,5,35,40);
-                                    }
-                        //
-                        //$this->fpdf->ln();
-
-                        $this->fpdf->SetX(30); 
-                        $this->fpdf->SetFont('Arial', 'B', '7');
-                        // fila de información
-                        $this->fpdf->Cell(30,$alto_cell[0],"A1->Actividad 1 (35%)",'LR',0,'L');       
-                        $this->fpdf->Cell(30,$alto_cell[0],"A2->Actividad 2 (35%)",'LR',0,'L');       
-                        $this->fpdf->Cell(35,$alto_cell[0],"PO->Prueba Objetiva (30%)",'LR',0,'L'); 
-                        $this->fpdf->Cell(35,$alto_cell[0],"PP->Promedio Periodo",'LR',0,'L');      
-                        $this->fpdf->Cell(30,$alto_cell[0],"PF->Promedio Final",'LR',1,'L');          
-                        // fila de información 
-                        $this->fpdf->SetX(30);       
-                        $mensaje_1 = mb_convert_encoding("NR1->Nota Recuperación 1",'ISO-8859-1','UTF-8');
-                        $mensaje_2 = mb_convert_encoding("NR1->Nota Recuperación 2",'ISO-8859-1','UTF-8');
-                        $this->fpdf->Cell(35,$alto_cell[0],$mensaje_1,'LR',0,'L');             
-                        $this->fpdf->Cell(35,$alto_cell[0],$mensaje_2,'LR',0,'L');                
-                        $this->fpdf->Cell(20,$alto_cell[0],("A->Aprobado"),'LR',0,'L');                
-                        $this->fpdf->Cell(20,$alto_cell[0],("R->Reprobado"),'LR',0,'L');                
-                        $this->fpdf->Cell(20,$alto_cell[0],("NF->Nota Final"),'LR',1,'L');                
-                    //  $this->fpdf->ln();
-                        // cabecera de la tabla de calificaicone4s por periodo
-                        $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"",'LRT',0,'L');
-                        for ($pp=0; $pp <= $valor_periodo; $pp++) { 
-                            if($valor_periodo == $pp){
-                                $this->fpdf->Cell($ancho_cell[2],$alto_cell[0],$periodos_a[$pp],1,1,'C');
-                            }else{
-                                $this->fpdf->Cell($ancho_cell[2],$alto_cell[0],$periodos_a[$pp],1,0,'C');
-                            }
+    }else{
+                // variales de entorno para mostrar la información.
+                // agregar pagina
+                $this->fpdf->AddPage();
+                $fila = 1; $fill = true;
+                $this->fpdf->SetX(30); 
+                foreach($EstudianteBoleta as $response){  //Llenar el arreglo con datos
+                    $nombre_completo = convertirTexto(trim($response->full_nombres_apellidos));
+                    $codigo_nie = (trim($response->codigo_nie));
+                    $nombre_modalidad = mb_convert_encoding(trim($response->nombre_modalidad),'ISO-8859-1','UTF-8');  
+                    $nombre_grado = mb_convert_encoding(trim($response->nombre_grado),'ISO-8859-1','UTF-8');  
+                    $nombre_seccion = mb_convert_encoding(trim($response->nombre_seccion),'ISO-8859-1','UTF-8');  
+                    $nombre_turno = mb_convert_encoding(trim($response->nombre_turno),'ISO-8859-1','UTF-8');                
+                    $nombre_annlectivo = mb_convert_encoding(trim($response->nombre_annlectivo),'ISO-8859-1','UTF-8');                
+                    $codigo_asignatura = (trim($response->codigo_asignatura));
+                    $codigo_area = (trim($response->codigo_area));
+                    $nota_final = (trim($response->nota_final));
+                    $nombre_foto = (trim($response->foto));
+                    $codigo_genero = (trim($response->codigo_genero));
+                    $correo_estudiante = (trim($response->correo_estudiante));
+                    // NOTA ACTIVIDAD 1, 2 Y PO, NOTA PERIODO 1
+                    $nota_actividades_0 = array('',
+                                $response->nota_a1_1, $response->nota_a2_1, $response->nota_a3_1, $response->nota_r_1, $response->nota_p_p_1, // 5
+                                $response->nota_a1_2, $response->nota_a2_2, $response->nota_a3_2, $response->nota_r_2, $response->nota_p_p_2, // 10
+                                $response->nota_a1_3, $response->nota_a2_3, $response->nota_a3_3, $response->nota_r_3, $response->nota_p_p_3, // 15
+                                $response->nota_a1_4, $response->nota_a2_4, $response->nota_a3_4, $response->nota_r_4, $response->nota_p_p_4, // 20
+                                $response->nota_a1_5, $response->nota_a2_5, $response->nota_a3_5, $response->nota_r_5, $response->nota_p_p_5, // 25
+                                $response->recuperacion, $response->nota_recuperacion_2, $response->nota_final);      // 26, 27, 28.
+                        // MATRICES
+                        $periodos_a = array('PERIODO 1', 'PERIODO 2', 'PERIODO 3', 'PERIODO 4', 'PERIODO 5', 'PROMEDIO FINAL', 'R');
+                        $actividad_periodo = array('A1','A2','PO','R','PP','PF');
+                        // VALIDAR VARIABGLES PARA MOSTRAR CABECERA Y CALIFICACIONES.
+                        if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
+                            $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 180;
+                        }else if($codigo_modalidad >= '06' && $codigo_modalidad <= '09' || $codigo_modalidad == '15'){   // EDUCACION MEDIA
+                            $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
+                        }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
+                            $valor_periodo = 4; $valor_actividades = 25; $ancho_area_asignatura = 240;
+                        }else{
+                            $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 186;    // DEFAULT PUEDE SER PARVULARIA
                         }
-                        // COMPONENTE DE ESTUDIO Y PRIMER FILA DE LAS ACTIVIDADES Y PROMEDIOS
-                        $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"Componente del Plan de Estudio",'LRB',0,'C');             
-                        for ($pp=0; $pp <= $valor_periodo; $pp++) { 
-                            for ($ap=0; $ap < count($actividad_periodo) -1; $ap++) { 
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$actividad_periodo[$ap],1,0,'C');
-                            }
-                            if($valor_periodo == $pp){
-                                // colocar celda PF
-                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$actividad_periodo[4].strval($valor_periodo+1),1,0,'C');
-                            }
-                        }
-                            // colocar celda NR1
-                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR1',1,0,'C');
-                            // colocar celda NR2
-                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR2',1,0,'C');
-                            // colocar celda NF
-                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NF',1,0,'C');
-                            // COLOCAR CELDA RESULTADO.
-                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$periodos_a[6],1,1,'C');
-                        ///////////////////////////////////////////////////////////////////////////////////////////////////
-                        /////VERIFICAR ENCABEZADO de AREA DE ASIGNATURAS///////////////////////////////////////////////////
-                        ///////////////////////////////////////////////////////////////////////////////////////////////////		
-                        /*	"01"	"Básica                                                                     " 0
-                            "02"	"Formativa                                                                  " 1
-                            "03"	"Técnica                                                                    " 2
-                            "04"	"Experiencia y Desarrollo Personal y Social                                 " 3
-                            "05"	"Experiencia y Desarrollo de la Expresión, Comunicación y Representación    " 4
-                            "06"	"Experiencia y Desarrollo de la Relación con el Entorno                     " 5
-                            "07"	"Competencias Ciudadanas                                                    " 6
-                            "08"	"Complementaria                                                             " 7
-                            "09"	"Alertas                                                                    " 8
-                        */                                                                 
-                        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                        // DAR FORMATO. -1 en la matriz
-                            //Colores, ancho de l�nea y fuente en negrita
-                            $this->fpdf->SetFillColor(212, 230, 252);
-                            $this->fpdf->SetTextColor(0,0,0);
-                            $this->fpdf->SetFont('Times','B',12);
-        
-                            //print_r($catalogo_area_asignatura_codigo);
-                            //$encabezado_ = EncabezadoCatalogoAreaAsignatura($catalogo_area_asignatura_codigo, $codigo_area);
-                        //	print $descripcion_area;
-                            //exit;
-                        // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
-                            if($catalogo_area_asignatura_codigo[0] == $codigo_area){
-                                if($catalogo_area_basica == true){
-                                    $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[0],"ISO-8859-1","UTF-8")),1,1,'L',true);
-                                    $catalogo_area_basica = false;
-                                }
-                            }
-                            //$this->fpdf->Cell(203,6,strtoupper(mb_convert_encoding($encabezado_)),1,1,'L',true);
-                            // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
-                            if($catalogo_area_asignatura_codigo[1] == $codigo_area){
-                                if($catalogo_area_formativa == true){
-                                    $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[1],"ISO-8859-1","UTF-8")),1,1,'L',true);
-                                    $catalogo_area_formativa = false;
-                                }
-                            }
-                            // LINEA DE DIVISIÓN - PARA EL ÁREA TÉCNICA.
-                            if($catalogo_area_asignatura_codigo[2] == $codigo_area){
-                                if($catalogo_area_tecnica == true){
-                                    $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[2],"ISO-8859-1","UTF-8")),1,1,'L',true);
-                                    $catalogo_area_tecnica = false;
-                                }
-                            }
-                            // LINEA DE DIVISIÓN - PARA EL ÁREA COMPETENCIAS CIUDADANAS.
-                            if($catalogo_area_asignatura_codigo[6] == $codigo_area){
-                                if($catalogo_area_cc == true){
-                                    $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[6],"ISO-8859-1","UTF-8")),1,1,'L',true);
-                                    $catalogo_area_cc = false;
-                                }
-                            }
-                            
-                            // LINEA DE DIVISIÓN - PARA EL ÁREA COMPLEMENTARIA.
-                            if($catalogo_area_asignatura_codigo[7] == $codigo_area){
-                                if($catalogo_area_complementaria == true){
-                                    $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[7],"ISO-8859-1","UTF-8")),1,1,'L',true);
-                                    $catalogo_area_complementaria = false;
-                                }
-                            }
-                            //Restauraci�n de colos y fuentes
-                            $this->fpdf->SetFillColor(212, 230, 252);
-                            $this->fpdf->SetTextColor(0);
-                            $this->fpdf->SetFont('Times','',10);	
-                        ///////////////////////////////////////////////////////////////////////////////////////////////////
-                        ///////////////////////////////////////////////////////////////////////////////////////////////////	
-                        // VALOR DE LA CALIFIACION SEGUN PERIODO 
-                            $this->fpdf->SetFont('Arial', '', '7');
-                        // INFORMACION DE LA ARRAY EXTRAER DE LA MATRIZ
-                                $buscar = array_search($codigo_asignatura, $datos_asignatura['codigo']);
-                                
-                                    $Nombre = $datos_asignatura['nombre'][$buscar];
-                                    $Codigo = $datos_asignatura['codigo'][$buscar];
-                                    $Concepto = $datos_asignatura['concepto'][$buscar];
-                                        $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$codigo_asignatura . "-" . substr($Nombre,0,60),1,0,'L');     
-                        //  validar la calificación promedio.
-                            for ($na=1; $na <= $valor_actividades; $na++) { 
-                                if($na == 5 || $na == 10 || $na == 15 || $na == 20 || $na == 25){
-                                    $this->fpdf->SetFillColor(218,215,215);
-                                    $this->fpdf->SetFont('Arial', 'B', '7');
-                                    // Cerificar si la calicación es igual a 0
-                                    if($nota_actividades_0[$na] == 0){
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
-                                    }else{
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
-                                    }
-                                        
-                                    $this->fpdf->SetFont('Arial', '', '7');
-                                    $this->fpdf->SetFillColor(255,255,255);
-                                }else{
-                                    //
-                                    $this->fpdf->SetFont('Arial', '', '7');
-                                    $this->fpdf->SetFillColor(255,255,255);
-                                    // Cerificar si la calicación es igual a 0
-                                    if($nota_actividades_0[$na] == 0){
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
-                                    }else{
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
-                                    }
-                                }
-                            }
-                            // NOTA PROMEDIO FINAL.
+
+                        if($fila == 1){
+                            // LOGO DE LA INSTITUCIÓN
+                                $this->fpdf->image(URL::to($logo_uno),10,10,20,25);
+                                $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
+                                $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,1,1,'L');       
+                            // LLAMAR A LA FUNCION QUE POSEE EL ENCAVEZADO DE CADA REA DE LA ASIGNTURA
+                            // EncabezadoCatalogoAreaAsignatura($codigo_area);
+                            //
+                            $this->fpdf->SetX(30); 
+                            $this->fpdf->Cell(40,$alto_cell[0],"Estudiante",1,0,'L');       
+                            $this->fpdf->Cell(135,$alto_cell[0],$codigo_nie . " - " . $nombre_completo,1,1,'L');       
+                            $this->fpdf->SetX(30); 
+                            $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Correo Electrónico","ISO-8859-1","UTF-8"),1,0,'L');       
+                            $this->fpdf->Cell(135,$alto_cell[0],$correo_estudiante,1,1,'L');       
+                            //Nivel
+                            $this->fpdf->SetX(30); 
+                            $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Nivel","ISO-8859-1","UTF-8"),1,0,'L');       
+                            $this->fpdf->Cell(115,$alto_cell[0],$nombre_modalidad,1,1,'L');       
+                            // Grado
+                            $this->fpdf->SetX(30); 
+                            $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L');       
+                            $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado,1,0,'L');       
+                            // Sección.
+                            $this->fpdf->Cell(15,$alto_cell[0],mb_convert_encoding("Sección","ISO-8859-1","UTF-8"),1,0,'L');       
+                            $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion,1,0,'C');       
+                            // Turno
+                            $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L');       
+                            $this->fpdf->Cell(30,$alto_cell[0],$nombre_turno,1,0,'C');       
+                            // Año Lectivo
+                            $this->fpdf->Cell(22,$alto_cell[0],mb_convert_encoding("Año Lectivo","ISO-8859-1","UTF-8"),1,0,'L');       
+                            $this->fpdf->Cell(10,$alto_cell[0],mb_convert_encoding($nombre_annlectivo,"ISO-8859-1","UTF-8"),1,1,'C');       
+                            // FOTO DEL ESTUDIANTE.
+                                if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
+                                    {
+                                        $img = 'c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
+                                        $this->fpdf->image($img,240,5,35,40);
+                                    }else if($codigo_genero == '01'){
+                                            $fotos = 'avatar_masculino.png';
+                                            $img = '/img/'.$fotos;
+                                            $this->fpdf->image(URL::to($img),240,5,35,40);
+                                        }
+                                        else{
+                                            $fotos = 'avatar_femenino.png';
+                                            $img = '/img/'.$fotos;
+                                            $this->fpdf->image(URL::to($img),240,5,35,40);
+                                        }
+                            //
+                            //$this->fpdf->ln();
+                            $this->fpdf->SetX(30); 
                             $this->fpdf->SetFont('Arial', 'B', '7');
-                                // NOTA PROMEDIO FINAL
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[28],1,0,'C');
-                                // NOTA RECUPERACION  1
-                                    if($nota_actividades_0[26] == 0){
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
-                                    }
-                                    else{
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[26],1,0,'C');
-                                    }
-                                // NOTA RECUPERACION  2
-                                    if($nota_actividades_0[27] == 0){
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
-                                    }
-                                    else{
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[27],1,0,'C');
-                                    }
-                                // NOTA PROMEDIO FINAL.
-                                if($nota_actividades_0[28] == 0){
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,1,'C');
+                            // fila de información
+                            $this->fpdf->Cell(30,$alto_cell[0],"A1->Actividad 1 (35%)",'LR',0,'L');       
+                            $this->fpdf->Cell(30,$alto_cell[0],"A2->Actividad 2 (35%)",'LR',0,'L');       
+                            $this->fpdf->Cell(35,$alto_cell[0],"PO->Prueba Objetiva (30%)",'LR',0,'L'); 
+                            $this->fpdf->Cell(35,$alto_cell[0],"PP->Promedio Periodo",'LR',0,'L');      
+                            $this->fpdf->Cell(30,$alto_cell[0],"PF->Promedio Final",'LR',1,'L');          
+                            // fila de información 
+                            $this->fpdf->SetX(30);       
+                            $mensaje_1 = mb_convert_encoding("NR1->Nota Recuperación 1",'ISO-8859-1','UTF-8');
+                            $mensaje_2 = mb_convert_encoding("NR1->Nota Recuperación 2",'ISO-8859-1','UTF-8');
+                            $this->fpdf->Cell(35,$alto_cell[0],$mensaje_1,'LR',0,'L');             
+                            $this->fpdf->Cell(35,$alto_cell[0],$mensaje_2,'LR',0,'L');                
+                            $this->fpdf->Cell(20,$alto_cell[0],("A->Aprobado"),'LR',0,'L');                
+                            $this->fpdf->Cell(20,$alto_cell[0],("R->Reprobado"),'LR',0,'L');                
+                            $this->fpdf->Cell(20,$alto_cell[0],("NF->Nota Final"),'LR',1,'L');                
+                        //  $this->fpdf->ln();
+                            // cabecera de la tabla de calificaicone4s por periodo
+                            $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"",'LRT',0,'L');
+                            for ($pp=0; $pp <= $valor_periodo; $pp++) { 
+                                if($valor_periodo == $pp){
+                                    $this->fpdf->Cell($ancho_cell[2],$alto_cell[0],$periodos_a[$pp],1,1,'C');
+                                }else{
+                                    $this->fpdf->Cell($ancho_cell[2],$alto_cell[0],$periodos_a[$pp],1,0,'C');
                                 }
-                                else{
-                                    // CALCULAR SI ES APROBADO O REPROBRADO
-                                    $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28]);
-                                    
-                                        if($result[0] == "R"){
-                                            $this->fpdf->SetTextColor(255,0,0);
-                                        } 
-                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],round($result[1],0),1,0,'C');
-                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result[0],1,1,'C');
-                                            // restaurar el color
-                                            $this->fpdf->SetTextColor(0);
-                                            $this->fpdf->SetFillColor(255,255,255);
+                            }
+                            // COMPONENTE DE ESTUDIO Y PRIMER FILA DE LAS ACTIVIDADES Y PROMEDIOS
+                            $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"Componente del Plan de Estudio",'LRB',0,'C');             
+                            for ($pp=0; $pp <= $valor_periodo; $pp++) { 
+                                for ($ap=0; $ap < count($actividad_periodo) -1; $ap++) { 
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$actividad_periodo[$ap],1,0,'C');
                                 }
-                            $this->fpdf->SetFont('Arial', '', '7');
-                    }else{
-                        //Mostrar solamente una vez.
-                        ///////////////////////////////////////////////////////////////////////////////////////////////////
-                        /////VERIFICAR ENCABEZADO de AREA DE ASIGNATURAS///////////////////////////////////////////////////
-                        ///////////////////////////////////////////////////////////////////////////////////////////////////		
-                        /*	"01"	"Básica                                                                     " 0
-                            "02"	"Formativa                                                                  " 1
-                            "03"	"Técnica                                                                    " 2
-                            "04"	"Experiencia y Desarrollo Personal y Social                                 " 3
-                            "05"	"Experiencia y Desarrollo de la Expresión, Comunicación y Representación    " 4
-                            "06"	"Experiencia y Desarrollo de la Relación con el Entorno                     " 5
-                            "07"	"Competencias Ciudadanas                                                    " 6
-                            "08"	"Complementaria                                                             " 7
-                            "09"	"Alertas                                                                    " 8
-                        */                                                                 
-                        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                        // DAR FORMATO. -1 en la matriz
-                            //Colores, ancho de l�nea y fuente en negrita
-                            $this->fpdf->SetFillColor(200,200,200);
-                            $this->fpdf->SetTextColor(0);
-                            $this->fpdf->SetFont('Times','B',12);
-        
-                            //print_r($catalogo_area_asignatura_codigo);
-                        //	print $descripcion_area;
-                            //exit;
+                                if($valor_periodo == $pp){
+                                    // colocar celda PF
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$actividad_periodo[4].strval($valor_periodo+1),1,0,'C');
+                                }
+                            }
+                                // colocar celda NR1
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR1',1,0,'C');
+                                // colocar celda NR2
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR2',1,0,'C');
+                                // colocar celda NF
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NF',1,0,'C');
+                                // COLOCAR CELDA RESULTADO.
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$periodos_a[6],1,1,'C');
+                            ///////////////////////////////////////////////////////////////////////////////////////////////////
+                            /////VERIFICAR ENCABEZADO de AREA DE ASIGNATURAS///////////////////////////////////////////////////
+                            ///////////////////////////////////////////////////////////////////////////////////////////////////		
+                            /*	"01"	"Básica                                                                     " 0
+                                "02"	"Formativa                                                                  " 1
+                                "03"	"Técnica                                                                    " 2
+                                "04"	"Experiencia y Desarrollo Personal y Social                                 " 3
+                                "05"	"Experiencia y Desarrollo de la Expresión, Comunicación y Representación    " 4
+                                "06"	"Experiencia y Desarrollo de la Relación con el Entorno                     " 5
+                                "07"	"Competencias Ciudadanas                                                    " 6
+                                "08"	"Complementaria                                                             " 7
+                                "09"	"Alertas                                                                    " 8
+                            */                                                                 
+                            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                            // DAR FORMATO. -1 en la matriz
+                                //Colores, ancho de l�nea y fuente en negrita
+                                $this->fpdf->SetFillColor(212, 230, 252);
+                                $this->fpdf->SetTextColor(0,0,0);
+                                $this->fpdf->SetFont('Times','B',12);
+                                //print_r($catalogo_area_asignatura_codigo);
+                                //$encabezado_ = EncabezadoCatalogoAreaAsignatura($catalogo_area_asignatura_codigo, $codigo_area);
+                            //	print $descripcion_area;
+                                //exit;
                             // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
-                        /* if($catalogo_area_asignatura_codigo[0] == $codigo_area){
-                                if($catalogo_area_basica == true){
-                                    $this->fpdf->Cell(203,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[0])),1,1,'L',true);
-                                    $catalogo_area_basica = false;
+                                if($catalogo_area_asignatura_codigo[0] == $codigo_area){
+                                    if($catalogo_area_basica == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[0],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_basica = false;
+                                    }
                                 }
-                            }*/
-                            // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
-                            if($catalogo_area_asignatura_codigo[1] == $codigo_area){
-                                if($catalogo_area_formativa == true){
-                                    $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[1],"ISO-8859-1","UTF-8")),1,1,'L',true);
-                                    $catalogo_area_formativa = false;
+                                //$this->fpdf->Cell(203,6,strtoupper(mb_convert_encoding($encabezado_)),1,1,'L',true);
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
+                                if($catalogo_area_asignatura_codigo[1] == $codigo_area){
+                                    if($catalogo_area_formativa == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[1],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_formativa = false;
+                                    }
                                 }
-                            }
-                            // LINEA DE DIVISIÓN - PARA EL ÁREA TÉCNICA.
-                            if($catalogo_area_asignatura_codigo[2] == $codigo_area){
-                                if($catalogo_area_tecnica == true){
-                                    $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[2],"ISO-8859-1","UTF-8")),1,1,'L',true);
-                                    $catalogo_area_tecnica = false;
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA TÉCNICA.
+                                if($catalogo_area_asignatura_codigo[2] == $codigo_area){
+                                    if($catalogo_area_tecnica == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[2],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_tecnica = false;
+                                    }
                                 }
-                            }
-                            // LINEA DE DIVISIÓN - PARA EL ÁREA COMPETENCIAS CIUDADANAS.
-                            if($catalogo_area_asignatura_codigo[6] == $codigo_area){
-                                if($catalogo_area_cc == true){
-                                    $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[6],"ISO-8859-1","UTF-8")),1,1,'L',true);
-                                    $catalogo_area_cc = false;
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA COMPETENCIAS CIUDADANAS.
+                                if($catalogo_area_asignatura_codigo[6] == $codigo_area){
+                                    if($catalogo_area_cc == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[6],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_cc = false;
+                                    }
                                 }
-                            }
-                            
-                            // LINEA DE DIVISIÓN - PARA EL ÁREA COMPLEMENTARIA.
-                            if($catalogo_area_asignatura_codigo[7] == $codigo_area){
-                                if($catalogo_area_complementaria == true){
-                                    $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[7],"ISO-8859-1","UTF-8")),1,1,'L',true);
-                                    $catalogo_area_complementaria = false;
-                                }
-                            }
-                            //Restauraci�n de colos y fuentes
-                            $this->fpdf->SetFillColor(212, 230, 252);
-                            $this->fpdf->SetTextColor(0);
-                            $this->fpdf->SetFont('Times','',10);	
-                        ///////////////////////////////////////////////////////////////////////////////////////////////////
-                        ///////////////////////////////////////////////////////////////////////////////////////////////////	                    	
-                        // VALOR DE LA CALIFIACION SEGUN PERIODO 
-                        $this->fpdf->SetFont('Arial', '', '7');
-                        // INFORMACION DE LA ARRAY EXTRAER DE LA MATRIZ
-                                $buscar = array_search($codigo_asignatura, $datos_asignatura['codigo']);
                                 
-                                    $Nombre = $datos_asignatura['nombre'][$buscar];
-                                    $Codigo = $datos_asignatura['codigo'][$buscar];
-                                    $Concepto = $datos_asignatura['concepto'][$buscar];
-                                        $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$codigo_asignatura . "-" . substr($Nombre,0,40),1,0,'L');     
-                        //
-                            for ($na=1; $na <= $valor_actividades; $na++) { 
-                                if($na == 5 || $na == 10 || $na == 15 || $na == 20 || $na == 25){
-                                    $this->fpdf->SetFillColor(218,215,215);
-                                    $this->fpdf->SetFont('Arial', 'B', '7');
-                                    // Cerificar si la calicación es igual a 0
-                                        if($nota_actividades_0[$na] == 0){
-                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
-                                        }else{
-                                            //
-                                            // ASIGNATURA ACOMPETENCIA CIUDADANA
-                                            //
-                                            if($codigo_area == '07'){
-                                                $result_concepto = resultado_concepto($codigo_modalidad, $nota_actividades_0[$na]);
-                                                // $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
-                                                //$this->fpdf->SetX
-                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result_concepto,1,'TB','R',true);                                     
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA COMPLEMENTARIA.
+                                if($catalogo_area_asignatura_codigo[7] == $codigo_area){
+                                    if($catalogo_area_complementaria == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[7],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_complementaria = false;
+                                    }
+                                }
+                                //Restauraci�n de colos y fuentes
+                                $this->fpdf->SetFillColor(212, 230, 252);
+                                $this->fpdf->SetTextColor(0);
+                                $this->fpdf->SetFont('Times','',10);	
+                            ///////////////////////////////////////////////////////////////////////////////////////////////////
+                            ///////////////////////////////////////////////////////////////////////////////////////////////////	
+                            // VALOR DE LA CALIFIACION SEGUN PERIODO 
+                                $this->fpdf->SetFont('Arial', '', '7');
+                            // INFORMACION DE LA ARRAY EXTRAER DE LA MATRIZ
+                                    $buscar = array_search($codigo_asignatura, $datos_asignatura['codigo']);
+                                    
+                                        $Nombre = $datos_asignatura['nombre'][$buscar];
+                                        $Codigo = $datos_asignatura['codigo'][$buscar];
+                                        $Concepto = $datos_asignatura['concepto'][$buscar];
+                        //  DEFINIR EL ANCHO DE LA COLUMNA. SEGUN BACHILLERATO TECNICO VOCACIONAL AUXILIAR CONTABLE.
+                        //  nombre de la asignatura.
+                            if($codigo_area == "03" and $codigo_modalidad == "15"){
+                                $NumeroAnchoColumna = 4;
+                                $NombreStringAncho = 165;
+                            }else{
+                                $NumeroAnchoColumna = 0;
+                                $NombreStringAncho = 60;
+                            }
+                                $this->fpdf->Cell($ancho_cell[$NumeroAnchoColumna],$alto_cell[0],$codigo_asignatura . "-" .substr($Nombre,0,$NombreStringAncho),1,0,'L');     
+                            //  validar la calificación promedio.
+                            //  DEFINIR QUE SEAN DIFERENTES AL BACHILLERATO TVC administrativo contable
+                                if($codigo_area == "03" and $codigo_modalidad == "15"){
+
+                                }else{
+                                    for ($na=1; $na <= $valor_actividades; $na++) { 
+                                        if($na == 5 || $na == 10 || $na == 15 || $na == 20 || $na == 25){
+                                            $this->fpdf->SetFillColor(218,215,215);
+                                            $this->fpdf->SetFont('Arial', 'B', '7');
+                                            // Cerificar si la calicación es igual a 0
+                                            if($nota_actividades_0[$na] == 0){
+                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
                                             }else{
                                                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
                                             }
-                                            
-                                        }
-                                    $this->fpdf->SetFont('Arial', '', '7');
-                                    $this->fpdf->SetFillColor(255,255,255);
-                                }else{
-                                    $this->fpdf->SetFont('Arial', '', '7');
-                                    $this->fpdf->SetFillColor(255,255,255);
-                                    // Cerificar si la calicación es igual a 0
-                                    // VALIDAR CUANDO LA ASIGNATURA ES COMPETENCIA CIUDADANA
-                                    // BUENO, MUY BUENO, EXCELENTE O VACIO
-                                    if($nota_actividades_0[$na] == 0){
-                                            if($codigo_area == '07'){
-                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','TB',0,'C',true);
-                                            }else{
+                                                
+                                            $this->fpdf->SetFont('Arial', '', '7');
+                                            $this->fpdf->SetFillColor(255,255,255);
+                                        }else{
+                                            //
+                                            $this->fpdf->SetFont('Arial', '', '7');
+                                            $this->fpdf->SetFillColor(255,255,255);
+                                            // Cerificar si la calicación es igual a 0
+                                            if($nota_actividades_0[$na] == 0){
                                                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
+                                            }else{
+                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
                                             }
-                                        
-                                    }else{
-                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                        }
                                     }
                                 }
-                                    
-                            }
                                 // NOTA PROMEDIO FINAL.
                                 $this->fpdf->SetFont('Arial', 'B', '7');
-                                // NOTA PROMEDIO FINAL
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[28],1,0,'C');
-                                // NOTA RECUPERACION  1
-                                    if($nota_actividades_0[26] == 0){
+                                    // NOTA PROMEDIO FINAL
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[28],1,0,'C');
+                                    // NOTA RECUPERACION  1
+                                        if($nota_actividades_0[26] == 0){
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                        }
+                                        else{
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[26],1,0,'C');
+                                        }
+                                    // NOTA RECUPERACION  2
+                                        if($nota_actividades_0[27] == 0){
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                        }
+                                        else{
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[27],1,0,'C');
+                                        }
+                                    // NOTA PROMEDIO FINAL.
+                                    if($nota_actividades_0[28] == 0){
                                         $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,1,'C');
                                     }
                                     else{
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[26],1,0,'C');
-                                    }
-                                // NOTA RECUPERACION  2
-                                    if($nota_actividades_0[27] == 0){
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
-                                    }
-                                    else{
-                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[27],1,0,'C');
-                                    }
-                                // NOTA PROMEDIO FINAL.
-                                if($nota_actividades_0[28] == 0){
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,1,'C');
-                                }
-                                else{
-                                    // CALCULAR SI ES APROBADO O REPROBRADO
-                                        $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28]);
+                                        // CALCULAR SI ES APROBADO O REPROBRADO
+                                        $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28],$codigo_area);
+                                        
                                             if($result[0] == "R"){
                                                 $this->fpdf->SetTextColor(255,0,0);
                                             } 
-                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],round($result[1],0),1,0,'C');
-                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result[0],1,1,'C');
-                                        
-                                        $this->fpdf->SetTextColor(0);
-                                        $this->fpdf->SetFillColor(255,255,255);
+                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],round($result[1],0),1,0,'C');
+                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result[0],1,1,'C');
+                                                // restaurar el color
+                                                $this->fpdf->SetTextColor(0);
+                                                $this->fpdf->SetFillColor(255,255,255);
+                                    }
+                                        $this->fpdf->SetFont('Arial', '', '7');
+                        }else{
+                            //Mostrar solamente una vez.
+                            ///////////////////////////////////////////////////////////////////////////////////////////////////
+                            /////VERIFICAR ENCABEZADO de AREA DE ASIGNATURAS///////////////////////////////////////////////////
+                            ///////////////////////////////////////////////////////////////////////////////////////////////////		
+                            /*	"01"	"Básica                                                                     " 0
+                                "02"	"Formativa                                                                  " 1
+                                "03"	"Técnica                                                                    " 2
+                                "04"	"Experiencia y Desarrollo Personal y Social                                 " 3
+                                "05"	"Experiencia y Desarrollo de la Expresión, Comunicación y Representación    " 4
+                                "06"	"Experiencia y Desarrollo de la Relación con el Entorno                     " 5
+                                "07"	"Competencias Ciudadanas                                                    " 6
+                                "08"	"Complementaria                                                             " 7
+                                "09"	"Alertas                                                                    " 8
+                            */                                                                 
+                            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                            // DAR FORMATO. -1 en la matriz
+                                //Colores, ancho de l�nea y fuente en negrita
+                                $this->fpdf->SetFillColor(200,200,200);
+                                $this->fpdf->SetTextColor(0);
+                                $this->fpdf->SetFont('Times','B',12);
+                                //print_r($catalogo_area_asignatura_codigo);
+                            //	print $descripcion_area;
+                                //exit;
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
+                            /* if($catalogo_area_asignatura_codigo[0] == $codigo_area){
+                                    if($catalogo_area_basica == true){
+                                        $this->fpdf->Cell(203,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[0])),1,1,'L',true);
+                                        $catalogo_area_basica = false;
+                                    }
+                                }*/
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
+                                if($catalogo_area_asignatura_codigo[1] == $codigo_area){
+                                    if($catalogo_area_formativa == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[1],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_formativa = false;
+                                    }
                                 }
-                    }
-                // incremento de variable que controla la fila
-                    $fila++;
-                   // de LA BOLETA DE CALIFICACION                                     
-                } // FIN DEL FOREACH
-                //////////////////////////////////
-                //
-                        //  DATOS AL FINAL DE LAS CALIFICACIONES
-                        //
-                        $ultima_linea = $this->fpdf->GetY();
-                        $this->fpdf->SetY($ultima_linea+40);
-                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
-                        $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
-                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal,0,1,'L');
-                        
-                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
-                        $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
-                            // FOTO DEL ESTUDIANTE.
-                            if(!empty($firma_docente)){
-                                if (file_exists('c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente))
-                                {
-                                    $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
-                                    $this->fpdf->image($img,$this->fpdf->GetX()+10,$this->fpdf->GetY()-30,25,30);
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA TÉCNICA.
+                                if($catalogo_area_asignatura_codigo[2] == $codigo_area){
+                                    if($catalogo_area_tecnica == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[2],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_tecnica = false;
+                                    }
                                 }
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA COMPETENCIAS CIUDADANAS.
+                                if($catalogo_area_asignatura_codigo[6] == $codigo_area){
+                                    if($catalogo_area_cc == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[6],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_cc = false;
+                                    }
+                                }
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA COMPLEMENTARIA.
+                                if($catalogo_area_asignatura_codigo[7] == $codigo_area){
+                                    if($catalogo_area_complementaria == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[7],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_complementaria = false;
+                                    }
+                                }
+                                //Restauraci�n de colos y fuentes
+                                $this->fpdf->SetFillColor(212, 230, 252);
+                                $this->fpdf->SetTextColor(0);
+                                $this->fpdf->SetFont('Times','',10);	
+                            ///////////////////////////////////////////////////////////////////////////////////////////////////
+                            ///////////////////////////////////////////////////////////////////////////////////////////////////	                    	
+                            // VALOR DE LA CALIFIACION SEGUN PERIODO 
+                            $this->fpdf->SetFont('Arial', '', '7');
+                            // INFORMACION DE LA ARRAY EXTRAER DE LA MATRIZ
+                                    $buscar = array_search($codigo_asignatura, $datos_asignatura['codigo']);
+                                    
+                                        $Nombre = $datos_asignatura['nombre'][$buscar];
+                                        $Codigo = $datos_asignatura['codigo'][$buscar];
+                                        $Concepto = $datos_asignatura['concepto'][$buscar];
+                        //  DEFINIR EL ANCHO DE LA COLUMNA. SEGUN BACHILLERATO TECNICO VOCACIONAL AUXILIAR CONTABLE.
+                            if($codigo_area == "03" and $codigo_modalidad == "15"){
+                                $NumeroAnchoColumna = 4;
+                                $NombreStringAncho = 165;
+                            }else{
+                                $NumeroAnchoColumna = 0;
+                                $NombreStringAncho = 60;
                             }
-                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,1,'L');
-                    //  Información del docente responsable de la sección.
+                                $this->fpdf->Cell($ancho_cell[$NumeroAnchoColumna],$alto_cell[0],$codigo_asignatura . "-" .substr($Nombre,0,$NombreStringAncho),1,0,'L');     
+                            //
+                            //  DEFINIR QUE SEAN DIFERENTES AL BACHILLERATO TVC administrativo contable
+                                if($codigo_area == "03" and $codigo_modalidad == "15"){
 
-                    // agregar firma y sello
-                        $this->fpdf->image(URL::to($firma_director),15,$ultima_linea+25,40,15);
-                        $this->fpdf->image(URL::to($sello_direccion),40,$ultima_linea+20,25,25);
-                    // Construir el nombre del archivo.
-                    $nombre_archivo = $codigo_nie.'-'.$nombre_completo.'-'.$nombre_modalidad.' '.$nombre_grado . ' ' . $nombre_seccion . ' ' . $nombre_turno . '.pdf';
-                    // Salida del pdf.
-                    if($crear_archivos == "SI"){
-                        $modo = 'D'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
-                    }else{
-                        $modo = 'I'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
+                                }else{
+                                    for ($na=1; $na <= $valor_actividades; $na++) { 
+                                        if($na == 5 || $na == 10 || $na == 15 || $na == 20 || $na == 25){
+                                            $this->fpdf->SetFillColor(218,215,215);
+                                            $this->fpdf->SetFont('Arial', 'B', '7');
+                                            // Cerificar si la calicación es igual a 0
+                                                if($nota_actividades_0[$na] == 0){
+                                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
+                                                }else{
+                                                    //
+                                                    // ASIGNATURA ACOMPETENCIA CIUDADANA
+                                                    //
+                                                    if($codigo_area == '07'){
+                                                        $result_concepto = resultado_concepto($codigo_modalidad, $nota_actividades_0[$na]);
+                                                        // $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                                        //$this->fpdf->SetX
+                                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result_concepto,1,'TB','R',true);                                     
+                                                    }else{
+                                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                                    }
+                                                }
+                                            $this->fpdf->SetFont('Arial', '', '7');
+                                            $this->fpdf->SetFillColor(255,255,255);
+                                        }else{
+                                            $this->fpdf->SetFont('Arial', '', '7');
+                                            $this->fpdf->SetFillColor(255,255,255);
+                                            // Cerificar si la calicación es igual a 0
+                                            // VALIDAR CUANDO LA ASIGNATURA ES COMPETENCIA CIUDADANA
+                                            // BUENO, MUY BUENO, EXCELENTE O VACIO
+                                            if($nota_actividades_0[$na] == 0){
+                                                if($codigo_area == '07'){
+                                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','TB',0,'C',true);
+                                                }else{
+                                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
+                                                }
+                                            }else{
+                                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                            }
+                                        }
+                                    }   // fom deñ fpr
+                                }
+                                    // NOTA PROMEDIO FINAL.
+                                    $this->fpdf->SetFont('Arial', 'B', '7');
+                                    // NOTA PROMEDIO FINAL
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[28],1,0,'C');
+                                    // NOTA RECUPERACION  1
+                                        if($nota_actividades_0[26] == 0){
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                        }
+                                        else{
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[26],1,0,'C');
+                                        }
+                                    // NOTA RECUPERACION  2
+                                        if($nota_actividades_0[27] == 0){
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                        }
+                                        else{
+                                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[27],1,0,'C');
+                                        }
+                                    // NOTA PROMEDIO FINAL.
+                                    if($nota_actividades_0[28] == 0){
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,1,'C');
+                                    }
+                                    else{
+                                        // CALCULAR SI ES APROBADO O REPROBRADO
+                                            $result =  resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28],$codigo_area);
+                                                if($result[0] == "R"){
+                                                    $this->fpdf->SetTextColor(255,0,0);
+                                                } 
+                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],round($result[1],0),1,0,'C');
+                                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result[0],1,1,'C');
+                                        // cambiar color.
+                                            $this->fpdf->SetTextColor(0);
+                                            $this->fpdf->SetFillColor(255,255,255);
+                                    }
+                        }
+                    // incremento de variable que controla la fila
+                        $fila++;
+                    // de LA BOLETA DE CALIFICACION                                     
+                    } // FIN DEL FOREACH
+            //////////////////////////////////
+            //
+            //  DATOS AL FINAL DE LAS CALIFICACIONES
+            //
+                $ultima_linea = $this->fpdf->GetY();
+                $this->fpdf->SetY($ultima_linea+40);
+                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
+                $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
+                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal,0,1,'L');
+                
+                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
+                $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
+            // FOTO DEL ESTUDIANTE.
+                if(!empty($firma_docente)){
+                    if (file_exists('c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente))
+                    {
+                        $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
+                        $this->fpdf->image($img,$this->fpdf->GetX()+10,$this->fpdf->GetY()-30,25,30);
                     }
-                        $this->fpdf->Output($nombre_archivo,$modo);
-                            exit;
-}
-
-    }    //pdf controller contenedor
+                }
+                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,1,'L');
+        //  Información del docente responsable de la sección.
+        // agregar firma y sello
+            $this->fpdf->image(URL::to($firma_director),15,$ultima_linea+25,40,15);
+            $this->fpdf->image(URL::to($sello_direccion),40,$ultima_linea+20,25,25);
+        // Construir el nombre del archivo.
+            $nombre_archivo = $codigo_nie.'-'.$nombre_completo.'-'.$nombre_modalidad.' '.$nombre_grado . ' ' . $nombre_seccion . ' ' . $nombre_turno . '.pdf';
+        // Salida del pdf.
+            if($crear_archivos == "SI"){
+                $modo = 'D'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
+            }else{
+                $modo = 'I'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
+            }
+                $this->fpdf->Output($nombre_archivo,$modo);
+                    exit;
+    }
+}    //pdf controller contenedor
 }
 
 
