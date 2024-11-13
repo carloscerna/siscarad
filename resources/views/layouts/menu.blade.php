@@ -55,9 +55,9 @@
             </a>
         </li>
         <li>
-            {{-- <a href="matricula"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+            <a href="matricula"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Matricula</span>
-            </a>  --}}
+            </a>
         </li>
     </ul>
 </li>

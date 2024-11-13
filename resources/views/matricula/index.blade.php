@@ -277,23 +277,56 @@ use Illuminate\Support\Facades;
                         <tbody id="ContenidoResponsable">
                             <form action="" method="post" id="cusCreate" autocomplete="off">
                                 <tr>
-                                    <td>{!! Form::select('codigo_familiar_0', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_00', 'class' => 'form-control']) !!}</td>
+                                    <td>
+                                        <!-- Default checked radio -->
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="Encargado" id="EncargadoPadre" value="Padre"/>
+                                            <label class="form-check-label" for="Encargado"> Encargado</label>
+                                        </div>
+                                        {!! Form::select('codigo_familiar_0', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_00', 'class' => 'form-control']) !!}</td>
                                     <td><input type="hidden" name="id_1" id="id_1" value="">
                                         <label for="">Nombre del Padre: </label><input type="text" class="form-control text-bold text-black" id="nombrep" name="nombrep" readonly>
-                                        <textarea name="direccion1" id="direccion1" rows="3" cols="40"></textarea></td>
                                     <td><input type="text" class="form-control" id="telefono1" name="telefono1" maxlength="9" autocomplete="off"></td>
                                 </tr>
                                 <tr class="bg-secondary">
-                                    <td>{!! Form::select('codigo_familiar_1', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_01', 'class' => 'form-control']) !!}</td>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="Encargado" id="EncargadoMadre" value="Madre"/>
+                                            <label class="form-check-label" for="Encargado"> Encargado</label>
+                                        </div>
+                                        {!! Form::select('codigo_familiar_1', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_01', 'class' => 'form-control']) !!}</td>
                                     <td><input type="hidden" name="id_2" id="id_2" value="">
                                         <label for="">Nombre de la Madre: </label><input type="text" class="form-control text-bold text-black" id="nombrem" name="nombrem" readonly>
                                     <td><input type="text" class="form-control" id="telefono2" name="telefono2" maxlength="9" autocomplete="off"></td>
                                 </tr>
                                 <tr>
-                                    <td>{!! Form::select('codigo_familiar_2', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_02', 'class' => 'form-control']) !!}</td>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="Encargado" id="EncargadoOtro" value="Otro"/>
+                                            <label class="form-check-label" for="Encargado"> Encargado</label>
+                                        </div>
+                                        {!! Form::select('codigo_familiar_2', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_02', 'class' => 'form-control']) !!}</td>
                                     <td><input type="hidden" name="id_3" id="id_3" value="">
                                         <label for="" >Nombre Otro: </label><input type="text" class="form-control text-bold text-black" id="nombreotro" name="nnombreotroombrep" autocomplete="off">
                                     <td><input type="text" class="form-control" id="telefono3" name="telefono3" maxlength="9" autocomplete="off"></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>
+                                        <label for="DireccionUno">Dirección:</label>
+                                        <textarea name="direccion1" id="direccion1" rows="3" cols="40"></textarea></td>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="" id="TieneHermanos">
+                                            <label class="form-check-label" for="defaultCheck2">
+                                                Tiene hermano en otro grado.
+                                            </label>
+                                            </div>
+                                    </td>
                                 </tr>
                             </form>
                         </tbody>
@@ -302,7 +335,7 @@ use Illuminate\Support\Facades;
         </div>
         <div class="modal-footer bg-light">
           <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>
-          <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="GuardarMatricula()" id="GuardarMatricular">Guardar</button>
+          <button type="button" class="btn btn-primary disabled" data-dismiss="modal" onclick="GuardarMatricula()" id="GuardarMatricular">Guardar</button>
         </div>
       </div>
     </div>
@@ -805,18 +838,30 @@ use Illuminate\Support\Facades;
                                 $("#nombrep").val(value.nombres);
                                 $("#direccion1").val(value.direccion);
                                 $("#telefono1").val(value.telefono);
+                                if(value.encargado == true){
+                                   // alert(value.encargado+" Padre.");
+                                    $("#EncargadoPadre").prop("checked", true);
+                                }
                                 break;
                             case 1:
                                 $("#codigo_familiar_01").val(value.codigo_familiar);
                                 $("#id_2").val(value.id_);
                                 $("#nombrem").val(value.nombres);
                                 $("#telefono2").val(value.telefono);
+                                if(value.encargado == true){
+                                   // alert(value.encargado +" Madre.");
+                                    $("#EncargadoMadre").prop("checked", true);
+                                }
                             break;
                             case 2:
                                 $("#codigo_familiar_02").val(value.codigo_familiar);
                                 $("#id_3").val(value.id_);
                                 $("#nombreotro").val(value.nombres);
                                 $("#telefono3").val(value.telefono);
+                                if(value.encargado == true){
+                                   // alert(value.encargado+" Otro.");
+                                    $("#EncargadoOtro").prop("checked", true);
+                                }
                                 break;
                             default:
                                 break;
