@@ -254,9 +254,9 @@ use Illuminate\Support\Facades;
                         <div class="col">
                             <label style="text-color: white"> Año lectivo: </label><span class="badge badge-light" id="AnnLectivoMatricula">#</span>
 
-                            <select name="lstModalidad" id="lstModalidad" style="display: none;">
+                            <select class="form-control" name="lstModalidad" id="lstModalidad" style="display: none;">
                                 <option value="06">Bachillerato General</option>
-                                <option value="07">Bachillerato Técnico</option>
+                                <option value="15">Bachillerato Técnico Vocacional Administrativo Contable.</option>
                             </select>
                             <label style="text-color: white"> Código Modalidad: </label><span class="badge badge-light" id="CodigoModalidadMatricula">#</span>
                             <label style="text-color: white"> Código Grado: </label><span class="badge badge-light" id="CodigoGradoMatricula">#</span>
@@ -313,17 +313,24 @@ use Illuminate\Support\Facades;
                                 <tr>
                                     <td></td>
                                     <td>
+                                        <label for="" >Nombre Estudiante: </label><input type="text" class="form-control text-bold text-black" id="nombreEstudiante" name="nombreEstudiante" readonly></td>
+                                        <td><input type="text" class="form-control" id="telefono4" name="telefono4" maxlength="9" autocomplete="off">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td>
                                         <label for="DireccionUno">Dirección:</label>
-                                        <textarea name="direccion1" id="direccion1" rows="3" cols="40"></textarea></td>
+                                        <textarea class="form-control" name="direccion1" id="direccion1" rows="4" cols="40"></textarea></td>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td></td>
                                     <td>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" value="" id="TieneHermanos">
+                                            <input class="form-check-input" type="checkbox" value="Si" id="TieneHermanos">
                                             <label class="form-check-label" for="defaultCheck2">
-                                                Tiene hermano en otro grado.
+                                                Tiene hermano(s) en otro grado(s).
                                             </label>
                                             </div>
                                     </td>
@@ -335,7 +342,7 @@ use Illuminate\Support\Facades;
         </div>
         <div class="modal-footer bg-light">
           <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>
-          <button type="button" class="btn btn-primary disabled" data-dismiss="modal" onclick="GuardarMatricula()" id="GuardarMatricular">Guardar</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="GuardarMatricula()" id="GuardarMatricular">Guardar</button>
         </div>
       </div>
     </div>
@@ -733,11 +740,13 @@ use Illuminate\Support\Facades;
                     break;
                 case '6P': // cambia la modalidad a Primer ciclo y primer grado
                     codigo_grado = '01';
-                    codigo_modalidad = '03';
+                    codigo_modalidad = '14';
                     codigo_turno = '01';
+                    if(codigo_seccion == '02'){codigo_seccion = '03';}
                     break;
-                case '01':
+                case '01':  // va cambiar la modalidad a focalizada.
                     codigo_grado = '02';
+                    codigo_modalidad = '16';
                     break;
                 case '02':
                     codigo_grado = '03';
@@ -802,7 +811,6 @@ use Illuminate\Support\Facades;
             $("#CodigoGradoMatricula").text(codigo_grado);    
             $("#CodigoSeccionMatricula").text(codigo_seccion);    
             $("#CodigoTurnoMatricula").text(codigo_turno);   
-
         }
         //
         // traer datos del responsable.
@@ -836,12 +844,15 @@ use Illuminate\Support\Facades;
                                 $("#codigo_familiar_00").val(value.codigo_familiar);
                                 $("#id_1").val(value.id_);
                                 $("#nombrep").val(value.nombres);
-                                $("#direccion1").val(value.direccion);
                                 $("#telefono1").val(value.telefono);
                                 if(value.encargado == true){
                                    // alert(value.encargado+" Padre.");
                                     $("#EncargadoPadre").prop("checked", true);
                                 }
+                                // información del estudiante.
+                                $("#direccion1").val(value.direccion);
+                                $("#nombreEstudiante").val(value.nombreEstudiante);
+                                $("#telefono4").val(value.numeroCelular);
                                 break;
                             case 1:
                                 $("#codigo_familiar_01").val(value.codigo_familiar);
@@ -899,13 +910,31 @@ use Illuminate\Support\Facades;
             const telefono_ = [telefono_padre, telefono_madre, telefono_otro];
         // actualizar la dirección.
         var direccion = $("#direccion1").val();
-
+        // actualizar la dirección.
+        var numeroCelular = $("#telefono4").val();
+        // variable hermano en otros grados.
+        if ($('#TieneHermanos').prop('checked')) {
+           // alert("Checkbox is checked");
+            var OtroHermano = "true";
+        } else {
+         //   alert("Checkbox is not checked");
+            var OtroHermano = "false";
+        }
+        // variable para el responsable del estudiante.
+            var Encargado = $('input[name=Encargado]:checked').val();
+            // definir el padre es el encargado
+            $En = "true"; $En2 = "false"; $En3 = "false"
+            if(Encargado == 'Otro'){
+                $En = "false"; $En2 = "false"; $En3 = "true"
+            }else if(Encargado == 'Madre'){
+                $En = "false"; $En2 = "true"; $En3 = "false"
+            }
+            const encargado_ = [$En,$En2,$En3];
+        //
             console.log("Código estudiante: " + codigo_alumno + " Codigo modalidad: " + codigo_modalidad + " Codigo grado: " + codigo_grado + " Codigo año lectivo: " + codigo_annlectivo);
-
         // CUANDO SE HA SELECCIONADO UN GRADO...
-            url_ajax = '{{url("getDatosMatriculaGuardar")}}' 
+            url_ajax = '{{url("getDatosMatriculaGuardar1")}}' 
             csrf_token = '{{csrf_token()}}' 
-
             // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
             $.ajax({
                 type: "post",
@@ -922,7 +951,10 @@ use Illuminate\Support\Facades;
                     codigo_id: codigo_id_,
                     telefono: telefono_,
                     nombreotro: nombre_encargado_otro,
-                    direccion: direccion
+                    direccion: direccion,
+                    telefonoEstudiante: numeroCelular,
+                    otroHermano: OtroHermano,
+                    encargado: encargado_,
                 },
                 dataType: 'json',
                 success:function(data) {

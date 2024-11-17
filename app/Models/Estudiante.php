@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Estudiantea extends Model
+class Estudiante extends Model
 {
     use HasFactory;
     protected $table = "alumno";
     // es para definir que registros van hacer guardados, o sea solo los campos que esten en el listado.
-        protected $fillable = ['apellido_materno','apellido_paterno','nombre_completo',
+        protected $fillable = ['id_alumno','apellido_materno','apellido_paterno','nombre_completo',
             'codigo_nie','direccion_alumno','telefono_alumno','codigo_departamento','codigo_municipio',
             'fecha_nacimiento','nacionalidad','distancia','pn_numero','pn_folio','pn_tomo','pn_libro',
             'transporte','medicamento','direccion_email','edad','certificado','partida_nacimiento',

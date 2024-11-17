@@ -8,6 +8,7 @@ use App\Models\Tablas\Annlectivo;
 use App\Models\Tablas\Calificaciones;
 use App\Models\Tablas\CatalogoFamiliar;
 use App\Models\Tablas\EstudianteMatricula;
+use App\Models\Estudiante;
 
 use Illuminate\Support\Facades\DB;
 
@@ -248,6 +249,15 @@ class MatriculaController extends Controller
 
         $DatosResponsables = array();
 
+        // Eloquient Traer datos del Estudiante, Nombre y N-º de Telefono.
+        $EstudianteDatos = Estudiante::where('id_alumno', '=', $codigo_alumno)
+        ->get();
+        foreach($EstudianteDatos as $response){  //Llenar el arreglo con datos
+            $nombre = trim($response->nombre_completo);
+            $apellido_materno = trim($response->apellido_materno);
+            $apellido_paterno = trim($response->apellido_paterno);
+            $telefono_celular = $response->telefono_celular;
+        }
         // Eloquiente verificar si ya existe la matricula.
             $estado_matricular = "no";
             $EstudianteMatriculaCount = EstudianteMatricula::where('codigo_alumno', '=', $codigo_alumno)
@@ -285,7 +295,9 @@ class MatriculaController extends Controller
                         "codigo_familiar"=>$codigo_familiar,
                         "dui"=>$dui,
                         "fila"=>$fila_array,
-                        "estado_matricular"=> $estado_matricular
+                        "estado_matricular"=> $estado_matricular,
+                        "nombreEstudiante"=> $nombre." ".$apellido_paterno." ".$apellido_materno,
+                        "numeroCelular"=>$telefono_celular
                     ); 
                     $fila_array++;
                 }
@@ -307,7 +319,12 @@ class MatriculaController extends Controller
         $telefono = $_POST["telefono"];
         $nombre_encargado_otro = $_POST["nombreotro"];
         $direccion = $_POST["direccion"];
-
+        //
+        $numeroEstudiante = $_POST["telefonoEstudiante"];
+        // tengo hermano en otros grados.
+        $BooleanHermano = $_POST["otroHermano"];
+        // responsable encargado.
+        $Encargado = $_POST["encargado"];
         // Eloquent
         $fila_array = 0;
         $EstudianteMatriculaCount = EstudianteMatricula::where('codigo_alumno', '=', $codigo_alumno)
@@ -393,20 +410,20 @@ class MatriculaController extends Controller
                                 // CONDICIONAR PARA QUE SOLO GUARDE EL NOMBRE4 DEL ENCARGADO.
                                 $telefonos = trim($telefono[$i]);
                                 if($i == 2){
-                                    $actualiars['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, nombres = ?, direccion = ?
+                                    $actualiars['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, nombres = ?, direccion = ?, encargado = ?
                                     WHERE id_alumno_encargado = ?", 
-                                        [$codigo_familiar[$i], $telefonos, $nombre_encargado_otro, $direccion, $codigo_id[$i]]);
+                                        [$codigo_familiar[$i], $telefonos, $nombre_encargado_otro, $direccion, $codigo_id[$i],$Encargado[$i]]);
                                 }else{
-                                    $actualiars['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, direccion = ?
+                                    $actualiars['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, direccion = ?, encargado = ?
                                     WHERE id_alumno_encargado = ?", 
-                                        [$codigo_familiar[$i], $telefonos, $direccion, $codigo_id[$i]]);    
+                                        [$codigo_familiar[$i], $telefonos, $direccion, $codigo_id[$i],$Encargado[$i]]);    
                                 }
                         //
                         //  ACTUALIZAR DIRECCION DEL ESTUDIANTE.
                         //
-                            $actualiarles['update'] = DB::update("UPDATE alumno set direccion_alumno = ?
+                            $actualiarles['update'] = DB::update("UPDATE alumno set direccion_alumno = ?,telefono_celular = ?, posee_hermano = ?
                             WHERE id_alumno = ?", 
-                                [$direccion, $codigo_alumno]);
+                                [$direccion, $codigo_alumno, $numeroEstudiante,$BooleanHermano]);
 
                     }
 
