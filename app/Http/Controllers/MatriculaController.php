@@ -256,7 +256,8 @@ class MatriculaController extends Controller
             $nombre = trim($response->nombre_completo);
             $apellido_materno = trim($response->apellido_materno);
             $apellido_paterno = trim($response->apellido_paterno);
-            $telefono_celular = $response->telefono_celular;
+            $telefono_celular = trim($response->telefono_celular);
+            $posee_hermano = trim($response->posee_hermano);
         }
         // Eloquiente verificar si ya existe la matricula.
             $estado_matricular = "no";
@@ -281,7 +282,7 @@ class MatriculaController extends Controller
                     $id_encargado_ = $response->id_alumno_encargado; 
                     $nombres = trim($response->nombres); 
                     $telefono = trim($response->telefono); 
-                    $direccion = $response->direccion; 
+                    $direccion = trim($response->direccion); 
                     $encargado  = $response->encargado; 
                     $codigo_familiar = $response->codigo_familiar; 
                     $dui = $response->dui;
@@ -297,7 +298,8 @@ class MatriculaController extends Controller
                         "fila"=>$fila_array,
                         "estado_matricular"=> $estado_matricular,
                         "nombreEstudiante"=> $nombre." ".$apellido_paterno." ".$apellido_materno,
-                        "numeroCelular"=>$telefono_celular
+                        "numeroCelular"=>$telefono_celular,
+                        "poseeHermano"=>$posee_hermano
                     ); 
                     $fila_array++;
                 }
@@ -332,7 +334,6 @@ class MatriculaController extends Controller
                     ->where('codigo_grado','=',$codigo_grado)
                     ->where('codigo_ann_lectivo','=',$codigo_annlectivo)
                     ->count();
-
         if($EstudianteMatriculaCount != 0) {
             //la matricula ya esta realizada.
             $mensaje_01 = "Ya Matriculado...";
@@ -348,8 +349,6 @@ class MatriculaController extends Controller
                 "matricula_mensaje" => $mensaje_01,
                 "fila"=>$fila_array
             ); 
-
-
             // GUARDAR CODIGO DEL ALUMNO EN LA TABLA ALUMNO MATRICULA.
             EstudianteMatricula::create([
                 'codigo_alumno' => $codigo_alumno
@@ -398,7 +397,6 @@ class MatriculaController extends Controller
                         $DatosMatriculaMensaje[$fila_array] = array ( 
                             "calificacion_mensaje" => $calificacion_mensaje
                         );
-
                         //
                         //  FIN DE CONSULTA DE MATRICULA Y GUARADODO DE CALIFICACIONES.
                         //
@@ -412,29 +410,22 @@ class MatriculaController extends Controller
                                 if($i == 2){
                                     $actualiars['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, nombres = ?, direccion = ?, encargado = ?
                                     WHERE id_alumno_encargado = ?", 
-                                        [$codigo_familiar[$i], $telefonos, $nombre_encargado_otro, $direccion, $codigo_id[$i],$Encargado[$i]]);
+                                        [$codigo_familiar[$i], $telefonos, $nombre_encargado_otro, $direccion, $Encargado[$i], $codigo_id[$i]]);
                                 }else{
                                     $actualiars['update'] = DB::update("UPDATE alumno_encargado set codigo_familiar = ?, telefono = ?, direccion = ?, encargado = ?
                                     WHERE id_alumno_encargado = ?", 
-                                        [$codigo_familiar[$i], $telefonos, $direccion, $codigo_id[$i],$Encargado[$i]]);    
+                                        [$codigo_familiar[$i], $telefonos, $direccion, $Encargado[$i], $codigo_id[$i]]);    
                                 }
                         //
                         //  ACTUALIZAR DIRECCION DEL ESTUDIANTE.
                         //
                             $actualiarles['update'] = DB::update("UPDATE alumno set direccion_alumno = ?,telefono_celular = ?, posee_hermano = ?
                             WHERE id_alumno = ?", 
-                                [$direccion, $codigo_alumno, $numeroEstudiante,$BooleanHermano]);
-
+                                [$direccion, $numeroEstudiante,$BooleanHermano, $codigo_alumno]);
                     }
-
-                //
-                //
-                //
             // fila incrementar.
                 $fila_array++;
         }   // TERMINA EL COUNT
-
-
         //retornar valores
         return $DatosMatriculaMensaje;
     }

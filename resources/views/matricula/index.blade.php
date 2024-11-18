@@ -341,7 +341,7 @@ use Illuminate\Support\Facades;
             </form>
         </div>
         <div class="modal-footer bg-light">
-          <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-success" data-dismiss="modal" onclick="CerrarMatricula()">Cerrar</button>
           <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="GuardarMatricula()" id="GuardarMatricular">Guardar</button>
         </div>
       </div>
@@ -449,7 +449,6 @@ use Illuminate\Support\Facades;
                 } 
             });
         }
-        
         //
         // FUNCION PARA PRESENTES O RETIRADOS.
         //
@@ -853,6 +852,10 @@ use Illuminate\Support\Facades;
                                 $("#direccion1").val(value.direccion);
                                 $("#nombreEstudiante").val(value.nombreEstudiante);
                                 $("#telefono4").val(value.numeroCelular);
+                                if(value.poseeHermano == true){
+                                   // alert(value.encargado+" Padre.");
+                                    $("#TieneHermanos").prop("checked", true);
+                                }
                                 break;
                             case 1:
                                 $("#codigo_familiar_01").val(value.codigo_familiar);
@@ -933,7 +936,7 @@ use Illuminate\Support\Facades;
         //
             console.log("Código estudiante: " + codigo_alumno + " Codigo modalidad: " + codigo_modalidad + " Codigo grado: " + codigo_grado + " Codigo año lectivo: " + codigo_annlectivo);
         // CUANDO SE HA SELECCIONADO UN GRADO...
-            url_ajax = '{{url("getDatosMatriculaGuardar1")}}' 
+            url_ajax = '{{url("getDatosMatriculaGuardar")}}' 
             csrf_token = '{{csrf_token()}}' 
             // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
             $.ajax({
@@ -968,9 +971,18 @@ use Illuminate\Support\Facades;
                                     // mensaje
                         // Display an info toast with no title
                         toastr.info("Matricula creada.", "Sistema");
+                        //
+                        // variable hermano en otros grados.
+                            if ($('#TieneHermanos').prop('checked')) {
+                                $('#TieneHermanos').prop('checked', false);
+                            }
                 }
             }); 
             // FIN DE LA CONSULTA CON AJAX
+    }
+//  Cerrar Ventana matricula.
+    function CerrarMatricula() {
+        $('#TieneHermanos').prop('checked', false);
     }
 // VERIFICAR LA PROMOCION PARA EL CAMBIO DE GRADO SECCION TURNO
 function promocion_verificar(codigo_grado) {
