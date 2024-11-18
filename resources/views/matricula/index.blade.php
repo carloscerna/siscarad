@@ -741,7 +741,7 @@ use Illuminate\Support\Facades;
                     codigo_grado = '01';
                     codigo_modalidad = '14';
                     codigo_turno = '01';
-                    if(codigo_seccion == '02'){codigo_seccion = '03';$codigo_turno = '03';}
+                    if(codigo_seccion == '02'){codigo_seccion = '03';codigo_turno = '02';}
                     break;
                 case '01':  // va cambiar la modalidad a focalizada.
                     codigo_grado = '02';
