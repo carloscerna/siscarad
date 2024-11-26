@@ -257,6 +257,7 @@ use Illuminate\Support\Facades;
                             <select class="form-control" name="lstModalidad" id="lstModalidad" style="display: none;">
                                 <option value="06">Bachillerato General</option>
                                 <option value="15">Bachillerato Técnico Vocacional Administrativo Contable.</option>
+                                <option value="11">Bachillerato General - Nocturna</option>
                             </select>
                             <label style="text-color: white"> Código Modalidad: </label><span class="badge badge-light" id="CodigoModalidadMatricula">#</span>
                             <label style="text-color: white"> Código Grado: </label><span class="badge badge-light" id="CodigoGradoMatricula">#</span>
@@ -743,8 +744,8 @@ use Illuminate\Support\Facades;
                     codigo_turno = '01';
                     if(codigo_seccion == '02'){codigo_seccion = '03';codigo_turno = '02';}
                     break;
-                case '01':  // va cambiar la modalidad a focalizada.
-                    codigo_grado = '02';
+                case '01':  // va cambiar la modalidad a focalizada. segundo grado codigo 18
+                    codigo_grado = '17';
                     codigo_modalidad = '16';
                     break;
                 case '02':
@@ -765,7 +766,11 @@ use Illuminate\Support\Facades;
                     codigo_modalidad = '05';
                     break;
                 case '07':
-                    codigo_grado = '08';
+                    if(codigo_modalidad == "10")   // condición para III ciclo modalidasdes felxibles septimo grado.
+                    {
+                        
+                    }
+                        codigo_grado = '08';
                     break;
                 case '08':
                     codigo_grado = '09';
@@ -774,7 +779,7 @@ use Illuminate\Support\Facades;
                     codigo_seccion = '01';
                     codigo_grado = '10';
                     codigo_modalidad = '06';
-                    codigo_turno = '01';
+                    codigo_turno = '04';    // jornada completa.
                         $("#lstModalidad").show();
                     break;
                 case '10':  // segundos años sin cambiar modalidad
@@ -784,6 +789,14 @@ use Illuminate\Support\Facades;
                 case '11':  // tercer año solo para técnico.
                     codigo_grado = '12';
                     codigo_modalidad = '09'
+                    break;
+                case '17':  // segundo grado focalizado.
+                    codigo_grado = '18';
+                    codigo_modalidad = '16';
+                    break;
+                case '18':  // tercer grado focalizado.
+                    codigo_grado = '04';
+                    codigo_modalidad = '04';
                     break;
                 default:
                     break;

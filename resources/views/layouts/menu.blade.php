@@ -54,11 +54,11 @@
                 <span>Asistencia Diaria</span>
             </a>
         </li>
-        <li>
-            <a href="matricula"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+        {{-- <li>
+              <a href="matricula"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Matricula</span>
-            </a>
-        </li>
+            </a>   
+        </li> --}}
     </ul>
 </li>
 @endrole
