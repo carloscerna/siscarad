@@ -334,7 +334,7 @@ class CalificacionesPorAsignaturaController extends Controller
                     // cambiar el nombre de actividad por el nombre del periodo
                     // cuando es LA CONVIVENCIA CIUDADANA O MUCI
                         $nombre_actividad = $nombre_periodo;
-                }else if($codigo_area == "03" and $codigo_modalidad == "15"){
+                }else if($codigo_area == "03" && $codigo_modalidad == "15"){
                         $nombre_actividad = $nombre_periodo;
                 }else{
                     switch ($codigo_actividad) {
