@@ -265,7 +265,10 @@ class PdfController extends Controller
                     $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
                 }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
                     $valor_periodo = 4; $valor_actividades = 25; $ancho_area_asignatura = 240;
-                }else{
+                }else if($codigo_modalidad == '21' || $codigo_modalidad == '17'){
+                    $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
+                }
+                else{
                     $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 186;    // DEFAULT PUEDE SER PARVULARIA
                 }
 
@@ -796,7 +799,10 @@ class PdfController extends Controller
                             $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
                         }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
                             $valor_periodo = 4; $valor_actividades = 25; $ancho_area_asignatura = 240;
-                        }else{
+                        }else if($codigo_modalidad == '21'){
+                            $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
+                        }
+                        else{
                             $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 186;    // DEFAULT PUEDE SER PARVULARIA
                         }
 

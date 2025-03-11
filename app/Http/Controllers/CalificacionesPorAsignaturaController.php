@@ -496,7 +496,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                     // AGREGAR QUE SEA UN ENTERO YT UN DECIMAL PARA EDUCACION MEDIA.
                                     //
                                     switch ($codigo_modalidad) {
-                                        case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
+                                        case ($codigo_modalidad == '03' || $codigo_modalidad == '04' || $codigo_modalidad == '05' || $codigo_modalidad == '17'):
                                             if($numero_periodo == '6' || $numero_periodo == '7'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
                                                 DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_,  $id_notas_]); // ACTUALIZAR LA CALIFICACION, A1, A2, PO, R
                                             }else{
@@ -636,7 +636,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                                 }
                                             }
                                         break;
-                                        case ($codigo_modalidad == '15'):  // EDUCACION MEDIA.*********//////
+                                        case ($codigo_modalidad == '15' || $codigo_modalidad == '21'):  // EDUCACION MEDIA.*********//////
                                             if($codigo_area == '07' || $numero_periodo == '6' || $numero_periodo == '7' || $codigo_area == '03'){   // CONDICIÓN PARA COMPETENCIA CIUDADANA, NOTA (RECUPERACION, NOTA_RECUPERACION_2)
                                                 $actual['update'] = DB::update("UPDATE nota set $nombre_periodo = ? where id_notas = ?", [$calificacion_ , $id_notas_]);
                                             }else{
@@ -700,10 +700,10 @@ class CalificacionesPorAsignaturaController extends Controller
                                 // 15 -> EDUCACIÓN MEDIA TECNICO MODULAR.
                                 if ($numero_periodo >= '1' && $numero_periodo <= '5') {
                                     switch ($codigo_modalidad) {
-                                        case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'):
+                                        case ($codigo_modalidad == '03' || $codigo_modalidad == '04' || $codigo_modalidad == '05' || $codigo_modalidad == '17'):
                                             DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3)/3,0) where id_notas = ?", [$id_notas_]);                                        
                                         break;
-                                        case ($codigo_modalidad == '06' || $codigo_modalidad == '07' || $codigo_modalidad == '08' || $codigo_modalidad == '09'|| $codigo_modalidad == '15'):  // EDUCACION MEDIA.*********//////
+                                        case ($codigo_modalidad == '06' || $codigo_modalidad == '07' || $codigo_modalidad == '08' || $codigo_modalidad == '09' || $codigo_modalidad == '15' || $codigo_modalidad == '21'):  // EDUCACION MEDIA.*********//////
                                             DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4)/4,0) where id_notas = ?", [$id_notas_]);                                                                                
                                         break;
                                         case ($codigo_modalidad == '10' || $codigo_modalidad == '11'):

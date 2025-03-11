@@ -228,14 +228,25 @@ use Illuminate\Support\Facades;
         // funcion onchange
         function BuscarPorPeriodo(Periodo) {
             codigo_asignatura_area = $("#codigo_asignatura").val();
+            
             conteo_codigo_asignatura = codigo_asignatura_area.length;
-
+            console.log("Conteo asignatura: " + conteo_codigo_asignatura);
             if(conteo_codigo_asignatura == 4){
                 codigo_asignatura = codigo_asignatura_area.substring(0,2);
                 codigo_area = codigo_asignatura_area.substring(2,4);
-            }else{
+                console.log("Código Asignatura: " + codigo_asignatura);
+                console.log("Código Area: " + codigo_area);
+            }else if(conteo_codigo_asignatura == 6){
+                codigo_asignatura = codigo_asignatura_area.substring(0,4);
+                codigo_area = codigo_asignatura_area.substring(4,6);
+                console.log("Código Asignatura:  " + codigo_asignatura);
+                console.log("Código Area:  " + codigo_area);
+            }
+            else{
                 codigo_asignatura = codigo_asignatura_area.substring(0,3);
                 codigo_area = codigo_asignatura_area.substring(3,5);
+                console.log("Código Asignatura: " + codigo_asignatura);
+                console.log("Código Area: " + codigo_area);
             }
             if(codigo_area == '01' || codigo_area == '02' || codigo_area == '03' || codigo_area == '08'){
                 miselect = $("#codigo_actividad_porcentaje");
@@ -299,7 +310,13 @@ use Illuminate\Support\Facades;
             if(conteo_codigo_asignatura == 4){
                 codigo_asignatura = codigo_asignatura_area.substring(0,2);
                 codigo_area = codigo_asignatura_area.substring(2,4);
-            }else{
+            }else if(conteo_codigo_asignatura == 6){
+                codigo_asignatura = codigo_asignatura_area.substring(0,4);
+                codigo_area = codigo_asignatura_area.substring(4,6);
+                console.log("Código Asignatura:  " + codigo_asignatura);
+                console.log("Código Area:  " + codigo_area);
+            }
+            else{
                 codigo_asignatura = codigo_asignatura_area.substring(0,3);
                 codigo_area = codigo_asignatura_area.substring(3,5);
             }
@@ -441,6 +458,11 @@ use Illuminate\Support\Facades;
             if(conteo_codigo_asignatura == 4){
                 codigo_asignatura = codigo_asignatura_area.substring(0,2);
                 codigo_area = codigo_asignatura_area.substring(2,4);
+            }else if(conteo_codigo_asignatura == 6){
+                codigo_asignatura = codigo_asignatura_area.substring(0,4);
+                codigo_area = codigo_asignatura_area.substring(4,6);
+                console.log("Código Asignatura:  " + codigo_asignatura);
+                console.log("Código Area:  " + codigo_area);
             }else{
                 codigo_asignatura = codigo_asignatura_area.substring(0,3);
                 codigo_area = codigo_asignatura_area.substring(3,5);
@@ -464,6 +486,11 @@ use Illuminate\Support\Facades;
             if(conteo_codigo_asignatura == 4){
                 codigo_asignatura = codigo_asignatura_area.substring(0,2);
                 codigo_area = codigo_asignatura_area.substring(2,4);
+            }else if(conteo_codigo_asignatura == 6){
+                codigo_asignatura = codigo_asignatura_area.substring(0,4);
+                codigo_area = codigo_asignatura_area.substring(4,6);
+                console.log("Código Asignatura:  " + codigo_asignatura);
+                console.log("Código Area:  " + codigo_area);
             }else{
                 codigo_asignatura = codigo_asignatura_area.substring(0,3);
                 codigo_area = codigo_asignatura_area.substring(3,5);
@@ -488,6 +515,11 @@ use Illuminate\Support\Facades;
             if(conteo_codigo_asignatura == 4){
                 codigo_asignatura = codigo_asignatura_area.substring(0,2);
                 codigo_area = codigo_asignatura_area.substring(2,4);
+            }else if(conteo_codigo_asignatura == 6){
+                codigo_asignatura = codigo_asignatura_area.substring(0,4);
+                codigo_area = codigo_asignatura_area.substring(4,6);
+                console.log("Código Asignatura:  " + codigo_asignatura);
+                console.log("Código Area:  " + codigo_area);
             }else{
                 codigo_asignatura = codigo_asignatura_area.substring(0,3);
                 codigo_area = codigo_asignatura_area.substring(3,5);
@@ -544,6 +576,11 @@ use Illuminate\Support\Facades;
                 if(conteo_codigo_asignatura == 4){
                     codigo_asignatura = codigo_asignatura_area.substring(0,2);
                     codigo_area = codigo_asignatura_area.substring(2,4);
+                }else if(conteo_codigo_asignatura == 6){
+                codigo_asignatura = codigo_asignatura_area.substring(0,4);
+                codigo_area = codigo_asignatura_area.substring(4,6);
+                console.log("Código Asignatura:  " + codigo_asignatura);
+                console.log("Código Area:  " + codigo_area);
                 }else{
                     codigo_asignatura = codigo_asignatura_area.substring(0,3);
                     codigo_area = codigo_asignatura_area.substring(3,5);
