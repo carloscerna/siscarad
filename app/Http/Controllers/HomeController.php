@@ -168,12 +168,12 @@ class HomeController extends Controller
          // extgraer datos para el encabezado
          $alto_cell = array('5'); $ancho_cell = array('60','6','24','30');
          foreach($EstudianteInformacionInstitucion as $response_i){  //Llenar el arreglo con datos
-             $nombre_institucion = utf8_decode(trim($response_i->nombre_institucion));
-             $nombre_director = utf8_decode(trim($response_i->full_name));
-             $codigo_institucion = utf8_decode(trim($response_i->codigo_institucion));
-             $logo_uno = "/img/".utf8_decode(trim($response_i->logo_uno));
-             $firma_director = "/img/".utf8_decode(trim($response_i->logo_dos));
-             $sello_direccion = "/img/".utf8_decode(trim($response_i->logo_tres));
+             $nombre_institucion = convertirTexto(trim($response_i->nombre_institucion));
+             $nombre_director = convertirTexto(trim($response_i->full_name));
+             $codigo_institucion = convertirTexto(trim($response_i->codigo_institucion));
+             $logo_uno = "/img/".convertirTexto(trim($response_i->logo_uno));
+             $firma_director = "/img/".convertirTexto(trim($response_i->logo_dos));
+             $sello_direccion = "/img/".convertirTexto(trim($response_i->logo_tres));
              // LOGO DE LA INSTITUCIÓN
          //        $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
            //      $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       

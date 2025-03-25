@@ -12,7 +12,6 @@ use Illuminate\Support\Facades;
     $nombre_docente = Auth::user()->name;
     $codigo_personal = Auth::user()->codigo_personal; 
     $codigo_institucion = Auth::user()->codigo_institucion;                                                
-
 @endphp
 
 @section('content')
@@ -453,12 +452,14 @@ use Illuminate\Support\Facades;
                         '<td>' + value.codigo_nie + '</td>' +
                         '<td>' + value.apellidos_nombres_estudiantes + '</td>' +
                         '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
-                            '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
+                            '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i>'+
+                                
+                            '</td>'+
                         '</tr>';
+                        
                     });
                     $('#contenido').html(html);
                     $('#contenido').focus();
-                        // Display an info toast with no title
                         toastr.success("Registros Encontrados... " + linea, "Sistema");
                 } 
             });

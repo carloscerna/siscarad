@@ -17,6 +17,7 @@ use App\Http\Controllers\PdfRPGEstudianteController;
 
 // emailes
 use App\Mail\BoletaEstudiantes;
+use App\Mail\CorreoConAdjunto;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderShipped;
 
@@ -106,6 +107,8 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::resource('funcion','PdfRLyPController');
     Route::resource('funcion','matricula/index');
     // Emails
+    //Route::get('/enviar-correo/{nie}', [CorreoConAdjunto::class, 'enviarCorreo'])->name('enviar.correo');
+
       //Route::get('/boleta', function(){
         //  return new BoletaEstudiantes("yonYOn");
       //});
