@@ -203,6 +203,14 @@ class PdfRPAController extends Controller
                         ->orderBy('full_name','asc')
                         ->get();
 
+            // --- INICIO: CÓDIGO AÑADIDO ---
+            // Arreglo para almacenar la suma de cada columna de notas.
+            // Lo inicializamos con 30 posiciones en cero, que es más que suficiente 
+            // para las 28 columnas de notas que tienes.
+            $sumas_columnas = array_fill(0, 30, 0); 
+            $total_estudiantes = count($EstudianteBoleta);
+            // --- FIN: CÓDIGO AÑADIDO ---
+
             // variales de entorno para mostrar la información.
             $fila = 1;             
             $this->fpdf->SetX(30); 
@@ -227,6 +235,17 @@ class PdfRPAController extends Controller
                             $response->nota_a1_4, $response->nota_a2_4, $response->nota_a3_4, $response->nota_r_4, $response->nota_p_p_4, // 20
                             $response->nota_a1_5, $response->nota_a2_5, $response->nota_a3_5, $response->nota_r_5, $response->nota_p_p_5, // 25
                             $response->recuperacion, $response->nota_recuperacion_2, $response->nota_final);      // 26, 27, 28.
+
+                // --- INICIO: CÓDIGO AÑADIDO ---
+                // Sumamos las notas del estudiante actual a nuestro acumulador.
+                // Iteramos desde el índice 1 hasta el 28.
+                for ($i = 1; $i <= 28; $i++) {
+                    // Nos aseguramos de sumar solo valores numéricos.
+                    if (is_numeric($nota_actividades_0[$i])) {
+                        $sumas_columnas[$i] += $nota_actividades_0[$i];
+                    }
+                }
+                // --- FIN: CÓDIGO AÑADIDO ---
                 // MATRICES
                 $periodos_a = array('PERIODO 1', 'PERIODO 2', 'PERIODO 3', 'PERIODO 4', 'PERIODO 5', 'PROMEDIO FINAL', 'R');
                 $actividad_periodo = array('A1','A2','PO','R','PP','PF');
@@ -540,6 +559,57 @@ class PdfRPAController extends Controller
                 // incremento de variable que controla la fila
                     $fila++;
             } // FIN DEL FOREACH
+
+            // --- INICIO: CÓDIGO AÑADIDO ---
+// Imprimir la fila de promedios si hay estudiantes
+if ($total_estudiantes > 0) {
+    // Establecemos el estilo para la fila de promedios
+    $this->fpdf->SetFont('Arial', 'B', '7');
+    $this->fpdf->SetFillColor(200, 200, 200); // Un color de fondo gris claro
+
+    // Celda para la etiqueta "PROMEDIO" que abarca las primeras 3 columnas
+    $ancho_etiqueta = $ancho_cell[1] + $ancho_cell[4] + $ancho_cell[0];
+    $this->fpdf->Cell($ancho_etiqueta, $alto_cell[0], 'PROMEDIO GENERAL', 1, 0, 'C', true);
+
+    // Celdas para cada promedio de actividad/periodo
+    for ($na = 1; $na <= $valor_actividades; $na++) {
+        // Calculamos el promedio para esta columna
+        $promedio = $sumas_columnas[$na] / $total_estudiantes;
+        
+        // Damos un formato especial a las columnas de promedios de periodo
+        if ($na == 5 || $na == 10 || $na == 15 || $na == 20 || $na == 25) {
+            $this->fpdf->SetFillColor(180, 180, 180); // Un gris un poco más oscuro
+        } else {
+            $this->fpdf->SetFillColor(200, 200, 200); // Gris claro
+        }
+        
+        // Imprimimos la celda con el promedio formateado a 1 decimal
+        $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($promedio, 1), 1, 0, 'C', true);
+    }
+
+    // Restauramos el color de fondo por si acaso
+    $this->fpdf->SetFillColor(200, 200, 200);
+
+    // Celda para el PROMEDIO FINAL GENERAL
+    $promedio_final = $sumas_columnas[28] / $total_estudiantes;
+    $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($promedio_final, 1), 1, 0, 'C', true);
+
+    // Celda para el promedio de RECUPERACION 1
+    $promedio_rec_1 = $sumas_columnas[26] / $total_estudiantes;
+    $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($promedio_rec_1, 1), 1, 0, 'C', true);
+
+    // Celda para el promedio de RECUPERACION 2
+    $promedio_rec_2 = $sumas_columnas[27] / $total_estudiantes;
+    $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($promedio_rec_2, 1), 1, 0, 'C', true);
+
+    // Para la nota final, también calculamos el promedio
+    $promedio_nota_final = $sumas_columnas[28] / $total_estudiantes;
+    $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($promedio_nota_final, 1), 1, 0, 'C', true);
+    
+    // Dejamos la última celda de 'Resultado' en blanco para la fila de promedios
+    $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 1, 'C', true);
+}
+// --- FIN: CÓDIGO AÑADIDO ---
         //
         //  DATOS AL FINAL DE LAS CALIFICACIONES
         //
