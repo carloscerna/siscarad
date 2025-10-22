@@ -30,6 +30,9 @@ function resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recupera
             case ($codigo_modalidad >= '06' && $codigo_modalidad <= '09'): // BACHILLERATO GENERAL.
 				$EvaluarCalificacionFinal = 6;
             break;
+			case ($codigo_modalidad == '21'): // BACHILLERATO GENERAL.
+				$EvaluarCalificacionFinal = 6;
+            break;
             case ($codigo_modalidad == '10'):	// TERCER CICLO NOCTURNA.
 				$EvaluarCalificacionFinal = 5;
             break;

@@ -258,7 +258,9 @@ class PdfRPAController extends Controller
                     $valor_periodo = 4; $valor_actividades = 25; $ancho_area_asignatura = 210;
                 }else if($codigo_modalidad == '15'){
                     $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 186;
-                }else{
+                }else if($codigo_modalidad == '21'){   // EDUCACION MEDIA PL2025
+                    $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 186;}
+                else{
                     $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 162;    // DEFAULT PUEDE SER PARVULARIA
                 }
 
