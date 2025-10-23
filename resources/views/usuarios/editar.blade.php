@@ -9,10 +9,16 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
+                        
+                        {{-- Usamos un card-header para el título --}}
+                        <div class="card-header bg-warning text-dark">
+                            Datos del Usuario: {{ $user->name }}
+                        </div>
+
                         <div class="card-body">
                      
                         @if ($errors->any())                                                
-                            <div class="alert alert-dark alert-dismissible fade show" role="alert">
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <strong>¡Revise los campos!</strong>                        
                                 @foreach ($errors->all() as $error)                                    
                                     <span class="badge badge-danger">{{ $error }}</span>
@@ -24,55 +30,115 @@
                         @endif
 
                         {!! Form::model($user, ['method' => 'PATCH','route' => ['usuarios.update', $user->id]]) !!}
+                        
+                        {{-- Organizamos los inputs en 2 columnas (col-md-6) --}}
                         <div class="row">
-                            <div class="col-xs-12 col-sm-12 col-md-12">
+                            
+                            {{-- Columna Izquierda --}}
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="name">Nombre</label>
-                                    {!! Form::text('name', null, array('class' => 'form-control')) !!}
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        </div>
+                                        {!! Form::text('name', null, array('class' => 'form-control')) !!}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-12 col-md-12">
+
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="email">E-mail</label>
-                                    {!! Form::text('email', null, array('class' => 'form-control')) !!}
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                        </div>
+                                        {!! Form::text('email', null, array('class' => 'form-control')) !!}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-12 col-md-12">
+
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="password">Password</label>
-                                    {!! Form::password('password', array('class' => 'form-control')) !!}
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        </div>
+                                        {!! Form::password('password', array('class' => 'form-control', 'placeholder' => '(Dejar en blanco para no cambiar)')) !!}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-12 col-md-12">
+
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="confirm-password">Confirmar Password</label>
-                                    {!! Form::password('confirm-password', array('class' => 'form-control')) !!}
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        </div>
+                                        {!! Form::password('confirm-password', array('class' => 'form-control')) !!}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-12 col-md-12">
+                        </div>
+
+                        <hr> {{-- Separador visual --}}
+
+                        {{-- Columna Derecha --}}
+                        <div class="row">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="">Roles</label>
-                                    {!! Form::select('roles[]', $roles,$userRole, array('class' => 'form-control')) !!}
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                        </div>
+                                        {!! Form::select('roles[]', $roles, $userRole, array('class' => 'form-control')) !!}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-12 col-md-12">
+
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="">Personal (Docente)</label>
-                                    {!! Form::select('codigo_personal', $personal, null, ['class' => 'form-control']) !!}
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-chalkboard-teacher"></i></span>
+                                        </div>
+                                        {!! Form::select('codigo_personal', $personal, null, ['class' => 'form-control']) !!}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-12 col-md-12">
+
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="">Institución (Escuela)</label>
-                                    {!! Form::select('codigo_institucion', $institucion, null, ['class' => 'form-control']) !!}
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-school"></i></span>
+                                        </div>
+                                        {!! Form::select('codigo_institucion', $institucion, null, ['class' => 'form-control']) !!}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-12 col-md-12">
-                                <button type="submit" class="btn btn-primary">Guardar</button>
-                            </div>
+
                         </div>
+                        
+                        </div> {{-- Fin card-body --}}
+                        
+                        {{-- Usamos un card-footer para los botones --}}
+                        <div class="card-footer bg-light text-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Cambios
+                            </button>
+                            <a href="{{ route('usuarios.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                        
                         {!! Form::close() !!}
-                        </div>
                     </div>
                 </div>
             </div>

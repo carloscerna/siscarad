@@ -30,8 +30,20 @@ class UsuarioController extends Controller
      */
     public function index()
     {
-        //
-        $usuarios = User::orderby('name')->Paginate(10);
+//
+        // MODIFICACIÓN:
+        // 1. Unimos 'personal'
+        // 2. Filtramos por 'personal.codigo_estatus'
+        // 3. Ordenamos por 'personal.apellidos' PRIMERO
+        // 4. Ordenamos por 'personal.nombres' SEGUNDO
+        // 5. Seleccionamos solo las columnas de 'users'
+        
+        $usuarios = User::join('personal', 'users.codigo_personal', '=', 'personal.id_personal')
+                        ->where('personal.codigo_estatus', '01') 
+                        ->orderBy('personal.apellidos') // 1. Ordena por apellidos
+                        ->orderBy('personal.nombres')  // 2. Luego por nombres
+                        ->select('users.*')
+                        ->get();
         return view('usuarios.index', compact('usuarios'));
     }
 
@@ -46,10 +58,23 @@ class UsuarioController extends Controller
         $roles = Role::pluck('name','name')->all();
         //$personal = Personal::pluck('nombres','id_personal')->all();
         $institucion = Institucion::pluck('nombre_institucion','id_institucion')->all();
-        //
+        // === MODIFICACIÓN AQUÍ ===
+        // 1. Añadimos el filtro where()
+        // 2. Añadimos el ordenamiento
         $DatosPersonal = DB::table('personal')
+        ->where('codigo_estatus', '01') // <-- FILTRO DE ACTIVOS
         ->select('id_personal', DB::raw("TRIM(CONCAT(BTRIM(nombres), CAST(' ' AS VARCHAR), BTRIM(apellidos))) as full_name"))
+        ->orderBy('apellidos')
+        ->orderBy('nombres')
         ->get();
+        
+        $fila_array = 0; $personal = array();
+        foreach($DatosPersonal as $response){  //Llenar el arreglo con datos
+            $codigos_ = $response->id_personal; 
+            $nombres_ = $response->full_name; 
+            $personal[$codigos_] = ($nombres_); 
+        }
+        // === FIN DE MODIFICACIÓN ===
         
         $fila_array = 0; $personal = array();
         foreach($DatosPersonal as $response){  //Llenar el arreglo con datos
@@ -116,9 +141,24 @@ class UsuarioController extends Controller
         //$personal = Personal::pluck('nombres','id_personal')->all();
         $institucion = Institucion::pluck('nombre_institucion','id_institucion')->all();
         //
+        //
+        // === MODIFICACIÓN AQUÍ ===
+        // 1. Añadimos el filtro where()
+        // 2. Añadimos el ordenamiento (opcional, pero recomendado)
         $DatosPersonal = DB::table('personal')
+        ->where('codigo_estatus', '01') // <-- FILTRO DE ACTIVOS
         ->select('id_personal', DB::raw("TRIM(CONCAT(BTRIM(nombres), CAST(' ' AS VARCHAR), BTRIM(apellidos))) as full_name"))
+        ->orderBy('apellidos')
+        ->orderBy('nombres')
         ->get();
+        
+        $fila_array = 0; $personal = array();
+        foreach($DatosPersonal as $response){  //Llenar el arreglo con datos
+            $codigos_ = $response->id_personal; 
+            $nombres_ = $response->full_name; 
+            $personal[$codigos_] = ($nombres_); 
+        }
+        // === FIN DE MODIFICACIÓN ===
         
         $fila_array = 0; $personal = array();
         foreach($DatosPersonal as $response){  //Llenar el arreglo con datos
