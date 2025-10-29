@@ -18,13 +18,18 @@ use Carbon\Carbon;
 // mail envio
 use Illuminate\Support\Facades\Mail;
 use App\Mail\BoletaEstudiantes;
+use Illuminate\Support\Facades\Log; // Recomendado para registrar errores
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
 class CalificacionesPorAsignaturaController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function index()
@@ -718,5 +723,72 @@ class CalificacionesPorAsignaturaController extends Controller
                             }
         return $actual;
     }
+
+
+    public function enviarCorreosMasivos(Request $request)
+    {
+        try {
+            // 1. Validar la información recibida del AJAX
+            $request->validate([
+                'estudiantes' => 'required|array',
+                'estudiantes.*.email' => 'required|email',
+                'estudiantes.*.datos_pdf' => 'required|string',
+                'codigo_institucion' => 'required|string',
+            ]);
+
+            // 2. Obtener los "datos generales de la institución" que pediste
+            $institucion = Institucion::where('id_institucion', $request->codigo_institucion)->first();
+            if (!$institucion) {
+                return response()->json(['status' => 'error', 'message' => 'Institución no encontrada.'], 404);
+            }
+            
+            // Estos son los datos que se pasarán al cuerpo del email (Mailable)
+            $datosGenerales = [
+                'nombre_institucion' => $institucion->nombre_institucion,
+                'direccion' => $institucion->direccion,
+                'telefono' => $institucion->telefono,
+                'codigo_infra' => $institucion->codigo_infraestructura,
+                // ...Añade aquí cualquier otro dato general que necesites...
+            ];
+
+            // 3. Recorrer la lista de estudiantes y encolar los correos
+            foreach ($request->estudiantes as $estudiante) {
+                $mail = new PHPMailer(true);
+                try {
+                    //Configuración del servidor (aquí pones tus datos)
+                    $mail->SMTPDebug = 0; // Cambia a 2 para ver logs de depuración
+                    $mail->isSMTP();
+                    $mail->Host       = 'smtp.gmail.com';
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = 'carlos.w.cerna@gmail.com';
+                    $mail->Password   = 'rybkmvzqutdjfeao'; // Tu clave de 16 letras
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port       = 587;
+            
+                    //Receptores
+                    $mail->setFrom('carlos.wilfredo77@gmail.com', 'Sistema Siscarad');
+                    $mail->addAddress($estudiante['email']); // El email del estudiante
+            
+                    //Contenido
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Boleta de Calificaciones';
+                    $mail->Body    = 'Hola, adjuntamos tu boleta de calificaciones. Saludos.';
+            
+                    // Aquí tendrías que generar y adjuntar el PDF
+                    // $pdfString = $this->generarPdf($estudiante['datos_pdf']);
+                    // $mail->addStringAttachment($pdfString, 'Boleta.pdf');
+            
+                    $mail->send();
+            
+                } catch (Exception $e) {
+                    Log::error("PHPMailer no pudo enviar. Error: {$mail->ErrorInfo}");
+                }
+             }
+            }
+             catch (\Exception $e) {
+                Log::error("Error al enviar correos masivos: " . $e->getMessage());
+                return response()->json(['status' => 'error', 'message' => 'Error al enviar correos.'], 500);
+    }
+}
 
 }

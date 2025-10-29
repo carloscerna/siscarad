@@ -99,13 +99,17 @@ Route::group(['middleware'=> ['auth']], function(){
     // REPORTES para Licencias y Permisos
     Route::get('pdfRLyP/{id}', [PdfRLyPController::class,'index']);
     // REPORTES INFORMACIÓN DEL ESTUDIANTE Y ENCARGADO.
-    Route::get('pdfRPGEstudiante/{id}', ['\App\Http\Controllers\PdfRPGEstudianteController::class', 'index']);
+    //Route::get('pdfRPGEstudiante/{id}', ['\App\Http\Controllers\PdfRPGEstudianteController::class', 'index']);
     // helpers
-    Route::resource('funcion','PdfController');
-    Route::resource('funcion','PdfRPAController');
-    Route::resource('funcion','PdfRPGController');
-    Route::resource('funcion','PdfRLyPController');
-    Route::resource('funcion','matricula/index');
+    //Route::resource('funcion','PdfController');
+    //Route::resource('funcion','PdfRPAController');
+    //Route::resource('funcion','PdfRPGController');
+    //Route::resource('funcion','PdfRLyPController');
+    //Route::resource('funcion','matricula/index');
+
+    // Asegúrate que dice Route::post
+    Route::post('/calificaciones/enviar-correos', [CalificacionesPorAsignaturaController::class, 'enviarCorreosMasivos'])
+    ->name('calificaciones.enviarCorreos');
     // Emails
     //Route::get('/enviar-correo/{nie}', [CorreoConAdjunto::class, 'enviarCorreo'])->name('enviar.correo');
 
