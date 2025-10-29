@@ -818,6 +818,16 @@ use Illuminate\Support\Facades;
                 });
             });
 
+
+            // ===== ¡AQUÍ ESTÁ LA VERIFICACIÓN EN CONSOLA! =====
+            console.log("-----------------------------------------");
+            console.log("VERIFICACIÓN ANTES DE ENVÍO DE CORREOS");
+            console.log("Total de estudiantes seleccionados:", estudiantes.length);
+            console.log("Datos que se enviarán al servidor:", estudiantes);
+            console.log("Código de Institución:", $("#codigo_institucion").val());
+            console.log("-----------------------------------------");
+            // =====================================================
+
             // 2. Validar si seleccionó alguno
             if (estudiantes.length === 0) {
                 Swal.fire('Ningún Estudiante', 'Por favor, seleccione al menos un estudiante para enviar el correo.', 'info');
@@ -841,8 +851,8 @@ use Illuminate\Support\Facades;
             });
         }
 
-        /**
-         * Envía la lista de estudiantes al controlador de Laravel.
+/**
+         * Envía la lista de estudiantes al controlador de Laravel (usando PHPMailer).
          */
         function EnviarCorreosMasivos(estudiantes) {
             // Muestra un 'cargando'
@@ -853,7 +863,7 @@ use Illuminate\Support\Facades;
 
             $.ajax({
                 type: "POST", // Usar POST para enviar un array de datos
-                url: "{{ url('calificaciones/enviar-correos') }}", // Crearemos esta ruta
+                url: "{{ url('calificaciones/enviar-correos') }}", // Esta es la URL de tu ruta
                 data: {
                     _token: '{{ csrf_token() }}',
                     estudiantes: estudiantes, // El array de objetos (email y datos_pdf)
@@ -862,12 +872,13 @@ use Illuminate\Support\Facades;
                 dataType: 'json',
                 success: function(response) {
                     if(response.status === 'success') {
-                        Swal.fire('¡Correos Encolados!', response.message, 'success');
+                        Swal.fire('¡Éxito!', response.message, 'success');
                     } else {
                         Swal.fire('Error', response.message, 'error');
                     }
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
+                    console.log("Respuesta del error:", jqXHR.responseText); // Muestra el error completo en consola
                     Swal.fire('Error de Servidor', 'No se pudo contactar al servidor. (' + errorThrown + ')', 'error');
                 },
                 complete: function() {
@@ -876,5 +887,6 @@ use Illuminate\Support\Facades;
                 }
             });
         }
+
     </script>
 @endsection

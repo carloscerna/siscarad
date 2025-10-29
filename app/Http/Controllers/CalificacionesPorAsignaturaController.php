@@ -24,6 +24,10 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
+// ===== AÑADE ESTAS 4 LÍNEAS =====
+use PHPMailer\PHPMailer\Exception as PHPMailerException;
+
+
 class CalificacionesPorAsignaturaController extends Controller
 {
     /**
@@ -724,71 +728,129 @@ class CalificacionesPorAsignaturaController extends Controller
         return $actual;
     }
 
+/**
+ * Recibe una lista de estudiantes y envía sus boletas usando PHPMailer.
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @return \Illuminate\Http\Response
+ */
+public function enviarCorreosMasivos(Request $request)
+{
+    try {
+        // 1. Validar la información recibida del AJAX
+        $request->validate([
+            'estudiantes' => 'required|array',
+            'estudiantes.*.email' => 'required|email',
+            'estudiantes.*.datos_pdf' => 'required|string',
+            'codigo_institucion' => 'required|string',
+        ]);
 
-    public function enviarCorreosMasivos(Request $request)
-    {
-        try {
-            // 1. Validar la información recibida del AJAX
-            $request->validate([
-                'estudiantes' => 'required|array',
-                'estudiantes.*.email' => 'required|email',
-                'estudiantes.*.datos_pdf' => 'required|string',
-                'codigo_institucion' => 'required|string',
-            ]);
+        // 2. Obtener los "datos generales de la institución"
+        $institucion = Institucion::where('id_institucion', $request->codigo_institucion)->first();
+        if (!$institucion) {
+            return response()->json(['status' => 'error', 'message' => 'Institución no encontrada.'], 404);
+        }
 
-            // 2. Obtener los "datos generales de la institución" que pediste
-            $institucion = Institucion::where('id_institucion', $request->codigo_institucion)->first();
-            if (!$institucion) {
-                return response()->json(['status' => 'error', 'message' => 'Institución no encontrada.'], 404);
+        // 3. Recorrer la lista de estudiantes
+        foreach ($request->estudiantes as $estudiante) {
+
+            $mail = new PHPMailer(true); // Crea una nueva instancia de PHPMailer
+
+            try {
+                // ===== 4. CONFIGURACIÓN MANUAL DE GMAIL =====
+                // (La misma que funcionó en Tinker)
+                // $mail->SMTPDebug = SMTP::DEBUG_SERVER; // Descomenta para ver logs
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'carlos.w.cerna@gmail.com'; // Tu usuario
+                $mail->Password   = 'rybkmvzqutdjfeao'; // Tu contraseña de app de 16 letras
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+                // ===========================================
+
+                //Receptores
+                $mail->setFrom('carlos.w.cerna@gmail.com', $institucion->nombre_institucion); // De:
+
+                // ===== ¡MODIFICACIÓN DE PRUEBA! =====
+                // $mail->addAddress($estudiante['email']); // <-- Línea de Producción
+                //$mail->addAddress('carlos.w.cerna@gmail.com'); // <-- Línea de Prueba
+                $mail->addAddress('carlos.wilfredo.cerna@clases.edu.sv'); // <-- TU NUEVA LÍNEA DE PRUEBA
+                    // =
+                // ===================================
+
+                // Genera el PDF llamando a la función que pegamos
+                //$pdfOutput = $this->generarBoletaPdf($estudiante['datos_pdf']);
+
+                //Contenido
+                $mail->isHTML(true);
+                $mail->Subject = 'Boleta de Calificaciones - ' . $institucion->nombre_institucion;
+                $mail->Body    = "Estimado estudiante,<br><br>Adjuntamos su boleta de calificaciones.<br><br>Atentamente,<br>" . $institucion->nombre_institucion;
+                $mail->AltBody = "Estimado estudiante, adjuntamos su boleta de calificaciones.";
+
+                // Adjuntar el PDF (generado como string)
+               // $mail->addStringAttachment($pdfOutput, 'Boleta.pdf', 'base64', 'application/pdf');
+
+                $mail->send();
+
+            } catch (PHPMailerException $e) {
+                // Captura errores por cada correo individual
+                Log::error("PHPMailer no pudo enviar a {$estudiante['email']}. Error: {$mail->ErrorInfo}");
             }
-            
-            // Estos son los datos que se pasarán al cuerpo del email (Mailable)
-            $datosGenerales = [
-                'nombre_institucion' => $institucion->nombre_institucion,
-                'direccion' => $institucion->direccion,
-                'telefono' => $institucion->telefono,
-                'codigo_infra' => $institucion->codigo_infraestructura,
-                // ...Añade aquí cualquier otro dato general que necesites...
-            ];
+        } // Fin del foreach
 
-            // 3. Recorrer la lista de estudiantes y encolar los correos
-            foreach ($request->estudiantes as $estudiante) {
-                $mail = new PHPMailer(true);
-                try {
-                    //Configuración del servidor (aquí pones tus datos)
-                    $mail->SMTPDebug = 0; // Cambia a 2 para ver logs de depuración
-                    $mail->isSMTP();
-                    $mail->Host       = 'smtp.gmail.com';
-                    $mail->SMTPAuth   = true;
-                    $mail->Username   = 'carlos.w.cerna@gmail.com';
-                    $mail->Password   = 'rybkmvzqutdjfeao'; // Tu clave de 16 letras
-                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                    $mail->Port       = 587;
-            
-                    //Receptores
-                    $mail->setFrom('carlos.wilfredo77@gmail.com', 'Sistema Siscarad');
-                    $mail->addAddress($estudiante['email']); // El email del estudiante
-            
-                    //Contenido
-                    $mail->isHTML(true);
-                    $mail->Subject = 'Boleta de Calificaciones';
-                    $mail->Body    = 'Hola, adjuntamos tu boleta de calificaciones. Saludos.';
-            
-                    // Aquí tendrías que generar y adjuntar el PDF
-                    // $pdfString = $this->generarPdf($estudiante['datos_pdf']);
-                    // $mail->addStringAttachment($pdfString, 'Boleta.pdf');
-            
-                    $mail->send();
-            
-                } catch (Exception $e) {
-                    Log::error("PHPMailer no pudo enviar. Error: {$mail->ErrorInfo}");
-                }
-             }
-            }
-             catch (\Exception $e) {
-                Log::error("Error al enviar correos masivos: " . $e->getMessage());
-                return response()->json(['status' => 'error', 'message' => 'Error al enviar correos.'], 500);
+        // 5. Responder al AJAX
+        return response()->json([
+            'status' => 'success', 
+            'message' => '¡' . count($request->estudiantes) . ' correos han sido procesados por PHPMailer!'
+        ]);
+
+    } catch (\Exception $e) {
+        // Captura errores generales (ej. Validación)
+        Log::error('Error general en enviarCorreosMasivos: ' . $e->getMessage());
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
     }
 }
 
-}
+    /*
+     * Función privada para generar el PDF.
+     * ¡AQUÍ DEBES PONER TU LÓGICA DE PDF CONTROLLER!
+     */
+    
+    private function generarBoletaPdf($datosPdfString)
+    {
+        // IMPORTANTE: Esta es la lógica para generar tu PDF.
+        // Debes reemplazar este código de ejemplo con tu lógica real
+        // para convertir el string de datos en un PDF.
+
+        // ----- INICIO DE EJEMPLO (Debes borrar esto y poner tu lógica) -----
+        
+            // 1. (Ejemplo) Parsear el string
+            // $partes = explode('-', $datosPdfString);
+            // $nie = $partes[0];
+            // ...etc.
+
+            // 2. (Ejemplo) Hacer las consultas a la BD
+            // $estudiante = \App\Models\Estudiante::where('codigo_nie', $nie)->first();
+            // $datosParaPdf = compact('estudiante', 'notas', 'partes');
+
+            // 3. (Ejemplo) Cargar la vista del PDF con los datos
+            // $pdf = \PDF::loadView('pdf.tu_vista_de_boleta', $datosParaPdf);
+
+            // 4. (Ejemplo) Devolver el PDF como un string
+            // return $pdf->output();
+
+        // ----- FIN DE EJEMPLO -----
+
+        // --- INICIO DE CÓDIGO TEMPORAL (Borra esto) ---
+        // Pongo esto solo para que funcione mientras pegas tu lógica.
+        if (class_exists('PDF')) {
+            $pdf = \PDF::loadHTML('<h1>PDF de Prueba</h1><p>Datos: ' . $datosPdfString . '</p>');
+            return $pdf->output();
+        }
+        
+        return 'Este es un PDF de prueba.';
+        // --- FIN DE CÓDIGO TEMPORAL ---
+    }
+
+}   // fin de la función.
