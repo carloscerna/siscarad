@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @php
@@ -6,7 +7,7 @@ use Illuminate\Support\Facades;
     $correo_docente = Auth::user()->email;                                        
     $nombre_docente = Auth::user()->name;
     $codigo_personal = Auth::user()->codigo_personal;   
-    $codigo_institucion = Auth::user()->codigo_institucion;                                                
+    $codigo_institucion = Auth::user()->codigo_institucion;                                                ;
 @endphp
 
 @section('content')
