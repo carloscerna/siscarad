@@ -15,63 +15,115 @@ class PdfRPGController extends Controller
     {
         $this->fpdf = new Fpdf('L','mm','Legal');	// Formato Legal (Paisaje)
     }
+
 /**
-     * Dibuja la tabla de estadísticas (VERSIÓN PEQUEÑA)
+     * Dibuja la tabla de estadísticas (VERSIÓN MODULAR AVANZADA)
+     * Acepta coordenadas X, Y, anchos (W), alturas (H) y textos de cabecera.
+     *
      * @param Fpdf $fpdf La instancia de FPDF
      * @param array $stats Los datos estadísticos calculados
+     * @param float $x La coordenada X (horizontal) para la esquina superior izquierda
+     * @param float $y La coordenada Y (vertical) para la esquina superior izquierda
+     * @param array $w (Opcional) Array con los anchos de las 6 columnas
+     * @param float $h_title (Opcional) Alto de la fila del TÍTULO ("ESTADÍSTICA")
+     * @param float $h_header (Opcional) Alto de CADA LÍNEA de la cabecera (ej: 5mm por línea)
+     * @param float $h_row (Opcional) Alto de las filas de datos (Masculino, Femenino, Total)
+     * @param array $header_texts (Opcional) Array con los textos de la cabecera. Usa "\n" para saltos de línea.
      */
-    private function dibujarEstadisticas($fpdf, $stats)
+    private function dibujarEstadisticas($fpdf, $stats, $x, $y, $w = null, $h_title = null, $h_header = null, $h_row = null, $header_texts = null)
     {
-        // INDICADOR: Anchos de la tabla de estadísticas (Total: 157mm)
-        // Ajusta estos valores si necesitas más o menos espacio
-        $w = [35, 25, 22, 25, 25, 25]; // Anchos de columna (Más pequeños)
-        $h = 6; // Alto de celda (Más pequeño)
+        // --- INDICADOR: Valores por Defecto ---
+        // Puedes cambiar los valores por defecto aquí
+        $w_default = [35, 25, 22, 25, 25, 25]; // Anchos de columna (Total: 157mm)
+        $h_title_default = 8; // Alto para la celda "ESTADÍSTICA"
+        $h_header_line_default = 5; // Alto de CADA línea en la cabecera (ej: "Matrícula\nInicial" usará 10mm total)
+        $h_row_default = 6; // Alto para las filas de datos
+        $header_texts_default = [
+            "SEXO",
+            "Matrícula\nInicial",
+            "Retirados",
+            "Matrícula\nFinal",
+            "Promovidos",
+            "Retenidos"
+        ];
+        // --- Fin de Indicadores ---
 
-        $fpdf->SetFont('Arial', 'B', 10); // Fuente más pequeña
-        $fpdf->Cell(array_sum($w), $h, mb_convert_encoding('ESTADÍSTICA', 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
-        
-        $fpdf->SetFont('Arial', 'B', 8); // Fuente más pequeña
-        $fpdf->SetFillColor(230, 230, 230); // Gris claro
+        // Asigna los valores (si el usuario no los pasa, usa los por defecto)
+        $w = $w ?? $w_default;
+        $h_title = $h_title ?? $h_title_default;
+        $h_header_line = $h_header_line ?? $h_header_line_default;
+        $h_row = $h_row ?? $h_row_default;
+        $header_texts = $header_texts ?? $header_texts_default;
 
-        // --- Cabecera ---
-        $fpdf->Cell($w[0], $h, 'SEXO', 1, 0, 'C', true);
-        $fpdf->Cell($w[1], $h, mb_convert_encoding('Matrícula Inicial', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', true);
-        $fpdf->Cell($w[2], $h, 'Retirados', 1, 0, 'C', true);
-        $fpdf->Cell($w[3], $h, mb_convert_encoding('Matrícula Final', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', true);
-        $fpdf->Cell($w[4], $h, 'Promovidos', 1, 0, 'C', true);
-        $fpdf->Cell($w[5], $h, 'Retenidos', 1, 1, 'C', true);
+        // --- Posiciona el cursor en el X,Y que nos diste ---
+        $fpdf->SetXY($x, $y);
+        $fpdf->SetFont('Arial', 'B', 10);
+        $fpdf->Cell(array_sum($w), $h_title, mb_convert_encoding('ESTADÍSTICA', 'ISO-8859-1', 'UTF-8'), 1, 1, 'C'); // Título
         
-        $this->fpdf->SetFont('Arial', '', 8); // Fuente más pequeña
+        $fpdf->SetX($x); // Vuelve al inicio X
+        
+        $fpdf->SetFont('Arial', 'B', 7);
+        $fpdf->SetFillColor(230, 230, 230);
+
+        // --- Cabecera Multi-línea (El truco de FPDF) ---
+        // Guardamos la Y actual y la X inicial
+        $current_y = $fpdf->GetY();
+        $current_x = $x;
+        $max_y = $current_y; // Para rastrear la celda más alta
+        
+        for ($i = 0; $i < count($header_texts); $i++) {
+            $fpdf->SetXY($current_x, $current_y); // Fija la posición de esta celda
+            
+            // Dibuja la MultiCell. El $h_header_line es el alto de CADA línea de texto
+            $fpdf->MultiCell($w[$i], $h_header_line, convertirTexto($header_texts[$i]), 1, 'C', true);
+            
+            // Guarda la Y máxima (la celda más alta, ej: "Matrícula\nInicial")
+            if ($fpdf->GetY() > $max_y) {
+                $max_y = $fpdf->GetY();
+            }
+            // Mueve la X para la siguiente celda
+            $current_x += $w[$i];
+        }
+        // Al final, establece la Y para la siguiente fila de datos
+        $fpdf->SetY($max_y);
+        // --- Fin Cabecera Multi-línea ---
+        
+        $this->fpdf->SetFont('Arial', '', 7);
         
         // --- Fila Masculino ---
-        $fpdf->Cell($w[0], $h, 'MASCULINO', 1, 0, 'L');
-        $fpdf->Cell($w[1], $h, $stats['M']['inicial'], 1, 0, 'C');
-        $fpdf->Cell($w[2], $h, $stats['M']['retirados'], 1, 0, 'C');
-        $fpdf->Cell($w[3], $h, $stats['M']['final'], 1, 0, 'C');
-        $fpdf->Cell($w[4], $h, $stats['M']['promovidos'], 1, 0, 'C');
-        $fpdf->Cell($w[5], $h, $stats['M']['retenidos'], 1, 1, 'C');
+        $fpdf->SetX($x); // Vuelve a la X inicial
+        $fpdf->Cell($w[0], $h_row, 'MASCULINO', 1, 0, 'L');
+        $fpdf->Cell($w[1], $h_row, $stats['M']['inicial'], 1, 0, 'C');
+        $fpdf->Cell($w[2], $h_row, $stats['M']['retirados'], 1, 0, 'C');
+        $fpdf->Cell($w[3], $h_row, $stats['M']['final'], 1, 0, 'C');
+        $fpdf->Cell($w[4], $h_row, $stats['M']['promovidos'], 1, 0, 'C');
+        $fpdf->Cell($w[5], $h_row, $stats['M']['retenidos'], 1, 1, 'C'); // Salto de línea
         
         // --- Fila Femenino ---
-        $fpdf->Cell($w[0], $h, 'FEMENINO', 1, 0, 'L');
-        $fpdf->Cell($w[1], $h, $stats['F']['inicial'], 1, 0, 'C');
-        $fpdf->Cell($w[2], $h, $stats['F']['retirados'], 1, 0, 'C');
-        $fpdf->Cell($w[3], $h, $stats['F']['final'], 1, 0, 'C');
-        $fpdf->Cell($w[4], $h, $stats['F']['promovidos'], 1, 0, 'C');
-        $fpdf->Cell($w[5], $h, $stats['F']['retenidos'], 1, 1, 'C');
+        $fpdf->SetX($x); // Vuelve a la X inicial
+        $fpdf->Cell($w[0], $h_row, 'FEMENINO', 1, 0, 'L');
+        $fpdf->Cell($w[1], $h_row, $stats['F']['inicial'], 1, 0, 'C');
+        $fpdf->Cell($w[2], $h_row, $stats['F']['retirados'], 1, 0, 'C');
+        $fpdf->Cell($w[3], $h_row, $stats['F']['final'], 1, 0, 'C');
+        $fpdf->Cell($w[4], $h_row, $stats['F']['promovidos'], 1, 0, 'C');
+        $fpdf->Cell($w[5], $h_row, $stats['F']['retenidos'], 1, 1, 'C'); // Salto de línea
         
         // --- Fila Total ---
-        $fpdf->SetFont('Arial', 'B', 8); // Fuente más pequeña
-        $fpdf->Cell($w[0], $h, 'TOTAL', 1, 0, 'L', true);
-        $fpdf->Cell($w[1], $h, $stats['Total']['inicial'], 1, 0, 'C', true);
-        $fpdf->Cell($w[2], $h, $stats['Total']['retirados'], 1, 0, 'C', true);
-        $fpdf->Cell($w[3], $h, $stats['Total']['final'], 1, 0, 'C', true);
-        $fpdf->Cell($w[4], $h, $stats['Total']['promovidos'], 1, 0, 'C', true);
-        $fpdf->Cell($w[5], $h, $stats['Total']['retenidos'], 1, 1, 'C', true);
+        $fpdf->SetFont('Arial', 'B', 7);
+        $fpdf->SetX($x); // Vuelve a la X inicial
+        $fpdf->Cell($w[0], $h_row, 'TOTAL', 1, 0, 'L', true);
+        $fpdf->Cell($w[1], $h_row, $stats['Total']['inicial'], 1, 0, 'C', true);
+        $fpdf->Cell($w[2], $h_row, $stats['Total']['retirados'], 1, 0, 'C', true);
+        $fpdf->Cell($w[3], $h_row, $stats['Total']['final'], 1, 0, 'C', true);
+        $fpdf->Cell($w[4], $h_row, $stats['Total']['promovidos'], 1, 0, 'C', true);
+        $fpdf->Cell($w[5], $h_row, $stats['Total']['retenidos'], 1, 1, 'C', true); // Salto de línea
 
         // --- Fecha y Hora ---
-        $fpdf->SetFont('Arial', 'I', 7); // Fuente más pequeña
+        $fpdf->SetFont('Arial', 'I', 7);
+        $fpdf->SetX($x); // Vuelve a la X inicial
         $fpdf->Cell(array_sum($w), 5, mb_convert_encoding('Generado el: ' . date('d/m/Y H:i:s'), 'ISO-8859-1', 'UTF-8'), 0, 1, 'R');
     }
+
     public function index($id) 
     {
         // ... (Tu código de configuración, parseo de $id, cálculo de $stats, y consultas de BD
@@ -159,29 +211,62 @@ class PdfRPGController extends Controller
                 $firma_director_path = public_path('img/' . trim($response_i->logo_dos));
                 $sello_direccion_path = public_path('img/' . trim($response_i->logo_tres));
                 
-                // INDICADOR: Posición del Logo
-                $this->fpdf->SetXY(10, 10); 
+                // --- INDICADOR: POSICIÓN DEL BLOQUE DE INFO INSTITUCIÓN ---
+                // X = Distancia desde la izquierda | Y = Distancia desde arriba
+                $ce_X = 10;
+                $ce_Y = 10;
+                $this->fpdf->SetXY($ce_X, $ce_Y); 
                 if (file_exists($logo_uno_path)) {
                     $this->fpdf->image($logo_uno_path, $this->fpdf->GetX(), $this->fpdf->GetY(), 15, 20);
                 }
                 
-                // INDICADOR: Posición del Encabezado de la Institución
-                $this->fpdf->SetXY(27, 10); // 10 (margen) + 15 (logo) + 2 (espacio)
+                $this->fpdf->SetXY($ce_X + 17, $ce_Y); // 10 (margen) + 15 (logo) + 2 (espacio)
                 $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
                 $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion_infra . " - " .$nombre_institucion,1,1,'L');       
             }
+// --- Dibujar Encabezado Derecho (Estadísticas) ---
+            
+            // --- INDICADOR: CONTROL MANUAL DE ESTADÍSTICAS ---
+            
+            // 1. Mueve la tabla completa cambiando X (horizontal) e Y (vertical)
+            $stats_X = 260; // Distancia desde la izquierda
+            $stats_Y = 10;  // Distancia desde arriba
 
-        // --- Dibujar Encabezado Derecho (Estadísticas) ---
-            // INDICADOR: Posición X,Y de la tabla de ESTADÍSTICAS
-            // Mueve estos valores para cambiar la tabla de lugar
-            // X = Distancia desde la izquierda (ej: 180)
-            // Y = Distancia desde arriba (ej: 10)
-            $stats_X = 180;
-            $stats_Y = 10;
-            $this->fpdf->SetXY($stats_X, $stats_Y); 
-            $this->dibujarEstadisticas($this->fpdf, $stats); // Llama a la nueva función
-            $y_stats_fin = $this->fpdf->GetY(); // Guarda dónde terminó la tabla de stats
+            // 2. Cambia los anchos de las 6 columnas
+            $w_stats = [17, 14, 14, 15, 18, 14]; 
+            
+            // 3. Cambia las alturas
+            $h_titulo_stats = 8;  // Alto de la celda "ESTADÍSTICA"
+            $h_linea_header_stats = 5; // Alto de CADA línea de la cabecera (5mm * 2 líneas = 10mm)
+            $h_fila_datos_stats = 6;  // Alto de las filas (Masculino, Femenino, Total)
 
+            // 4. Cambia los textos. Usa \n para un salto de línea
+            $textos_header_stats = [
+                "SEXO\n  ",
+                "Matrícula\nInicial",
+                "Retirados\n ",
+                "Matrícula\nFinal",
+                "Promovidos\n ",
+                "Retenidos\n "
+            ];
+
+            // Esta es la función que dibuja la tabla.
+            // Pasa tus variables personalizadas aquí.
+            $this->dibujarEstadisticas(
+                $this->fpdf, 
+                $stats, 
+                $stats_X, 
+                $stats_Y, 
+                $w_stats, 
+                $h_titulo_stats, 
+                $h_linea_header_stats, 
+                $h_fila_datos_stats, 
+                $textos_header_stats
+            );
+            
+            // --- FIN DEL INDICADOR ---
+            
+            //$y_stats_fin = $this->fpdf->GetY(); // Guarda dónde terminó la tabla de stats
 
         // =================================================================
         // ====== INICIO: BUCLE PRINCIPAL DE NOTAS ======
@@ -222,15 +307,18 @@ class PdfRPGController extends Controller
 
             $fila = 1; $fila_asignatura = 0; $fila_numero = 1; $fill = true; $ultima_columna = 250;
             
-            // INDICADOR: Posición Y (vertical) de la TABLA DE NOTAS
-            // Se calcula tomando el Y más bajo entre el header izquierdo y la tabla de estadísticas
-            $y_header_izquierdo = $this->fpdf->GetY();
-            // $y_stats_fin ya lo tenemos
-            $this->fpdf->SetY(max($y_header_izquierdo, $y_stats_fin) + 5); // +5 de padding
+            // --- INDICADOR: POSICIÓN DEL BLOQUE DE NOTAS (ENCABEZADO Y TABLA) ---
+            // Y = Distancia desde arriba. Lo calculamos para que empiece
+            //     debajo del bloque más alto (Info C.E. o Estadísticas)
+            $y_header_izquierdo_fin = $this->fpdf->GetY(); // Dónde terminó el C.E.
+            $y_stats_fin = $this->fpdf->GetY();        // Dónde terminó Stats (¡Cuidado! Esta Y es de la última celda de Stats)
             
-            // INDICADOR: Posición X (horizontal) de la TABLA DE NOTAS
-            $posicion_X_tabla_notas = 5; // Margen izquierdo
-            $this->fpdf->SetX($posicion_X_tabla_notas); 
+            // Queremos que la tabla de notas empiece debajo del bloque que haya quedado más abajo
+            //$table_Y_start = max($y_header_izquierdo_fin, $y_stats_fin) + 5; // +5mm de padding
+            $table_Y_start = 15;
+            // X = Distancia desde la izquierda.
+            $table_X_start = 27; // Margen izquierdo
+            // --- FIN DEL INDICADOR ---
             
             $header_dibujado = false; // Flag para dibujar el header de notas solo una vez
             $posicion_Y_texto_rotado = 0; // Guardará la Y para el texto de asignaturas
@@ -262,66 +350,90 @@ class PdfRPGController extends Controller
                 if(!$header_dibujado){
                     // Guardamos la Y actual para el texto rotado
                     $posicion_Y_texto_rotado = $this->fpdf->GetY() + $alto_cell[1]; // Y actual + alto de la cabecera
-                    
-                    // --- Encabezado del Grado ---
-                    $this->fpdf->SetX(30); 
-                    $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Nivel","ISO-8859-1","UTF-8"),1,0,'L');       
-                    $this->fpdf->Cell(135,$alto_cell[0],$nombre_modalidad,1,1,'L');       
-                    $this->fpdf->SetX(30); 
-                    $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L');       
-                    $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado,1,0,'L');       
-                    $this->fpdf->Cell(15,$alto_cell[0],mb_convert_encoding("Sección","ISO-8859-1","UTF-8"),1,0,'L');       
-                    $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion,1,0,'C');       
-                    $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L');       
-                    $this->fpdf->Cell(45,$alto_cell[0],$nombre_turno,1,1,'C');       
-                    $this->fpdf->SetX(30); 
-                    $this->fpdf->Cell(55,$alto_cell[0],"Encargado de Grado: ",1,0,'L');       
-                    $this->fpdf->Cell(120,$alto_cell[0],$nombre_personal_,1,1,'L');       
-                    $this->fpdf->ln(); 
-                    
-                    // --- Encabezado de Asignaturas (Componentes) ---
-                    $this->fpdf->SetX($posicion_X_tabla_notas); // Asegura que empiece en el margen X
-                    $this->fpdf->SetFont('Arial', 'B', '7');
-                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','LT',0,'L',false);            
-                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'','T',0,'L',false);            
-                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'','T',0,'L',false);            
-                    $mas_ancho = 12; $espacio = 0; 
-                    $ancho_titulo_asignatura = count($datos_asignatura['nombre']) * $mas_ancho;
-                    $this->fpdf->SetFont('Arial', 'B', '10');
-                    $this->fpdf->Cell($ancho_titulo_asignatura,$alto_cell[0],'COMPONENTES DEL PLAN DE ESTUDIO',1,1,'C');
-                    
-                    $this->fpdf->SetX($posicion_X_tabla_notas); // Asegura que empiece en el margen X
-                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','L',0,'L',false);            
-                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',0,0,'L',false);            
-                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'',0,0,'C');       
-                    $this->fpdf->SetFont('Arial', 'B', '10');
-                    for ($oi=0; $oi < count($codigo_area_existentes); $oi++) { 
-                        $buscar = array_search($codigo_area_existentes[$oi], $datos_asignatura['codigo_area']);
-                        $Nombre = $datos_asignatura['nombre_area'][$buscar];
-                        $this->fpdf->Cell($mas_ancho*$ancho_area[$oi],$alto_cell[0],$Nombre,1,0,'C');     
-                    }
-                    $this->fpdf->ln();
+                    // --- Obtenemos los datos del encabezado (Nivel, Grado) del PRIMER estudiante ---
+                        $firstStudent = $EstudianteBoleta[0];
+                        $nombre_modalidad_header = mb_convert_encoding(trim($firstStudent->nombre_modalidad),"ISO-8859-1","UTF-8");  
+                        $nombre_grado_header = mb_convert_encoding(trim($firstStudent->nombre_grado),"ISO-8859-1","UTF-8");  
+                        $nombre_seccion_header = mb_convert_encoding(trim($firstStudent->nombre_seccion),"ISO-8859-1","UTF-8");  
+                        $nombre_turno_header = mb_convert_encoding(trim($firstStudent->nombre_turno),"ISO-8859-1","UTF-8");
+                    // =================================================================
+                    // ====== INICIO: DIBUJAR ENCABEZADO DE GRADO (NUEVO BLOQUE) ======
+                    // =================================================================
 
-                    // --- Encabezado de Nómina y Asignaturas Rotadas ---
-                    $this->fpdf->SetX($posicion_X_tabla_notas); // Asegura que empiece en el margen X
-                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[1],mb_convert_encoding('N.º',"ISO-8859-1","UTF-8"),1,0,'C',false);            
-                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[1],'NIE',1,0,'C',false);            
-                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[1],"NOMINA DE ESTUDIANTES",1,0,'C');       
+                    // --- INDICADOR: POSICIÓN DEL BLOQUE "Nivel, Grado, Encargado" ---
+                    // Modifica estos X/Y para mover este bloque independientemente
+                    $header_info_X = 27;  // Distancia desde la izquierda
+                    $header_info_Y = 10; // Distancia desde arriba (debajo del logo)
+                    $this->fpdf->SetXY($header_info_X, $header_info_Y);
                     
-                    $x_rotado_inicio = $posicion_X_tabla_notas + $ancho_cell[1] + $ancho_cell[4] + $ancho_cell[0];
-                    $ancho_col_asignatura = 12;
+                    $this->fpdf->SetFont('Arial', 'B', 9);
+                    $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Nivel","ISO-8859-1","UTF-8"),1,0,'L'); 
+                    $this->fpdf->Cell(135,$alto_cell[0],$nombre_modalidad_header,1,1,'L'); 
+                    $this->fpdf->SetX($header_info_X); // Vuelve al X inicial
+                    $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L'); 
+                    $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado_header,1,0,'L'); 
+                    $this->fpdf->Cell(15,$alto_cell[0],mb_convert_encoding("Sección","ISO-8859-1","UTF-8"),1,0,'L'); 
+                    $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion_header,1,0,'C'); 
+                    $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L'); 
+                    $this->fpdf->Cell(45,$alto_cell[0],$nombre_turno_header,1,1,'C'); 
+                    $this->fpdf->SetX($header_info_X); // Vuelve al X inicial
+                    $this->fpdf->Cell(55,$alto_cell[0],"Encargado de Grado: ",1,0,'L'); 
+                    $this->fpdf->Cell(120,$alto_cell[0],$nombre_personal_,1,1,'L');
+                   $this->fpdf->ln(); 
+                   
+                   // Guardamos la Y actual para el texto rotado
+                   $posicion_Y_texto_rotado = $this->fpdf->GetY() + $alto_cell[1]; // Y actual + alto de la cabecera
+
+                    // --- INDICADOR: POSICIÓN DEL BLOQUE "Tabla de Notas" (Componentes, Nómina) ---
+                    // Y se calcula automático, +2mm debajo del bloque anterior
+                    $table_Y_start = $this->fpdf->GetY() + 2; 
+                    // X es la misma del bloque anterior
+                    //$table_X_start = $header_info_X; 
+                    $table_X_start = 10; 
+                    $this->fpdf->SetXY($table_X_start, $table_Y_start);
                     
-                    for ($ij=0; $ij < count($datos_asignatura['nombre']); $ij++) { 
-                        $ancho_col = $ancho_col_asignatura;
-                        $x_actual = $x_rotado_inicio + ($ij * $ancho_col);
-                        $this->fpdf->Rect($x_actual, $this->fpdf->GetY(), $ancho_col, $alto_cell[1]);
-                        $this->fpdf->SetFont('Arial', '', '9');
-                        $this->fpdf->RotatedTextMultiCell($x_actual + ($ancho_col/2), $posicion_Y_texto_rotado - 1, $datos_asignatura['nombre'][$ij], 90);
-                    }
-                
-                    $this->fpdf->SetXY($posicion_X_tabla_notas, $posicion_Y_texto_rotado); // Posiciona el cursor al inicio de la lista
-                    $header_dibujado = true; // Marcar como dibujado
-                }
+                    $posicion_Y_texto_rotado = $this->fpdf->GetY() + $alto_cell[1]; // Y actual + alto de la cabecera
+                    $this->fpdf->SetFont('Arial', 'B', '7');
+                   $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','LT',0,'L',false);            
+                   $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'','T',0,'L',false);            
+                   $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'','T',0,'L',false);            
+                   $mas_ancho = 12; $espacio = 0; 
+                   $ancho_titulo_asignatura = count($datos_asignatura['nombre']) * $mas_ancho;
+                   $this->fpdf->SetFont('Arial', 'B', '10');
+                   $this->fpdf->Cell($ancho_titulo_asignatura,$alto_cell[0],'COMPONENTES DEL PLAN DE ESTUDIO',1,1,'C');
+                   
+                   $this->fpdf->SetX($table_X_start); // Vuelve al X inicial
+                   $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','L',0,'L',false);            
+                   $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',0,0,'L',false);            
+                   $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'',0,0,'C');       
+                   $this->fpdf->SetFont('Arial', 'B', '10');
+                   for ($oi=0; $oi < count($codigo_area_existentes); $oi++) { 
+                       $buscar = array_search($codigo_area_existentes[$oi], $datos_asignatura['codigo_area']);
+                       $Nombre = $datos_asignatura['nombre_area'][$buscar];
+                       $this->fpdf->Cell($mas_ancho*$ancho_area[$oi],$alto_cell[0],$Nombre,1,0,'C');     
+                   }
+                   $this->fpdf->ln();
+                   
+                  // --- Encabezado de Nómina y Asignaturas Rotadas ---
+                  $this->fpdf->SetX($table_X_start); // Vuelve al X inicial
+                  $this->fpdf->Cell($ancho_cell[1],$alto_cell[1],mb_convert_encoding('N.º',"ISO-8859-1","UTF-8"),1,0,'C',false);            
+                  $this->fpdf->Cell($ancho_cell[4],$alto_cell[1],'NIE',1,0,'C',false);            
+                  $this->fpdf->Cell($ancho_cell[0],$alto_cell[1],"NOMINA DE ESTUDIANTES",1,0,'C');       
+                  
+                  $x_rotado_inicio = $table_X_start + $ancho_cell[1] + $ancho_cell[4] + $ancho_cell[0];
+                  $ancho_col_asignatura = 12;
+                  
+                  for ($ij=0; $ij < count($datos_asignatura['nombre']); $ij++) { 
+                      $ancho_col = $ancho_col_asignatura;
+                      $x_actual = $x_rotado_inicio + ($ij * $ancho_col);
+                      $this->fpdf->Rect($x_actual, $this->fpdf->GetY(), $ancho_col, $alto_cell[1]);
+                      $this->fpdf->SetFont('Arial', '', '9');
+                      $this->fpdf->RotatedTextMultiCell($x_actual + ($ancho_col/2), $posicion_Y_texto_rotado - 1, $datos_asignatura['nombre'][$ij], 90);
+                  }
+              
+                  $this->fpdf->SetXY($table_X_start, $posicion_Y_texto_rotado); // Posiciona el cursor al inicio de la lista
+                  $header_dibujado = true; // Marcar como dibujado
+              }
                 
                 // --- Dibujar fila de notas del estudiante ---
                 // ... (toda tu lógica de $fill, $fila_asignatura, $fila_numero, etc.) ...
@@ -329,7 +441,7 @@ class PdfRPGController extends Controller
                 $this->fpdf->SetFillColor(212, 230, 252); $this->fpdf->SetTextColor(0,0,0); $this->fpdf->SetFont('Arial', '', 7);
                 if($fila_asignatura == $total_asignaturas){ $this->fpdf->ln(); $fila_asignatura = 0; $fila_numero++; $fill=!$fill; }
                 if($fila_asignatura == 0){
-                    $this->fpdf->SetX($posicion_X_tabla_notas); // Asegura que empiece en el margen X
+                    $this->fpdf->SetX($table_X_start); // Asegura que empiece en el X de la tabla
                     $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$fila_numero,1,0,'L',$fill);            
                     $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$codigo_nie,1,0,'L',$fill);            
                     $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$nombre_estudiante,1,0,'L',$fill); 
@@ -346,7 +458,7 @@ class PdfRPGController extends Controller
             $this->fpdf->Ln();
             if($numero > 25){ $linea_faltante = 50 - $numero; } else { $linea_faltante = 25 - $numero; } // Ajuste
             for($i=0;$i<=$linea_faltante;$i++) {
-                $this->fpdf->SetX($posicion_X_tabla_notas); // Asegura que empiece en el margen X
+                $this->fpdf->SetX($table_X_start); // Asegura que empiece en el X de la tabla
                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'L',$fill);            
                 $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',1,0,'L',$fill);            
                 $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'',1,0,'L',$fill); 
