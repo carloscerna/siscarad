@@ -124,6 +124,260 @@ class PdfRPGController extends Controller
         $fpdf->Cell(array_sum($w), 5, mb_convert_encoding('Generado el: ' . date('d/m/Y H:i:s'), 'ISO-8859-1', 'UTF-8'), 0, 1, 'R');
     }
 
+/**
+     * Dibuja la tabla de Escala de Valoración (VERSIÓN MODULAR)
+     * Acepta coordenadas X, Y, anchos (W), alturas (H) y textos.
+     *
+     * @param Fpdf $fpdf La instancia de FPDF
+     * @param float $x La coordenada X (horizontal) para la esquina superior izquierda
+     * @param float $y La coordenada Y (vertical) para la esquina superior izquierda
+     * @param array $w (Opcional) Array con los anchos de las 3 columnas
+     * @param float $h_title (Opcional) Alto de la fila del TÍTULO
+     * @param float $h_row_1 (Opcional) Alto de la fila (E, MB, B)
+     * @param float $h_line_row_2 (Opcional) Alto de CADA LÍNEA en la fila (Dominio...)
+     * @param array $texts (Opcional) Array con los textos de la tabla
+     */
+    private function dibujarEscalaValoracion($fpdf, $x, $y, $w = null, $h_title = null, $h_row_1 = null, $h_line_row_2 = null, $texts = null)
+    {
+// --- INDICADOR: Valores por Defecto ---
+        $w_default = [40, 40, 40]; // 3 columnas (Total 120mm)
+        $h_title_line_default = 5; // Alto de CADA LÍNEA del título
+        $h_row_1_default = 6;
+        $h_line_row_2_default = 4; // Interlineado para la fila "Dominio..."
+
+        $texts_default = [
+            'title' => "ESCALA DE VALORACIÓN PARA\nLAS COMPETENCIAS CIUDADANAS",
+            'row_1' => ["E: Excelente", "MB: Muy Bueno", "B: Bueno"],
+            'row_2' => ["Dominio alto de la competencia", "Dominio medio de la competencia", "Dominio bajo de la competencia"]
+        ];
+        // --- Fin de Indicadores ---
+
+// Asigna los valores (si el usuario no los pasa, usa los por defecto)
+        $w = $w ?? $w_default;
+        $h_title_line = $h_title_line ?? $h_title_line_default;
+        $h_row_1 = $h_row_1 ?? $h_row_1_default;
+        $h_line_row_2 = $h_line_row_2 ?? $h_line_row_2_default;
+        $texts = $texts ?? $texts_default;
+
+        // --- Dibuja Título ---
+        $fpdf->SetXY($x, $y);
+        $fpdf->SetFont('Arial', 'B', 9);
+        $fpdf->SetFillColor(230, 230, 230);
+        $fpdf->MultiCell(array_sum($w), $h_title_line, mb_convert_encoding($texts['title'], 'ISO-8859-1', 'UTF-8'), 1, 'C', true);
+
+        // --- Dibuja Fila 1 (E, MB, B) ---
+        $fpdf->SetX($x);
+        $fpdf->SetFont('Arial', 'B', 8);
+        $fpdf->Cell($w[0], $h_row_1, mb_convert_encoding($texts['row_1'][0], 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
+        $fpdf->Cell($w[1], $h_row_1, mb_convert_encoding($texts['row_1'][1], 'ISO-8859-1', 'UTF-8'), 1, 0, 'C');
+        $fpdf->Cell($w[2], $h_row_1, mb_convert_encoding($texts['row_1'][2], 'ISO-8859-1', 'UTF-8'), 1, 1, 'C');
+
+        // --- Dibuja Fila 2 (Dominio...) usando MultiCell ---
+        $fpdf->SetX($x);
+        $fpdf->SetFont('Arial', '', 8);
+        $current_x = $x;
+        $current_y = $fpdf->GetY();
+        $max_y = $current_y; // Para rastrear la celda más alta
+        
+        for ($i = 0; $i < 3; $i++) {
+            $fpdf->SetXY($current_x, $current_y);
+            // Dibuja la MultiCell. $h_line_row_2 es el interlineado.
+            $fpdf->MultiCell($w[$i], $h_line_row_2, mb_convert_encoding($texts['row_2'][$i], 'ISO-8859-1', 'UTF-8'), 1, 'C');
+            
+            // Guarda la Y máxima (la celda que crezca más)
+            if ($fpdf->GetY() > $max_y) {
+                $max_y = $fpdf->GetY();
+            }
+            // Mueve la X para la siguiente celda
+            $current_x += $w[$i];
+            // Restaura la Y para que la siguiente MultiCell empiece arriba
+            $fpdf->SetY($current_y);
+        }
+        // Al final, establece la Y para lo que venga después
+        $fpdf->SetY($max_y);
+    }
+
+/**
+     * Dibuja el bloque de Promovidos y Retenidos con números en palabras.
+     * Acepta coordenadas X, Y, anchos (W), alto (H) y tamaño de fuente.
+     *
+     * @param Fpdf $fpdf La instancia de FPDF
+     * @param array $stats Los datos estadísticos calculados
+     * @param float $x La coordenada X (horizontal) para la esquina superior izquierda
+     * @param float $y La coordenada Y (vertical) para la esquina superior izquierda
+     * @param float $w_label (Opcional) Ancho de la etiqueta (ej: "PROMOVIDOS:")
+     * @param float $w_line (Opcional) Ancho de la línea para el texto
+     * @param float $h_line (Opcional) Alto de cada fila
+     * @param float $font_size (Opcional) Tamaño de la fuente
+     */
+    private function dibujarPromovidosRetenidos($fpdf, $stats, $x, $y, $w_label = null, $w_line = null, $h_line = null, $font_size = null)
+    {
+        // --- INDICADOR: Valores por Defecto ---
+        $w_label_default = 30;    // Ancho para "PROMOVIDOS:"
+        $w_line_default = 80;     // Ancho de la línea
+        $h_line_default = 8;      // Alto de cada fila
+        $font_size_default = 10;  // Tamaño de fuente
+        $gap_default = 2;         // Espacio entre etiqueta y línea
+        // --- Fin de Indicadores ---
+
+        // Asigna los valores (si el usuario no los pasa, usa los por defecto)
+        $w_label = $w_label ?? $w_label_default;
+        $w_line = $w_line ?? $w_line_default;
+        $h_line = $h_line ?? $h_line_default;
+        $font_size = $font_size ?? $font_size_default;
+        $gap = $gap_default;
+
+        // 1. Obtener números del array de estadísticas
+        $promovidos_num = $stats['Total']['promovidos'];
+        $retenidos_num = $stats['Total']['retenidos'];
+
+        // 2. Convertir a palabras (con fallback a número si 'intl' no está)
+        $promovidos_texto = $promovidos_num; // Fallback
+        $retenidos_texto = $retenidos_num; // Fallback
+        
+        if (class_exists('NumberFormatter')) {
+            try {
+                $formatter = new \NumberFormatter('es', \NumberFormatter::SPELLOUT);
+                $promovidos_texto = mb_convert_encoding(ucfirst($formatter->format($promovidos_num)), 'ISO-8859-1', 'UTF-8');
+                $retenidos_texto = mb_convert_encoding(ucfirst($formatter->format($retenidos_num)), 'ISO-8859-1', 'UTF-8');
+            } catch (\Exception $e) {
+                // Si falla (ej: 'es' no está), usa el número
+                $promovidos_texto = $promovidos_num;
+                $retenidos_texto = $retenidos_num;
+            }
+        }
+
+        // --- 3. Dibujar ---
+        $fpdf->SetFont('Arial', 'B', $font_size);
+
+        // --- Fila PROMOVIDOS ---
+        $fpdf->SetXY($x, $y);
+        $fpdf->Cell($w_label, $h_line, 'PROMOVIDOS:', 0, 0, 'L');
+        
+        $text_x = $x + $w_label + $gap;
+        $fpdf->SetXY($text_x, $y);
+        $fpdf->Cell($w_line, $h_line, $promovidos_texto, 0, 0, 'C'); // Dibuja el texto
+        
+        $line_y = $y + $h_line - 1; // 1mm por encima del fondo
+        $fpdf->Line($text_x, $line_y, $text_x + $w_line, $line_y); // Dibuja la línea
+
+        // --- Fila RETENIDOS ---
+        $y_retenidos = $y + $h_line + 2; // Siguiente línea + 2mm de espacio
+        $fpdf->SetXY($x, $y_retenidos);
+        $fpdf->Cell($w_label, $h_line, 'RETENIDOS:', 0, 0, 'L');
+        
+        $text_x_retenidos = $x + $w_label + $gap;
+        $fpdf->SetXY($text_x_retenidos, $y_retenidos);
+        $fpdf->Cell($w_line, $h_line, $retenidos_texto, 0, 0, 'C'); // Dibuja el texto
+        
+        $line_y_retenidos = $y_retenidos + $h_line - 1;
+        $fpdf->Line($text_x_retenidos, $line_y_retenidos, $text_x_retenidos + $w_line, $line_y_retenidos);
+    }
+
+
+/**
+     * Dibuja el bloque de Lugar y Fecha.
+     *
+     * @param Fpdf $fpdf La instancia de FPDF
+     * @param float $x La coordenada X (horizontal)
+     * @param float $y La coordenada Y (vertical)
+     * @param array $texts Array con ['lugar' => '...', 'fecha' => '...']
+     * @param array $layout Array con ['w_label', 'w_line', 'h_line', 'font_size']
+     */
+    private function dibujarLugarFecha($fpdf, $x, $y, $texts, $layout = [])
+    {
+        // --- INDICADOR: Valores por Defecto ---
+        $w_label = $layout['w_label'] ?? 15; // Ancho para "Lugar:"
+        $w_line = $layout['w_line'] ?? 80;   // Ancho de la línea
+        $h_line = $layout['h_line'] ?? 7;    // Alto de cada fila
+        $font_size = $layout['font_size'] ?? 10;
+        $gap = 2; // Espacio entre etiqueta y línea
+        // --- Fin de Indicadores ---
+
+        $fpdf->SetFont('Arial', 'B', $font_size);
+
+        // --- Fila Lugar ---
+        $fpdf->SetXY($x, $y);
+        $fpdf->Cell($w_label, $h_line, mb_convert_encoding('Lugar:', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
+        
+        $text_x = $x + $w_label + $gap;
+        $fpdf->SetXY($text_x, $y);
+        $fpdf->Cell($w_line, $h_line, mb_convert_encoding($texts['lugar'], 'ISO-8859-1', 'UTF-8'), 0, 0, 'C'); // Dibuja el texto
+        
+        $line_y = $y + $h_line - 1; // 1mm por encima del fondo
+        $fpdf->Line($text_x, $line_y, $text_x + $w_line, $line_y); // Dibuja la línea
+
+        // --- Fila Fecha ---
+        $y_fecha = $y + $h_line; // Siguiente línea
+        $fpdf->SetXY($x, $y_fecha);
+        $fpdf->Cell($w_label, $h_line, mb_convert_encoding('Fecha:', 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
+        
+        $text_x_fecha = $x + $w_label + $gap;
+        $fpdf->SetXY($text_x_fecha, $y_fecha);
+        $fpdf->SetFont('Arial', '', $font_size); // Fuente normal para la fecha
+        $fpdf->Cell($w_line, $h_line, $texts['fecha'], 0, 0, 'C'); // Dibuja el texto
+        
+        $line_y_fecha = $y_fecha + $h_line - 1;
+        $fpdf->Line($text_x_fecha, $line_y_fecha, $text_x_fecha + $w_line, $line_y_fecha);
+    }
+
+    /**
+     * Dibuja un bloque de Firma (línea, nombre, título).
+     *
+     * @param Fpdf $fpdf La instancia de FPDF
+     * @param float $x La coordenada X (horizontal) del bloque
+     * @param float $y La coordenada Y (vertical) del bloque
+     * @param array $texts Array con ['nombre' => '...', 'titulo' => '...']
+     * @param array $layout Array con ['w_linea', 'h_gap', 'font_size_nombre', 'font_size_titulo']
+     */
+    private function dibujarFirma($fpdf, $x, $y, $texts, $layout = [])
+    {
+        // --- INDICADOR: Valores por Defecto ---
+        $w_linea = $layout['w_linea'] ?? 80;   // Ancho de la línea de firma
+        $h_gap = $layout['h_gap'] ?? 5;      // Alto de cada línea de texto
+        $font_size_nombre = $layout['font_size_nombre'] ?? 9;
+        $font_size_titulo = $layout['font_size_titulo'] ?? 8;
+        // --- Fin de Indicadores ---
+
+        // 1. Dibuja la Línea
+        $fpdf->SetXY($x, $y);
+        $fpdf->Line($x, $y, $x + $w_linea, $y);
+
+        // 2. Dibuja el Nombre
+        $y_nombre = $y + 2; // 2mm debajo de la línea
+        $fpdf->SetXY($x, $y_nombre);
+        $fpdf->SetFont('Arial', 'B', $font_size_nombre);
+        $fpdf->Cell($w_linea, $h_gap, $texts['nombre'], 0, 1, 'C'); // Salto de línea
+
+        // 3. Dibuja el Título
+        $fpdf->SetX($x); // Vuelve a la X de la firma
+        $fpdf->SetFont('Arial', '', $font_size_titulo);
+        $fpdf->Cell($w_linea, $h_gap, $texts['titulo'], 0, 1, 'C');
+    }
+
+    /**
+     * Dibuja un rectángulo para el sello.
+     *
+     * @param Fpdf $fpdf La instancia de FPDF
+     * @param float $x La coordenada X (horizontal)
+     * @param float $y La coordenada Y (vertical)
+     * @param float $w (Opcional) Ancho del rectángulo
+     * @param float $h (Opcional) Alto del rectángulo
+     */
+    private function dibujarSello($fpdf, $x, $y, $w = null, $h = null)
+    {
+        // --- INDICADOR: Valores por Defecto ---
+        $w_default = 40;
+        $h_default = 40;
+        // --- Fin de Indicadores ---
+        $w = $w ?? $w_default;
+        $h = $h ?? $h_default;
+
+        $fpdf->Rect($x, $y, $w, $h);
+    }
+
+
+
     public function index($id) 
     {
         // ... (Tu código de configuración, parseo de $id, cálculo de $stats, y consultas de BD
@@ -191,14 +445,20 @@ class PdfRPGController extends Controller
         // =================================================================
 
         // --- Consulta de Información de la Institución ---
+            // --- Consulta de Información de la Institución ---
             $EstudianteInformacionInstitucion = DB::table('informacion_institucion as inf')
-                ->leftjoin('personal as p','p.codigo_cargo','=','inf.nombre_director')
+                
+                // --- LÍNEA CORREGIDA ---
+                ->leftjoin('personal as p','p.id_personal','=',DB::raw("CAST(inf.nombre_director AS INTEGER)"))
+
                 ->select('inf.id_institucion','inf.codigo_institucion','inf.nombre_institucion','inf.telefono_uno','inf.logo_uno','inf.direccion_institucion','inf.nombre_director',
                             'inf.logo_dos','inf.logo_tres',
                         DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
                         )
-                ->where('id_institucion', '=', $codigo_institucion)->orderBy('id_institucion','asc')->limit(1)->get();
-            
+                ->where('id_institucion', '=', $codigo_institucion)
+                ->orderBy('id_institucion','asc')
+                ->limit(1)
+                ->get();
             $logo_uno_path = ''; $firma_director_path = ''; $sello_direccion_path = '';
             $nombre_modalidad_header = ''; $nombre_grado_header = ''; $nombre_seccion_header = ''; $nombre_turno_header = '';
 
@@ -224,13 +484,13 @@ class PdfRPGController extends Controller
                 $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
                 $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion_infra . " - " .$nombre_institucion,1,1,'L');       
             }
-// --- Dibujar Encabezado Derecho (Estadísticas) ---
+            // --- Dibujar Encabezado Derecho (Estadísticas) ---
             
             // --- INDICADOR: CONTROL MANUAL DE ESTADÍSTICAS ---
             
             // 1. Mueve la tabla completa cambiando X (horizontal) e Y (vertical)
             $stats_X = 260; // Distancia desde la izquierda
-            $stats_Y = 10;  // Distancia desde arriba
+            $stats_Y = 90;  // Distancia desde arriba
 
             // 2. Cambia los anchos de las 6 columnas
             $w_stats = [17, 14, 14, 15, 18, 14]; 
@@ -266,8 +526,82 @@ class PdfRPGController extends Controller
             
             // --- FIN DEL INDICADOR ---
             
-            //$y_stats_fin = $this->fpdf->GetY(); // Guarda dónde terminó la tabla de stats
+            $y_stats_fin = $this->fpdf->GetY(); // Guarda dónde terminó la tabla de stats
 
+            // =================================================================
+        // ====== INICIO: DIBUJAR ESCALA DE VALORACIÓN (NUEVO BLOQUE) ======
+        // =================================================================
+
+            // --- INDICADOR: POSICIÓN DEL BLOQUE "Escala de Valoración" ---
+            
+            // 1. Mueve la tabla completa cambiando X (horizontal) e Y (vertical)
+            //    (Por defecto, la pongo debajo de la tabla de estadísticas)
+            $escala_X = $stats_X; // Misma X que las estadísticas
+            $escala_Y = $y_stats_fin - 90; // 5mm debajo de las estadísticas
+            
+            // 2. (Opcional) Cambia los anchos de las 3 columnas
+            $w_escala = [30, 30, 30]; // Total 120mm
+            
+            // 3. (Opcional) Cambia las alturas
+            $h_titulo_escala = 10;
+            $h_fila_1_escala = 6;
+            $h_linea_fila_2_escala = 4; // Interlineado
+            
+            // 4. (Opcional) Cambia los textos
+            $textos_escala = [
+                'title' => "ESCALA DE VALORACIÓN PARA LAS\nCOMPETENCIAS CIUDADANAS",
+                'row_1' => ["E: Excelente", "MB: Muy Bueno", "B: Bueno"],
+                'row_2' => ["Dominio alto de la competencia", "Dominio medio de la competencia", "Dominio bajo de la competencia"]
+            ];
+
+            // Esta es la función que dibuja la tabla.
+            $this->dibujarEscalaValoracion(
+                $this->fpdf, 
+                $escala_X, 
+                $escala_Y, 
+                $w_escala, 
+                $h_titulo_escala, 
+                $h_fila_1_escala, 
+                $h_linea_fila_2_escala,
+                $textos_escala
+            );
+            // --- FIN DEL INDICADOR ---
+            // Guarda la Y final de la escala de valoración
+                $y_escala_fin = $this->fpdf->GetY();
+        // =================================================================
+        // ====== INICIO: DIBUJAR PROMOVIDOS/RETENIDOS (NUEVO BLOQUE) ======
+        // =================================================================
+            
+            // --- INDICADOR: POSICIÓN DEL BLOQUE "Promovidos/Retenidos" ---
+            
+            // 1. Mueve el bloque
+            $promo_X = $stats_X; // Misma X que las estadísticas
+            $promo_Y = $y_escala_fin + 85; // 5mm debajo de la escala
+            
+            // 2. (Opcional) Cambia los anchos y fuentes
+            $w_label_promo = 30;
+            $w_linea_promo = 50;
+            $h_linea_promo = 8;
+            $font_size_promo = 10;
+
+            $this->dibujarPromovidosRetenidos(
+                $this->fpdf, 
+                $stats, 
+                $promo_X, 
+                $promo_Y, 
+                $w_label_promo, 
+                $w_linea_promo, 
+                $h_linea_promo, 
+                $font_size_promo
+            );
+            // --- FIN DEL INDICADOR ---
+
+
+
+
+
+
+            
         // =================================================================
         // ====== INICIO: BUCLE PRINCIPAL DE NOTAS ======
         // =================================================================
@@ -363,7 +697,7 @@ class PdfRPGController extends Controller
                     // --- INDICADOR: POSICIÓN DEL BLOQUE "Nivel, Grado, Encargado" ---
                     // Modifica estos X/Y para mover este bloque independientemente
                     $header_info_X = 27;  // Distancia desde la izquierda
-                    $header_info_Y = 10; // Distancia desde arriba (debajo del logo)
+                    $header_info_Y = 15; // Distancia desde arriba (debajo del logo)
                     $this->fpdf->SetXY($header_info_X, $header_info_Y);
                     
                     $this->fpdf->SetFont('Arial', 'B', 9);
@@ -414,24 +748,69 @@ class PdfRPGController extends Controller
                    }
                    $this->fpdf->ln();
                    
-                  // --- Encabezado de Nómina y Asignaturas Rotadas ---
+               // --- Encabezado de Nómina y Asignaturas Rotadas (AQUÍ ESTÁ LA CORRECCIÓN) ---
+                  
+                 // 1. Guarda la posición Y ANTES de dibujar la fila de cabecera
+                  $y_header_row_start = $this->fpdf->GetY();
+                  $y_header_row_start_2 = $this->fpdf->GetY();
                   $this->fpdf->SetX($table_X_start); // Vuelve al X inicial
                   $this->fpdf->Cell($ancho_cell[1],$alto_cell[1],mb_convert_encoding('N.º',"ISO-8859-1","UTF-8"),1,0,'C',false);            
                   $this->fpdf->Cell($ancho_cell[4],$alto_cell[1],'NIE',1,0,'C',false);            
                   $this->fpdf->Cell($ancho_cell[0],$alto_cell[1],"NOMINA DE ESTUDIANTES",1,0,'C');       
                   
+                  // 2. Calcula la Y final (la parte de abajo de la cabecera)
+                  $y_header_row_end = $y_header_row_start + $alto_cell[1];
+
                   $x_rotado_inicio = $table_X_start + $ancho_cell[1] + $ancho_cell[4] + $ancho_cell[0];
-                  $ancho_col_asignatura = 12;
+                  $ancho_col_asignatura = 12; // $mas_ancho
                   
-                  for ($ij=0; $ij < count($datos_asignatura['nombre']); $ij++) { 
-                      $ancho_col = $ancho_col_asignatura;
-                      $x_actual = $x_rotado_inicio + ($ij * $ancho_col);
-                      $this->fpdf->Rect($x_actual, $this->fpdf->GetY(), $ancho_col, $alto_cell[1]);
-                      $this->fpdf->SetFont('Arial', '', '9');
-                      $this->fpdf->RotatedTextMultiCell($x_actual + ($ancho_col/2), $posicion_Y_texto_rotado - 1, $datos_asignatura['nombre'][$ij], 90);
-                  }
+                  // --- INDICADOR: CONTROL DE INTERLINEADO DE ASIGNATURAS ---
+                  // Este es el "interlineado" (alto de línea) del texto rotado.
+                  // La fuente es 7. Un alto de 4mm es justo.
+                  // Prueba con 3.5 o 3 para que esté más "junto".
+                  $alto_linea_asignatura = 3; // (en mm)
+                  // -----------------------------------------------------
+
+                  // Ajuste X/Y del texto DENTRO de la caja rotada:
+                    // (Estos son los valores que querías controlar)
+                    
+                    // Padding Vertical (X): Distancia desde el borde superior (que ahora es la izquierda)
+                    // (Valores más altos mueven el texto hacia abajo/derecha)
+                    $rotado_padding_X = -40; 
+                    
+                    // Padding Horizontal (Y): Distancia desde el borde derecho (que ahora es arriba)
+                    // (Valores más altos mueven el texto hacia la izquierda/arriba)
+                    $rotado_padding_Y = 15; 
+                    // --- FIN DE INDICADORES ---
+
+
+                    for ($ij=0; $ij < count($datos_asignatura['nombre']); $ij++) { 
+                        $ancho_col = $ancho_col_asignatura;
+                        $x_actual = $x_rotado_inicio + ($ij * $ancho_col);
+
+                        // 1. Dibuja el RECTÁNGULO (caja)
+                        $this->fpdf->Rect($x_actual, $y_header_row_start_2, $ancho_col, $alto_cell[1]);
+                        $this->fpdf->SetFont('Arial', '', '7');
+                        
+                        // 2. Inicia la rotación (gira 90 grados)
+                        $this->fpdf->Rotate(90, $x_actual, $y_header_row_start_2);
+                        
+                        // 3. Calcula la posición X,Y del MultiCell usando tus indicadores
+                        $pos_X_rotada = $x_actual + $rotado_padding_X;
+                        $pos_Y_rotada = $y_header_row_start_2 - $ancho_col + $rotado_padding_Y;
+                        
+                        $this->fpdf->SetXY($pos_X_rotada, $pos_Y_rotada); 
+                        
+                        // 4. Dibuja el MultiCell con el interlineado
+                        // Ancho de MultiCell = Alto de la caja | Alto de Línea = Interlineado
+                        $this->fpdf->MultiCell($alto_cell[1] - 2, $alto_linea_asignatura, $datos_asignatura['nombre'][$ij], 0, 'C');
+                        
+                        // 5. Detiene la rotación
+                        $this->fpdf->Rotate(0);
+                    }
               
-                  $this->fpdf->SetXY($table_X_start, $posicion_Y_texto_rotado); // Posiciona el cursor al inicio de la lista
+                  // 7. Establece la posición Y para la primera fila de datos
+                  $this->fpdf->SetXY($table_X_start, $y_header_row_end); 
                   $header_dibujado = true; // Marcar como dibujado
               }
                 
@@ -469,63 +848,92 @@ class PdfRPGController extends Controller
                 $this->fpdf->ln();
             }
 
+
+
         // =================================================================
-        // ====== INICIO: FIRMAS ALINEADAS A LA DERECHA (MODIFICADO) ======
+        // ====== INICIO: BLOQUE FINAL (LUGAR, FECHA, FIRMAS, SELLO) ======
         // =================================================================
         
             // Comprobar si hay espacio, si no, añadir nueva página
-            if($this->fpdf->GetY() > 150) { // 150mm es un umbral, ajústalo si es necesario
+            if($this->fpdf->GetY() > 150) {
                 $this->fpdf->AddPage();
-                $this->fpdf->SetY(20); // Posición Y en la nueva página
+                $this->fpdf->SetY(20);
             } else {
                 $this->fpdf->SetY($this->fpdf->GetY() + 30); // Espacio después de la tabla
             }
+
+            // --- Prepara los textos ---
+            // Convertir números a palabras
+            $fmt_day = new \NumberFormatter('es', \NumberFormatter::SPELLOUT);
+            $fmt_month_year = new \IntlDateFormatter('es_ES', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, null, null, " 'de' MMMM 'de' yyyy");
+            // Genera la fecha en palabras (ej: "veintinueve de octubre de 2025")
+            $fecha_en_palabras = $fmt_day->format(date('d')) . $fmt_month_year->format(time());
+            $fecha_en_palabras = mb_convert_encoding(ucfirst($fecha_en_palabras), 'ISO-8859-1', 'UTF-8');
+
+            $textos_lugar_fecha = [
+                'lugar' => mb_convert_encoding('Santa Ana', 'ISO-8859-1', 'UTF-8'),
+                'fecha' => $fecha_en_palabras
+            ];
+            $textos_director = [
+                'nombre' => $nombre_director, // Ya la tenías de una consulta anterior
+                'titulo' => mb_convert_encoding('Director(a)', 'ISO-8859-1', 'UTF-8')
+            ];
+            $textos_docente = [
+                'nombre' => $nombre_personal_, // Ya la tenías (Encargado de Grado)
+                'titulo' => mb_convert_encoding('Docente responsable', 'ISO-8859-1', 'UTF-8')
+            ];
+
+            // --- INDICADOR: POSICIÓN DEL BLOQUE "Lugar y Fecha" ---
+            $lugar_fecha_X = 260;
+            $lugar_fecha_Y = $this->fpdf->GetY() - 160;
+            $layout_lugar_fecha = [
+                'w_label' => 10, 'w_line' => 70, 'h_line' => 10, 'font_size' => 10
+            ];
+            $this->dibujarLugarFecha($this->fpdf, $lugar_fecha_X, $lugar_fecha_Y, $textos_lugar_fecha, $layout_lugar_fecha);
             
-            // --- INDICADOR: POSICIÓN DE FIRMAS ---
-            // Ajusta estos valores X (distancia desde la izquierda) para mover
-            // los bloques de firma. (El ancho de página Legal es 355.6 mm)
-            
-            $firma_director_X = 220; // Bloque izquierdo de firmas
-            $firma_docente_X = 290;  // Bloque derecho de firmas
-            
-            // Y (altura) se define automáticamente después de la tabla
-            $firmas_Y = $this->fpdf->GetY();
-            
-            // --- Dibujar Firma Director ---
-            $this->fpdf->SetFont('Arial', '', 9);
-            // Mueve el bloque de texto 20mm hacia abajo para dejar espacio a las imágenes
-            $this->fpdf->SetXY($firma_director_X, $firmas_Y + 20); 
-            $this->fpdf->Cell(60, 5, $nombre_director, 0, 1, 'C'); // Ancho de 60mm
-            $this->fpdf->SetX($firma_director_X);
-            $this->fpdf->Cell(60, 5, 'Director', 0, 1, 'C');
-            // Imágenes de firma y sello del Director
+            // --- INDICADOR: POSICIÓN DEL BLOQUE "Firma Director" ---
+            // (Alineado a la derecha)
+            $firma_director_X = 260;
+            $firma_director_Y = $this->fpdf->GetY() + 25; // 15mm debajo de la fecha
+            $layout_firma_director = [
+                'w_linea' => 80, 'h_gap' => 5, 'font_size_nombre' => 9, 'font_size_titulo' => 8
+            ];
+            $this->dibujarFirma($this->fpdf, $firma_director_X, $firma_director_Y, $textos_director, $layout_firma_director);
+
+            // --- INDICADOR: POSICIÓN DEL BLOQUE "Firma Docente" ---
+            // (Alineado a la derecha)
+            $firma_docente_X = 260;
+            $firma_docente_Y = $firma_director_Y + 25; // 25mm debajo del Director
+            $layout_firma_docente = [
+                'w_linea' => 80, 'h_gap' => 5, 'font_size_nombre' => 9, 'font_size_titulo' => 8
+            ];
+            $this->dibujarFirma($this->fpdf, $firma_docente_X, $firma_docente_Y, $textos_docente, $layout_firma_docente);
+
+            // --- INDICADOR: POSICIÓN DEL BLOQUE "Sello" ---
+            $sello_X = 270; // A la izquierda de las firmas
+            $sello_Y = $firma_director_Y + 55; // 5mm debajo de la línea del director
+            $sello_W = 40; // Ancho del sello
+            $sello_H = 40; // Alto del sello
+            $this->dibujarSello($this->fpdf, $sello_X, $sello_Y, $sello_W, $sello_H);
+
+            // Imágenes (Las posicionamos manualmente cerca de las firmas)
             if (file_exists($firma_director_path)) {
-                $this->fpdf->Image($firma_director_path, $firma_director_X + 10, $firmas_Y, 40, 15);
+               // $this->fpdf->Image($firma_director_path, $firma_director_X + 20, $firma_director_Y - 15, 40, 15);
             }
             if (file_exists($sello_direccion_path)) {
-                $this->fpdf->Image($sello_direccion_path, $firma_director_X + 17.5, $firmas_Y - 5, 25, 25);
+                //$this->fpdf->Image($sello_direccion_path, $sello_X + 7.5, $sello_Y + 7.5, 25, 25);
             }
-
-            // --- Dibujar Firma Docente ---
-            $this->fpdf->SetFont('Arial', '', 9);
-            $this->fpdf->SetXY($firma_docente_X, $firmas_Y + 20); // Y + 20
-            $this->fpdf->Cell(60, 5, $nombre_personal_, 0, 1, 'C'); // Ancho de 60mm
-            $this->fpdf->SetX($firma_docente_X);
-            $this->fpdf->Cell(60, 5, 'Docente responsable', 0, 1, 'C');
-            // Imagen de firma del Docente
             if(!empty($firma_docente)){
                 $firma_docente_path_abs = public_path('img/firmas/'.$codigo_institucion_infra.'/'.$firma_docente);
                 if (file_exists($firma_docente_path_abs)) {
-                    $this->fpdf->Image($firma_docente_path_abs, $firma_docente_X + 17.5, $firmas_Y - 5, 25, 30);
+                //    $this->fpdf->Image($firma_docente_path_abs, $firma_docente_X + 27.5, $firma_docente_Y - 20, 25, 30);
                 }
             }
 
         // --- Fecha y Hora Final ---
-            // INDICADOR: Posición Y de la fecha/hora final
-            $this->fpdf->SetY($this->fpdf->GetPageHeight() - 15); // 15mm desde el fondo
+            // (Esta parte ya estaba bien)
+            $this->fpdf->SetY($this->fpdf->GetPageHeight() - 15);
             $this->fpdf->SetFont('Arial', 'I', 8);
-            // INDICADOR: Posición X de la fecha/hora final (Alineado a la derecha)
-            // Celda de ancho 0 = ancho completo, 'R' = alinear derecha
             $this->fpdf->Cell(0, 10, mb_convert_encoding('Generado el: ' . date('d/m/Y H:i:s'), 'ISO-8859-1', 'UTF-8'), 0, 0, 'R');
 
         // Construir el nombre del archivo.
