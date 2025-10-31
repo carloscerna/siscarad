@@ -25,6 +25,9 @@ if (!function_exists('resultado_final')) {
             // 11 -> BACHILLERATO GENERAL NOCTURNA
             // 12 -> EDUCACION BASDICA DE ADULTOS NOCTURNA
             switch ($codigo_modalidad) {
+                case ($codigo_modalidad == '18'): // EDUCACIÓN BÁSICA
+                    $EvaluarCalificacionFinal = 5;
+                break;
                 case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'): // EDUCACIÓN BÁSICA 4.º A 9º.
                     $EvaluarCalificacionFinal = 5;
                 break;

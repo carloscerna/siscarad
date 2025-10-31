@@ -427,6 +427,18 @@ class PdfRPGController extends Controller
                     $datos_asignatura["codigo"][$fila_array_asignatura] = $codigo_asignatura_a; $datos_asignatura["nombre"][$fila_array_asignatura] = $nombre_asignatura_a;
                     $datos_asignatura["concepto"][$fila_array_asignatura] = $concepto_calificacion_a; $datos_asignatura["codigo_area"][$fila_array_asignatura] = $codigo_area_a; $datos_asignatura["nombre_area"][$fila_array_asignatura] = $nombre_area_a;                        
                     $total_asignaturas = count($count_asignaturas); $fila_array_asignatura++; }
+                
+                // --- INICIO: CÁLCULO DE ANCHO DINÁMICO ---
+                // Se define el ancho máximo para el bloque de asignaturas
+                $max_ancho_asignaturas_total = 170; 
+                $ancho_col_asignatura_dinamico = 12; // Ancho por defecto si no hay asignaturas
+                
+                if ($total_asignaturas > 0) {
+                    // Se calcula el ancho de CADA columna de asignatura
+                    $ancho_col_asignatura_dinamico = $max_ancho_asignaturas_total / $total_asignaturas;
+                }
+                // --- FIN: CÁLCULO DE ANCHO DINÁMICO ---
+
                 $codigo_area_existentes = array(); $counter = array_count_values($datos_asignatura['codigo_area']);
                 foreach($counter as $key => $cantidad) { $ancho_area[] = $cantidad; $codigo_area_existentes[] = $key; }
             $EncargadoGrado = DB::table('encargado_grado as eg')->join('personal as p','p.id_personal','=','eg.codigo_docente')
@@ -657,6 +669,13 @@ class PdfRPGController extends Controller
             $header_dibujado = false; // Flag para dibujar el header de notas solo una vez
             $posicion_Y_texto_rotado = 0; // Guardará la Y para el texto de asignaturas
 
+                // --- INICIO: Inicialización de Acumuladores (NUEVO) ---
+                $subjectTotals = []; // Array para guardar la suma de cada asignatura
+                $subjectCounts = []; // Array para contar cuántos estudiantes por asignatura
+                // Define las áreas que SÍ se deben sumar y promediar
+                $relevantAreas = ['01', '03', '08']; // 01=Básica, 03=Técnica, 08=Complementaria
+                // --- FIN: Inicialización de Acumuladores ---
+
             foreach($EstudianteBoleta as $response){
                 // ... (toda tu lógica de variables $nombre_completo, $codigo_nie, $nota_actividades_0, etc.) ...
                     $nombre_completo = mb_convert_encoding(trim($response->full_nombres_apellidos),"ISO-8859-1","UTF-8");
@@ -679,7 +698,24 @@ class PdfRPGController extends Controller
                     else if($codigo_modalidad >= '06' && $codigo_modalidad <= '09'){ $valor_periodo = 3; $valor_actividades = 16; $ancho_area_asignatura = 186; }
                     else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){ $valor_periodo = 4; $valor_actividades = 20; $ancho_area_asignatura = 210; }
                     else{ $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 162; }
+                    // --- INICIO: Cálculo y Acumulación de Nota (NUEVO) ---
+                        
+                        // 1. Calculamos la nota final (Numérica)
+                        $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final, $codigo_area);
+                        $finalGrade = $result[1]; // El número (ej: 7 o 4)
+                        $finalResultLetter = $result[0]; // 'A' o 'R'
 
+                        // 2. Acumulamos si el área es relevante
+                        if(in_array($codigo_area, $relevantAreas)){
+                            if (!isset($subjectTotals[$codigo_asignatura])) {
+                                $subjectTotals[$codigo_asignatura] = 0;
+                                $subjectCounts[$codigo_asignatura] = 0; // Contaremos por si acaso
+                            }
+                            // Sumamos la nota final calculada
+                            $subjectTotals[$codigo_asignatura] += $finalGrade;
+                            $subjectCounts[$codigo_asignatura] += 1;
+                        }
+                        // --- FIN: Cálculo y Acumulación de Nota ---
                 // --- Dibujar cabecera de la tabla de notas (solo la primera vez) ---
                 if(!$header_dibujado){
                     // Guardamos la Y actual para el texto rotado
@@ -729,22 +765,31 @@ class PdfRPGController extends Controller
                     $posicion_Y_texto_rotado = $this->fpdf->GetY() + $alto_cell[1]; // Y actual + alto de la cabecera
                     $this->fpdf->SetFont('Arial', 'B', '7');
                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','LT',0,'L',false);            
-                   $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'','T',0,'L',false);            
+                   $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'','T',0,'L',false); // Columna NIE (estática 12)          
                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'','T',0,'L',false);            
-                   $mas_ancho = 12; $espacio = 0; 
-                   $ancho_titulo_asignatura = count($datos_asignatura['nombre']) * $mas_ancho;
+                   
+                   // --- MODIFICADO ---
+                   // El ancho total del título es ahora el máximo definido
+                   $espacio = 0; 
+                   $ancho_titulo_asignatura = $max_ancho_asignaturas_total;
+                   // --- FIN MODIFICADO ---
+
                    $this->fpdf->SetFont('Arial', 'B', '10');
                    $this->fpdf->Cell($ancho_titulo_asignatura,$alto_cell[0],'COMPONENTES DEL PLAN DE ESTUDIO',1,1,'C');
                    
                    $this->fpdf->SetX($table_X_start); // Vuelve al X inicial
                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','L',0,'L',false);            
-                   $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',0,0,'L',false);            
+                   $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',0,0,'L',false); // Columna NIE (estática 12)             
                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'',0,0,'C');       
                    $this->fpdf->SetFont('Arial', 'B', '10');
                    for ($oi=0; $oi < count($codigo_area_existentes); $oi++) { 
                        $buscar = array_search($codigo_area_existentes[$oi], $datos_asignatura['codigo_area']);
                        $Nombre = $datos_asignatura['nombre_area'][$buscar];
-                       $this->fpdf->Cell($mas_ancho*$ancho_area[$oi],$alto_cell[0],$Nombre,1,0,'C');     
+                       
+                       // --- MODIFICADO ---
+                       // El ancho del área ahora usa la variable dinámica
+                       $this->fpdf->Cell($ancho_col_asignatura_dinamico * $ancho_area[$oi],$alto_cell[0],$Nombre,1,0,'C');     
+                       // --- FIN MODIFICADO ---
                    }
                    $this->fpdf->ln();
                    
@@ -755,14 +800,18 @@ class PdfRPGController extends Controller
                   $y_header_row_start_2 = $this->fpdf->GetY();
                   $this->fpdf->SetX($table_X_start); // Vuelve al X inicial
                   $this->fpdf->Cell($ancho_cell[1],$alto_cell[1],mb_convert_encoding('N.º',"ISO-8859-1","UTF-8"),1,0,'C',false);            
-                  $this->fpdf->Cell($ancho_cell[4],$alto_cell[1],'NIE',1,0,'C',false);            
+                  $this->fpdf->Cell($ancho_cell[4],$alto_cell[1],'NIE',1,0,'C',false); // Columna NIE (estática 12)             
                   $this->fpdf->Cell($ancho_cell[0],$alto_cell[1],"NOMINA DE ESTUDIANTES",1,0,'C');       
                   
                   // 2. Calcula la Y final (la parte de abajo de la cabecera)
                   $y_header_row_end = $y_header_row_start + $alto_cell[1];
 
                   $x_rotado_inicio = $table_X_start + $ancho_cell[1] + $ancho_cell[4] + $ancho_cell[0];
-                  $ancho_col_asignatura = 12; // $mas_ancho
+                  
+                  // --- MODIFICADO ---
+                  // Se comenta el ancho fijo
+                  // $ancho_col_asignatura = 12; // $mas_ancho
+                  // --- FIN MODIFICADO ---
                   
                   // --- INDICADOR: CONTROL DE INTERLINEADO DE ASIGNATURAS ---
                   // Este es el "interlineado" (alto de línea) del texto rotado.
@@ -780,12 +829,48 @@ class PdfRPGController extends Controller
                     
                     // Padding Horizontal (Y): Distancia desde el borde derecho (que ahora es arriba)
                     // (Valores más altos mueven el texto hacia la izquierda/arriba)
-                    $rotado_padding_Y = 15; 
-                    // --- FIN DE INDICADORES ---
+                // --- BLOQUE 2: AJUSTE DINÁMICO DE PADDING Y ---
+                    // Padding Horizontal (Y): Distancia desde el borde derecho (que ahora es arriba)
+                    // (Valores más altos mueven el texto hacia abajo)
+                    // (Valores más pequeños mueven el texto hacia arriba)
+                    
+                    // $total_asignaturas ya se calculó anteriormente
+                    
+                    switch ($total_asignaturas) {
+                        case 9:
+                            $rotado_padding_Y = 25;
+                            break;
+                        case 14:
+                            $rotado_padding_Y = 15;
+                            break;
+                        
+                        // --- INICIO: Casos Manuales ---
+                        // Agrega más 'case' aquí según necesites
+                        
+                         case 20:
+                             $rotado_padding_Y = 9;
+                             break;
+                         case 6:
+                             $rotado_padding_Y = 40;
+                             break;
+                        
+                        // --- FIN: Casos Manuales ---
+                        
+                        default:
+                            // Este es el valor por defecto si no coincide ningún 'case'
+                            $rotado_padding_Y = 15; 
+                            break;
+                    }
+                    // --- FIN DEL BLOQUE 2 ---
 
 
                     for ($ij=0; $ij < count($datos_asignatura['nombre']); $ij++) { 
-                        $ancho_col = $ancho_col_asignatura;
+                        
+                        // --- MODIFICADO ---
+                        // El ancho de la columna ahora es dinámico
+                        $ancho_col = $ancho_col_asignatura_dinamico;
+                        // --- FIN MODIFICADO ---
+
                         $x_actual = $x_rotado_inicio + ($ij * $ancho_col);
 
                         // 1. Dibuja el RECTÁNGULO (caja)
@@ -797,7 +882,10 @@ class PdfRPGController extends Controller
                         
                         // 3. Calcula la posición X,Y del MultiCell usando tus indicadores
                         $pos_X_rotada = $x_actual + $rotado_padding_X;
+                        // --- MODIFICADO ---
+                        // El cálculo de Y usa el ancho dinámico
                         $pos_Y_rotada = $y_header_row_start_2 - $ancho_col + $rotado_padding_Y;
+                        // --- FIN MODIFICADO ---
                         
                         $this->fpdf->SetXY($pos_X_rotada, $pos_Y_rotada); 
                         
@@ -822,32 +910,130 @@ class PdfRPGController extends Controller
                 if($fila_asignatura == 0){
                     $this->fpdf->SetX($table_X_start); // Asegura que empiece en el X de la tabla
                     $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$fila_numero,1,0,'L',$fill);            
-                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$codigo_nie,1,0,'L',$fill);            
+                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$codigo_nie,1,0,'L',$fill); // Columna NIE (estática 12)            
                     $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$nombre_estudiante,1,0,'L',$fill); 
                 }
-                if($codigo_area == '07'){ $result_concepto = resultado_concepto($codigo_modalidad, $nota_final); if($result_concepto == "R"){ $this->fpdf->SetTextColor(255,0,0); } $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$result_concepto,1,0,'C', $fill);
-                } else { $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final,$codigo_area); if($result[0] == "R"){ $this->fpdf->SetTextColor(255,0,0); } $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],round($result[1],0),1,0,'C', $fill); }
+                
+                // --- MODIFICADO ---
+                // Se reemplaza $ancho_cell[4] por $ancho_col_asignatura_dinamico para las celdas de nota
+                if($codigo_area == '07'){ $result_concepto = resultado_concepto($codigo_modalidad, $nota_final); if($result_concepto == "R"){ $this->fpdf->SetTextColor(255,0,0); } $this->fpdf->Cell($ancho_col_asignatura_dinamico,$alto_cell[0],$result_concepto,1,0,'C', $fill);
+                } else { $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final,$codigo_area); if($result[0] == "R"){ $this->fpdf->SetTextColor(255,0,0); } $this->fpdf->Cell($ancho_col_asignatura_dinamico,$alto_cell[0],round($result[1],0),1,0,'C', $fill); }
+                // --- FIN MODIFICADO ---
+
                 $fila_asignatura++; $fila++; 
                 $this->fpdf->SetTextColor(0,0,0); $this->fpdf->SetFillColor(212,230,252);
 
             } // FIN DEL FOREACH
 
         // ... (Tu lógica para $linea_faltante, $fill=!$fill, etc.) ...
-            $numero = $fila_numero; $linea_faltante = 0;
-            $this->fpdf->Ln();
-            if($numero > 25){ $linea_faltante = 50 - $numero; } else { $linea_faltante = 25 - $numero; } // Ajuste
-            for($i=0;$i<=$linea_faltante;$i++) {
+            // --- BLOQUE 1: MODIFICACIÓN DE FILAS DE RELLENO ---
+            
+            // $fila_numero ya tiene el siguiente número (ej: si hay 22 estudiantes, $fila_numero es 23)
+            $numero_maximo_filas = 50; 
+
+            // El bucle ahora va desde el siguiente estudiante ($fila_numero) hasta 50
+            for ($i = $fila_numero; $i <= $numero_maximo_filas; $i++) {
                 $this->fpdf->SetX($table_X_start); // Asegura que empiece en el X de la tabla
-                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'L',$fill);            
+                
+                // 1. Dibuja el número de fila
+                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0], $i, 1, 0, 'L', $fill); // Dibuja $i (el número)
+                
+                // 2. Celdas vacías (NIE y Nombre)
                 $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',1,0,'L',$fill);            
                 $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'',1,0,'L',$fill); 
-                $fill=!$fill;
+                
+                // 3. Celdas de notas (dinámicas)
                 for($j=1;$j<=$total_asignaturas;$j++){
-                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'',1,0,'L',$fill);            
+                    $this->fpdf->Cell($ancho_col_asignatura_dinamico,$alto_cell[0],'',1,0,'L',$fill);            
                 }
+                
                 $this->fpdf->ln();
+                $fill=!$fill; // Alterna el color para la siguiente fila
             }
+            // --- FIN DEL BLOQUE 1 ---
 
+
+// =================================================================
+        // ====== INICIO: DIBUJAR FILAS DE TOTALES Y PROMEDIO (NUEVO) ======
+        // =================================================================
+        
+        $this->fpdf->SetFont('Arial', 'B', 7);
+        $this->fpdf->SetFillColor(230, 230, 230); // Gris claro
+        
+        // --- MODIFICADO ---
+        // Se comenta el ancho fijo
+        // $ancho_col_asignatura = 12; // $mas_ancho (Asegúrate que sea 12)
+        // --- FIN MODIFICADO ---
+
+
+        // --- Fila TOTAL DE PUNTOS ---
+        $this->fpdf->SetX($table_X_start);
+        $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 0, 'L', true); // Celda vacía para N.º
+        $this->fpdf->Cell($ancho_cell[4], $alto_cell[0], '', 1, 0, 'L', true); // Celda vacía para NIE (estática 12)
+        $this->fpdf->Cell($ancho_cell[0], $alto_cell[0], 'TOTAL DE PUNTOS', 1, 0, 'R', true); // Título
+        
+        // Iteramos sobre las asignaturas en el orden del encabezado
+        foreach ($datos_asignatura['codigo'] as $index => $codigo_asig_header) {
+            if (empty($codigo_asig_header)) continue; // Omite el [0]=>"" del array
+            
+            $codigo_area_header = $datos_asignatura['codigo_area'][$index];
+
+            // Comprueba si el área de esta asignatura es una de las relevantes
+            if (in_array($codigo_area_header, $relevantAreas)) {
+                $total = $subjectTotals[$codigo_asig_header] ?? 0;
+                
+                // --- MODIFICADO ---
+                // Se usa el ancho dinámico
+                $this->fpdf->Cell($ancho_col_asignatura_dinamico, $alto_cell[0], $total, 1, 0, 'C', true);
+                // --- FIN MODIFICADO ---
+            } else {
+                // Si no es relevante (ej. Competencias), deja la celda vacía
+                
+                // --- MODIFICADO ---
+                // Se usa el ancho dinámico
+                $this->fpdf->Cell($ancho_col_asignatura_dinamico, $alto_cell[0], '', 1, 0, 'C', true);
+                // --- FIN MODIFICADO ---
+            }
+        }
+        $this->fpdf->ln(); // Nueva línea
+
+        // --- Fila PROMEDIO ---
+        $this->fpdf->SetX($table_X_start);
+        $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 0, 'L', true); // Celda vacía para N.º
+        $this->fpdf->Cell($ancho_cell[4], $alto_cell[0], '', 1, 0, 'L', true); // Celda vacía para NIE (estática 12)
+        $this->fpdf->Cell($ancho_cell[0], $alto_cell[0], 'PROMEDIO', 1, 0, 'R', true); // Título
+        
+        // $fila_numero es 1 más que el total de estudiantes, así que restamos 1
+        $total_estudiantes = $fila_numero - 1; 
+        if ($total_estudiantes == 0) $total_estudiantes = 1; // Evitar división por cero
+
+        foreach ($datos_asignatura['codigo'] as $index => $codigo_asig_header) {
+            if (empty($codigo_asig_header)) continue;
+            
+            $codigo_area_header = $datos_asignatura['codigo_area'][$index];
+
+            if (in_array($codigo_area_header, $relevantAreas)) {
+                $total = $subjectTotals[$codigo_asig_header] ?? 0;
+                // Usamos el total de estudiantes de la nómina para promediar
+                $average = round($total / $total_estudiantes, 1); 
+                
+                // --- MODIFICADO ---
+                // Se usa el ancho dinámico
+                $this->fpdf->Cell($ancho_col_asignatura_dinamico, $alto_cell[0], $average, 1, 0, 'C', true);
+                // --- FIN MODIFICADO ---
+            } else {
+                
+                // --- MODIFICADO ---
+                // Se usa el ancho dinámico
+                $this->fpdf->Cell($ancho_col_asignatura_dinamico, $alto_cell[0], '', 1, 0, 'C', true);
+                // --- FIN MODIFICADO ---
+            }
+        }
+        $this->fpdf->ln();
+        
+        // =================================================================
+        // ====== FIN: DIBUJAR FILAS DE TOTALES ======
+        // =================================================================
 
 
         // =================================================================
@@ -863,13 +1049,22 @@ class PdfRPGController extends Controller
             }
 
             // --- Prepara los textos ---
-            // Convertir números a palabras
-            $fmt_day = new \NumberFormatter('es', \NumberFormatter::SPELLOUT);
-            $fmt_month_year = new \IntlDateFormatter('es_ES', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, null, null, " 'de' MMMM 'de' yyyy");
-            // Genera la fecha en palabras (ej: "veintinueve de octubre de 2025")
-            $fecha_en_palabras = $fmt_day->format(date('d')) . $fmt_month_year->format(time());
-            $fecha_en_palabras = mb_convert_encoding(ucfirst($fecha_en_palabras), 'ISO-8859-1', 'UTF-8');
+            // 1. Formateador para números (Día y Año)
+            $fmt_numero = new \NumberFormatter('es', \NumberFormatter::SPELLOUT);
+                        
+            // 2. Formateador para el Mes (ej: " de octubre de ")
+            $fmt_mes = new \IntlDateFormatter('es_ES', \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, null, null, " 'de' MMMM 'de' ");
 
+            // 3. Obtener las partes
+            $dia_palabras = $fmt_numero->format(date('d')); // ej: "veintinueve"
+            $mes_palabras = $fmt_mes->format(time());      // ej: " de octubre de "
+            $ano_palabras = $fmt_numero->format(date('Y')); // ej: "dos mil veinticinco"
+
+            // 4. Concatenar todo
+            $fecha_en_palabras = $dia_palabras . $mes_palabras . $ano_palabras;
+
+            // 5. Convertir para FPDF
+            $fecha_en_palabras = mb_convert_encoding(ucfirst($fecha_en_palabras), 'ISO-8859-1', 'UTF-8');
             $textos_lugar_fecha = [
                 'lugar' => mb_convert_encoding('Santa Ana', 'ISO-8859-1', 'UTF-8'),
                 'fecha' => $fecha_en_palabras
@@ -894,7 +1089,7 @@ class PdfRPGController extends Controller
             // --- INDICADOR: POSICIÓN DEL BLOQUE "Firma Director" ---
             // (Alineado a la derecha)
             $firma_director_X = 260;
-            $firma_director_Y = $this->fpdf->GetY() + 25; // 15mm debajo de la fecha
+            $firma_director_Y = $this->fpdf->GetY() + 50; // 15mm debajo de la fecha
             $layout_firma_director = [
                 'w_linea' => 80, 'h_gap' => 5, 'font_size_nombre' => 9, 'font_size_titulo' => 8
             ];
@@ -903,15 +1098,15 @@ class PdfRPGController extends Controller
             // --- INDICADOR: POSICIÓN DEL BLOQUE "Firma Docente" ---
             // (Alineado a la derecha)
             $firma_docente_X = 260;
-            $firma_docente_Y = $firma_director_Y + 25; // 25mm debajo del Director
+            $firma_docente_Y = $firma_director_Y - 25; // 25mm debajo del Director
             $layout_firma_docente = [
                 'w_linea' => 80, 'h_gap' => 5, 'font_size_nombre' => 9, 'font_size_titulo' => 8
             ];
             $this->dibujarFirma($this->fpdf, $firma_docente_X, $firma_docente_Y, $textos_docente, $layout_firma_docente);
 
             // --- INDICADOR: POSICIÓN DEL BLOQUE "Sello" ---
-            $sello_X = 270; // A la izquierda de las firmas
-            $sello_Y = $firma_director_Y + 55; // 5mm debajo de la línea del director
+            $sello_X = 283; // A la izquierda de las firmas
+            $sello_Y = $firma_director_Y + 25; // 5mm debajo de la línea del director
             $sello_W = 40; // Ancho del sello
             $sello_H = 40; // Alto del sello
             $this->dibujarSello($this->fpdf, $sello_X, $sello_Y, $sello_W, $sello_H);
