@@ -389,7 +389,24 @@ class PdfRPGController extends Controller
             $this->fpdf->AddPage(); // Añadimos la página al inicio
             $this->fpdf->SetMargins(5, 5, 5);
             $this->fpdf->SetAutoPageBreak(true,5);
-        
+        // --- INICIO: TÍTULO PRINCIPAL ---
+            // 1. Define la posición Y inicial para el título
+            $current_Y = 10; // 10mm desde arriba
+            $this->fpdf->SetXY(10, $current_Y); 
+            $this->fpdf->SetFont('Arial', 'B', 12);
+            
+            // 2. Dibuja el título centrado
+            // Ancho usable = 355.6mm (Legal) - 5mm (Izq) - 5mm (Der) = 345.6
+            $this->fpdf->Cell(345.6, 8, mb_convert_encoding('CUADRO DE REGISTRO DE EVALUACIÓN DE LOS APRENDIZAJES', 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+            
+            // 3. Actualiza $current_Y para que sea la posición
+            //    donde el siguiente bloque debe empezar (con un espacio de 2mm)
+            $current_Y = $this->fpdf->GetY() + 2; 
+            
+            // Restablece la fuente para el resto del documento
+            $this->fpdf->SetFont('Arial', 'B', 9); 
+        // --- FIN: TÍTULO PRINCIPAL ---
+
         // ... (pega aquí tu parseo de $id) ...
             $EstudianteMatricula = explode("-",$id);
             if($EstudianteMatricula[0] == "Tablero"){
@@ -486,13 +503,13 @@ class PdfRPGController extends Controller
                 // --- INDICADOR: POSICIÓN DEL BLOQUE DE INFO INSTITUCIÓN ---
                 // X = Distancia desde la izquierda | Y = Distancia desde arriba
                 $ce_X = 10;
-                $ce_Y = 10;
+                $ce_Y = $current_Y;
                 $this->fpdf->SetXY($ce_X, $ce_Y); 
                 if (file_exists($logo_uno_path)) {
                     $this->fpdf->image($logo_uno_path, $this->fpdf->GetX(), $this->fpdf->GetY(), 15, 20);
                 }
                 
-                $this->fpdf->SetXY($ce_X + 17, $ce_Y); // 10 (margen) + 15 (logo) + 2 (espacio)
+                $this->fpdf->SetXY($ce_X + 17, $ce_Y); // 10 (margen) + 15 (logo) + 2 (espacio)    
                 $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
                 $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion_infra . " - " .$nombre_institucion,1,1,'L');       
             }
@@ -733,8 +750,10 @@ class PdfRPGController extends Controller
                     // --- INDICADOR: POSICIÓN DEL BLOQUE "Nivel, Grado, Encargado" ---
                     // Modifica estos X/Y para mover este bloque independientemente
                     $header_info_X = 27;  // Distancia desde la izquierda
-                    $header_info_Y = 15; // Distancia desde arriba (debajo del logo)
-                    $this->fpdf->SetXY($header_info_X, $header_info_Y);
+                    
+                    // Se usa $current_Y para que se dibuje en la misma línea
+                    // que el bloque del Centro Escolar.
+                    $this->fpdf->SetXY($header_info_X, $current_Y + 5);
                     
                     $this->fpdf->SetFont('Arial', 'B', 9);
                     $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Nivel","ISO-8859-1","UTF-8"),1,0,'L'); 
