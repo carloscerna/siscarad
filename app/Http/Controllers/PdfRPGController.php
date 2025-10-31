@@ -1061,10 +1061,10 @@ class PdfRPGController extends Controller
         
             // Comprobar si hay espacio, si no, añadir nueva página
             if($this->fpdf->GetY() > 150) {
-                $this->fpdf->AddPage();
+                //$this->fpdf->AddPage();
                 $this->fpdf->SetY(20);
             } else {
-                $this->fpdf->SetY($this->fpdf->GetY() + 30); // Espacio después de la tabla
+                $this->fpdf->SetY($this->fpdf->GetY()); // Espacio después de la tabla
             }
 
             // --- Prepara los textos ---
@@ -1099,7 +1099,7 @@ class PdfRPGController extends Controller
 
             // --- INDICADOR: POSICIÓN DEL BLOQUE "Lugar y Fecha" ---
             $lugar_fecha_X = 260;
-            $lugar_fecha_Y = $this->fpdf->GetY() - 160;
+            $lugar_fecha_Y = $this->fpdf->GetY();
             $layout_lugar_fecha = [
                 'w_label' => 10, 'w_line' => 70, 'h_line' => 10, 'font_size' => 10
             ];
