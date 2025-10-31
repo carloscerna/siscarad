@@ -377,6 +377,80 @@ class PdfRPGController extends Controller
     }
 
 
+/**
+     * Dibuja el encabezado oficial del MINED (Escudo y Títulos).
+     * Acepta coordenadas X, Y y layout personalizado.
+     *
+     * @param Fpdf $fpdf La instancia de FPDF
+     * @param float $x La coordenada X (horizontal)
+     * @param float $y La coordenada Y (vertical)
+     * @param string $codigo_modalidad El código para determinar la Dirección Nacional
+     * @param array $layout (Opcional) Array con layout personalizado
+     */
+    private function dibujarEncabezadoMined($fpdf, $x, $y, $codigo_modalidad, $layout = [])
+    {
+        // --- INDICADOR: Valores por Defecto ---
+        $logo_path = public_path('img/escudo-sv.png'); // La imagen que pediste
+        $logo_w = 15; // Ancho del logo
+        $logo_h = 20; // Alto del logo
+        $text_gap = 2; // Espacio entre logo y texto
+
+        // Tamaños de fuente
+        $font_size_1 = $layout['font_size_1'] ?? 10; // "República de El Salvador"
+        $font_size_2 = $layout['font_size_2'] ?? 10; // "Ministerio de Educación"
+        $font_size_3 = $layout['font_size_3'] ?? 9;  // "Dirección Nacional..."
+        
+        // Interlineado (alto de cada línea de texto)
+        $line_height = $layout['line_height'] ?? 5; 
+        
+        // Ancho del bloque de texto
+        $text_width = $layout['text_width'] ?? 150; 
+        // --- Fin de Indicadores ---
+
+        // 1. Dibuja el Logo/Escudo
+        $fpdf->SetXY($x, $y);
+        if (file_exists($logo_path)) {
+            $fpdf->Image($logo_path, $x, $y, $logo_w, $logo_h);
+        }
+
+        // 2. Determina el texto de la Línea 3 (con el switch que pediste)
+        $linea_3_texto = ""; // Default
+        switch ($codigo_modalidad) {
+            case '17':
+                $linea_3_texto = "Dirección Nacional de Educación Básica III Ciclo y Media";
+                break;
+            case '18':
+                $linea_3_texto = "Dirección Nacional de Educación Básica";
+                break;
+            // AÑADE MÁS 'case' AQUÍ SI ES NECESARIO
+            // case '06':
+            //     $linea_3_texto = "Dirección de Educación Media";
+            //     break;
+            default:
+                // Si no coincide, podemos dejarlo vacío o poner un default
+                $linea_3_texto = "Dirección Nacional de Educación"; // Un default genérico
+                break;
+        }
+
+        // 3. Dibuja el Bloque de Texto (Centrado)
+        $text_x = $x + $logo_w + $text_gap;
+        // Ajustamos la Y para que el texto quede centrado verticalmente con el logo
+        $fpdf->SetXY($text_x, $y + (($logo_h - ($line_height * 3)) / 2) ); 
+
+        $fpdf->SetFont('Arial', 'B', $font_size_1);
+        $fpdf->Cell($text_width, $line_height, mb_convert_encoding("REPÚBLICA DE EL SALVADOR", 'ISO-8859-1', 'UTF-8'), 0, 1, 'C'); // 1 = Salto de línea
+        
+        $fpdf->SetX($text_x); // Vuelve al X del texto
+        $fpdf->SetFont('Arial', 'B', $font_size_2);
+        $fpdf->Cell($text_width, $line_height, mb_convert_encoding("MINISTERIO DE EDUCACIÓN", 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+
+        $fpdf->SetX($text_x); // Vuelve al X del texto
+        $fpdf->SetFont('Arial', 'B', $font_size_3);
+        $fpdf->Cell($text_width, $line_height, mb_convert_encoding($linea_3_texto, 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+    }
+
+
+
 
     public function index($id) 
     {
@@ -397,7 +471,7 @@ class PdfRPGController extends Controller
             
             // 2. Dibuja el título centrado
             // Ancho usable = 355.6mm (Legal) - 5mm (Izq) - 5mm (Der) = 345.6
-            $this->fpdf->Cell(345.6, 8, mb_convert_encoding('CUADRO DE REGISTRO DE EVALUACIÓN DE LOS APRENDIZAJES', 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+            $this->fpdf->Cell(345.6, 8, mb_convert_encoding('REGISTRO DE EVALUACIÓN DEL RENDIMIENTO ESCOLAR DE EDUCACIÓN', 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
             
             // 3. Actualiza $current_Y para que sea la posición
             //    donde el siguiente bloque debe empezar (con un espacio de 2mm)
@@ -473,25 +547,14 @@ class PdfRPGController extends Controller
         // ====== INICIO: DIBUJAR ENCABEZADOS Y ESTADÍSTICAS ======
         // =================================================================
 
-        // --- Consulta de Información de la Institución ---
-            // --- Consulta de Información de la Institución ---
-            $EstudianteInformacionInstitucion = DB::table('informacion_institucion as inf')
-                
-                // --- LÍNEA CORREGIDA ---
+    $EstudianteInformacionInstitucion = DB::table('informacion_institucion as inf')
                 ->leftjoin('personal as p','p.id_personal','=',DB::raw("CAST(inf.nombre_director AS INTEGER)"))
+                ->select('inf.id_institucion','inf.codigo_institucion','inf.nombre_institucion','inf.telefono_uno','inf.logo_uno','inf.direccion_institucion','inf.nombre_director', 'inf.logo_dos','inf.logo_tres', DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name") )
+                ->where('id_institucion', '=', $codigo_institucion)->orderBy('id_institucion','asc')->limit(1)->get();
+            
+            $logo_uno_path = ''; $firma_director_path = ''; $sello_direccion_path = ''; $nombre_director = '';
+            $nombre_institucion = ''; $codigo_institucion_infra = '';
 
-                ->select('inf.id_institucion','inf.codigo_institucion','inf.nombre_institucion','inf.telefono_uno','inf.logo_uno','inf.direccion_institucion','inf.nombre_director',
-                            'inf.logo_dos','inf.logo_tres',
-                        DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
-                        )
-                ->where('id_institucion', '=', $codigo_institucion)
-                ->orderBy('id_institucion','asc')
-                ->limit(1)
-                ->get();
-            $logo_uno_path = ''; $firma_director_path = ''; $sello_direccion_path = '';
-            $nombre_modalidad_header = ''; $nombre_grado_header = ''; $nombre_seccion_header = ''; $nombre_turno_header = '';
-
-            // --- Dibujar Encabezado Izquierdo (Institución) ---
             foreach($EstudianteInformacionInstitucion as $response_i){  
                 $nombre_institucion = mb_convert_encoding(trim($response_i->nombre_institucion),"ISO-8859-1","UTF-8");
                 $nombre_director = mb_convert_encoding(trim($response_i->full_name),"ISO-8859-1","UTF-8");
@@ -499,20 +562,35 @@ class PdfRPGController extends Controller
                 $logo_uno_path = public_path('img/' . trim($response_i->logo_uno));
                 $firma_director_path = public_path('img/' . trim($response_i->logo_dos));
                 $sello_direccion_path = public_path('img/' . trim($response_i->logo_tres));
-                
-                // --- INDICADOR: POSICIÓN DEL BLOQUE DE INFO INSTITUCIÓN ---
-                // X = Distancia desde la izquierda | Y = Distancia desde arriba
+            }
+
+            // --- INDICADOR 1: POSICIÓN DEL NUEVO ENCABEZADO MINED ---
+            // (Este es el que querías mover)
+            $mined_X = 10;
+            $mined_Y = 10;
+            // (Opcional) Layout personalizado
+            $mined_layout = [
+                'font_size_1' => 10, 'font_size_2' => 10, 'font_size_3' => 9,
+                'line_height' => 5, 'text_width' => 150
+            ];
+            $this->dibujarEncabezadoMined($this->fpdf, $mined_X, $mined_Y, $codigo_modalidad, $mined_layout);
+
+
+                    // --- INDICADOR 2: POSICIÓN DEL BLOQUE "CENTRO ESCOLAR" ---
+                    // (Lo movemos debajo del logo del MINED)
+                    //$ce_X = 10;
+                    //$ce_Y = 35; // Debajo del logo/texto MINED (Y=10 + H=20 + 5mm padding)
                 $ce_X = 10;
                 $ce_Y = $current_Y;
                 $this->fpdf->SetXY($ce_X, $ce_Y); 
                 if (file_exists($logo_uno_path)) {
-                    $this->fpdf->image($logo_uno_path, $this->fpdf->GetX(), $this->fpdf->GetY(), 15, 20);
+                  //  $this->fpdf->image($logo_uno_path, $this->fpdf->GetX(), $this->fpdf->GetY(), 15, 20);
                 }
                 
                 $this->fpdf->SetXY($ce_X + 17, $ce_Y); // 10 (margen) + 15 (logo) + 2 (espacio)    
                 $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
                 $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion_infra . " - " .$nombre_institucion,1,1,'L');       
-            }
+            
             // --- Dibujar Encabezado Derecho (Estadísticas) ---
             
             // --- INDICADOR: CONTROL MANUAL DE ESTADÍSTICAS ---
