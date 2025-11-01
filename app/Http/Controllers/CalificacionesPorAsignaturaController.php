@@ -716,7 +716,7 @@ class CalificacionesPorAsignaturaController extends Controller
                                             DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4)/4,0) where id_notas = ?", [$id_notas_]);                                                                                
                                         break;
                                         case ($codigo_modalidad == '10' || $codigo_modalidad == '11'):
-                                            DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4 + nota_p_p_4)/5,0) where id_notas = ?", [$id_notas_]);
+                                            DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3 + nota_p_p_4 + nota_p_p_5)/5,0) where id_notas = ?", [$id_notas_]);
                                         break;
                                         default:
                                             DB::update("update nota set  nota_final = round((nota_p_p_1 + nota_p_p_2 + nota_p_p_3)/3,0) where id_notas = ?", [$id_notas_]);                                        
