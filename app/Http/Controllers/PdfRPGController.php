@@ -379,22 +379,27 @@ class PdfRPGController extends Controller
 
 /**
      * Dibuja el encabezado oficial del MINED (Escudo y Títulos).
-     * Acepta coordenadas X, Y y layout personalizado.
+     * Acepta coordenadas separadas para el logo (x,y) y el texto (layout[text_x, text_y]).
      *
      * @param Fpdf $fpdf La instancia de FPDF
-     * @param float $x La coordenada X (horizontal)
-     * @param float $y La coordenada Y (vertical)
+     * @param float $logo_x La coordenada X (horizontal) del LOGO
+     * @param float $logo_y La coordenada Y (vertical) del LOGO
      * @param string $codigo_modalidad El código para determinar la Dirección Nacional
      * @param array $layout (Opcional) Array con layout personalizado
      */
-    private function dibujarEncabezadoMined($fpdf, $x, $y, $codigo_modalidad, $layout = [])
+    private function dibujarEncabezadoMined($fpdf, $logo_x, $logo_y, $codigo_modalidad, $layout = [])
     {
         // --- INDICADOR: Valores por Defecto ---
-        $logo_path = public_path('img/escudo-sv.png'); // La imagen que pediste
-        $logo_w = 15; // Ancho del logo
-        $logo_h = 20; // Alto del logo
-        $text_gap = 2; // Espacio entre logo y texto
+        $logo_w = $layout['logo_w'] ?? 15; // Ancho del logo
+        $logo_h = $layout['logo_h'] ?? 20; // Alto del logo
 
+        // --- Nuevos controles para el TEXTO ---
+        $text_x = $layout['text_x'] ?? ($logo_x + $logo_w + 2); // X del texto (default: 2mm al lado del logo)
+        $text_y = $layout['text_y'] ?? ($logo_y + 2);           // Y del texto (default: 2mm abajo del Y del logo)
+        $text_align = $layout['text_align'] ?? 'C'; // Alineación: 'L', 'C', 'R'
+        $text_width = $layout['text_width'] ?? 150; // Ancho del bloque de texto
+        // --- Fin de nuevos controles ---
+        
         // Tamaños de fuente
         $font_size_1 = $layout['font_size_1'] ?? 10; // "República de El Salvador"
         $font_size_2 = $layout['font_size_2'] ?? 10; // "Ministerio de Educación"
@@ -402,15 +407,13 @@ class PdfRPGController extends Controller
         
         // Interlineado (alto de cada línea de texto)
         $line_height = $layout['line_height'] ?? 5; 
-        
-        // Ancho del bloque de texto
-        $text_width = $layout['text_width'] ?? 150; 
         // --- Fin de Indicadores ---
 
-        // 1. Dibuja el Logo/Escudo
-        $fpdf->SetXY($x, $y);
+        // 1. Dibuja el Logo/Escudo (en sus propias coordenadas)
+        $logo_path = public_path('img/escudo-sv.png');
+        $fpdf->SetXY($logo_x, $logo_y);
         if (file_exists($logo_path)) {
-            $fpdf->Image($logo_path, $x, $y, $logo_w, $logo_h);
+            $fpdf->Image($logo_path, $logo_x, $logo_y, $logo_w, $logo_h);
         }
 
         // 2. Determina el texto de la Línea 3 (con el switch que pediste)
@@ -423,34 +426,92 @@ class PdfRPGController extends Controller
                 $linea_3_texto = "Dirección Nacional de Educación Básica";
                 break;
             // AÑADE MÁS 'case' AQUÍ SI ES NECESARIO
-            // case '06':
-            //     $linea_3_texto = "Dirección de Educación Media";
-            //     break;
             default:
-                // Si no coincide, podemos dejarlo vacío o poner un default
                 $linea_3_texto = "Dirección Nacional de Educación"; // Un default genérico
                 break;
         }
 
-        // 3. Dibuja el Bloque de Texto (Centrado)
-        $text_x = $x + $logo_w + $text_gap;
-        // Ajustamos la Y para que el texto quede centrado verticalmente con el logo
-        $fpdf->SetXY($text_x, $y + (($logo_h - ($line_height * 3)) / 2) ); 
+        // 3. Dibuja el Bloque de Texto (en sus propias coordenadas X,Y)
+        // Ya no se centra automáticamente, usa los valores del layout
+        $fpdf->SetXY($text_x, $text_y); 
 
         $fpdf->SetFont('Arial', 'B', $font_size_1);
-        $fpdf->Cell($text_width, $line_height, mb_convert_encoding("REPÚBLICA DE EL SALVADOR", 'ISO-8859-1', 'UTF-8'), 0, 1, 'C'); // 1 = Salto de línea
+        $fpdf->Cell($text_width, $line_height, mb_convert_encoding("REPÚBLICA DE EL SALVADOR", 'ISO-8859-1', 'UTF-8'), 0, 1, $text_align); // 1 = Salto de línea
         
         $fpdf->SetX($text_x); // Vuelve al X del texto
         $fpdf->SetFont('Arial', 'B', $font_size_2);
-        $fpdf->Cell($text_width, $line_height, mb_convert_encoding("MINISTERIO DE EDUCACIÓN", 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+        $fpdf->Cell($text_width, $line_height, mb_convert_encoding("MINISTERIO DE EDUCACIÓN", 'ISO-8859-1', 'UTF-8'), 0, 1, $text_align);
 
         $fpdf->SetX($text_x); // Vuelve al X del texto
         $fpdf->SetFont('Arial', 'B', $font_size_3);
-        $fpdf->Cell($text_width, $line_height, mb_convert_encoding($linea_3_texto, 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+        $fpdf->Cell($text_width, $line_height, mb_convert_encoding($linea_3_texto, 'ISO-8859-1', 'UTF-8'), 0, 1, $text_align);
     }
+/**
+     * Dibuja el bloque de Información General (Cuadro Final, CE, Dirección, etc.)
+     *
+     * @param Fpdf $fpdf La instancia de FPDF
+     * @param float $x La coordenada X (horizontal)
+     * @param float $y La coordenada Y (vertical)
+     * @param array $data Array con todos los textos necesarios
+     * @param array $layout (Opcional) Array con layout personalizado
+     */
+    private function dibujarInformacionGeneral($fpdf, $x, $y, $data, $layout = [])
+    {
+        // --- INDICADOR: Valores por Defecto ---
+        $w_label_1 = $layout['w_label_1'] ?? 60; // Ancho para "NOMBRE DEL CENTRO EDUCATIVO:"
+        $w_label_2 = $layout['w_label_2'] ?? 25; // Ancho para "DEPARTAMENTO:"
+        $w_full = $layout['w_full'] ?? 175;  // Ancho total del bloque
+        $h_line = $layout['h_line'] ?? 5;    // Interlineado
+        
+        $font_size_1 = $layout['font_size_1'] ?? 10; // "CUADRO FINAL..."
+        $font_size_2 = $layout['font_size_2'] ?? 9;  // "NOMBRE DEL CE..."
+        // --- Fin de Indicadores ---
 
+        $fpdf->SetXY($x, $y);
+        
+        // --- Línea 1: CUADRO FINAL DE EVALUACIÓN DE: [Grado] [Sección] ---
+        $fpdf->SetFont('Arial', 'B', $font_size_1);
+        $texto_l1 = "CUADRO FINAL DE EVALUACIÓN DE: " . $data['grado'] . " " . $data['seccion'];
+        $fpdf->Cell($w_full, $h_line, mb_convert_encoding($texto_l1, 'ISO-8859-1', 'UTF-8'), 0, 1, 'L'); // 1 = Salto de línea
 
+        // --- Línea 2: NOMBRE DEL CENTRO EDUCATIVO: [Nombre] ---
+        $fpdf->SetX($x); // Vuelve al X inicial
+        $fpdf->SetFont('Arial', '', $font_size_2);
+        $fpdf->Cell($w_label_1, $h_line, mb_convert_encoding("NOMBRE DEL CENTRO EDUCATIVO:", 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
+        $fpdf->SetFont('Arial', 'B', $font_size_2);
+        $fpdf->Cell($w_full - $w_label_1, $h_line, $data['institucion'], 0, 1, 'L');
 
+        // --- Línea 3: DIRECCIÓN: [Dirección] ---
+        $fpdf->SetX($x);
+        $fpdf->SetFont('Arial', '', $font_size_2);
+        $fpdf->Cell($w_label_1, $h_line, mb_convert_encoding("DIRECCIÓN:", 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
+        $fpdf->SetFont('Arial', 'B', $font_size_2);
+        $fpdf->Cell($w_full - $w_label_1, $h_line, $data['direccion'], 0, 1, 'L');
+
+        // --- Línea 4: DEPARTAMENTO: [Depto] MUNICIPIO: [Municipio] ---
+        $fpdf->SetX($x);
+        $fpdf->SetFont('Arial', '', $font_size_2);
+        $fpdf->Cell($w_label_2, $h_line, mb_convert_encoding("DEPARTAMENTO:", 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
+        $fpdf->SetFont('Arial', 'B', $font_size_2);
+        $fpdf->Cell(60, $h_line, $data['departamento'], 0, 0, 'L'); // Ancho fijo para depto
+        
+        $fpdf->SetFont('Arial', '', $font_size_2);
+        $fpdf->Cell(25, $h_line, mb_convert_encoding("MUNICIPIO:", 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
+        $fpdf->SetFont('Arial', 'B', $font_size_2);
+        $fpdf->Cell(0, $h_line, $data['municipio'], 0, 1, 'L'); // El resto
+
+        // --- Línea 5: DISTRITO: [Distrito] N.º ACUERDO: [Acuerdo] ---
+        $fpdf->SetX($x);
+        $fpdf->SetFont('Arial', '', $font_size_2);
+        $fpdf->Cell($w_label_2, $h_line, mb_convert_encoding("DISTRITO:", 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
+        $fpdf->SetFont('Arial', 'B', $font_size_2);
+        $fpdf->Cell(60, $h_line, $data['distrito'], 0, 0, 'L'); // Ancho fijo para distrito
+        
+        $fpdf->SetFont('Arial', '', $font_size_2);
+        $fpdf->Cell(25, $h_line, mb_convert_encoding("Nº ACUERDO:", 'ISO-8859-1', 'UTF-8'), 0, 0, 'L');
+        $fpdf->SetFont('Arial', 'B', $font_size_2);
+        $fpdf->Cell(0, $h_line, $data['acuerdo'], 0, 1, 'L'); // El resto
+    }
 
     public function index($id) 
     {
@@ -547,49 +608,100 @@ class PdfRPGController extends Controller
         // ====== INICIO: DIBUJAR ENCABEZADOS Y ESTADÍSTICAS ======
         // =================================================================
 
-    $EstudianteInformacionInstitucion = DB::table('informacion_institucion as inf')
-                ->leftjoin('personal as p','p.id_personal','=',DB::raw("CAST(inf.nombre_director AS INTEGER)"))
-                ->select('inf.id_institucion','inf.codigo_institucion','inf.nombre_institucion','inf.telefono_uno','inf.logo_uno','inf.direccion_institucion','inf.nombre_director', 'inf.logo_dos','inf.logo_tres', DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name") )
-                ->where('id_institucion', '=', $codigo_institucion)->orderBy('id_institucion','asc')->limit(1)->get();
+         // --- Consulta de Información de la Institución (MODIFICADA CON JOINS) ---
+         $EstudianteInformacionInstitucion = DB::table('informacion_institucion as inf')
+         ->leftjoin('personal as p','p.id_personal','=',DB::raw("CAST(inf.nombre_director AS INTEGER)"))
+         // --- INICIO: JOINS NUEVOS ---
+         ->leftjoin('catalogo_departamentos as cat_dep', 'cat_dep.codigo', '=', 'inf.codigo_departamento')
+         ->leftjoin('catalogo_municipios as mun', function($join) {
+             $join->on('mun.codigo', '=', 'inf.codigo_municipio')
+                  ->on('mun.codigo_departamento', '=', 'inf.codigo_departamento');
+         })
+         ->leftjoin('catalogo_distritos as dis', function($join) {
+             $join->on('dis.codigo', '=', 'inf.codigo_distrito')
+                  ->on('dis.codigo_municipio', '=', 'inf.codigo_municipio')
+                  ->on('dis.codigo_departamento', '=', 'inf.codigo_departamento');
+         })
+         // --- FIN: JOINS NUEVOS ---
+         ->select(
+             'inf.id_institucion','inf.codigo_institucion','inf.nombre_institucion','inf.telefono_uno',
+             'inf.logo_uno','inf.direccion_institucion','inf.nombre_director', 'inf.logo_dos','inf.logo_tres', 
+             'inf.numero_acuerdo', // <-- AÑADIDO
+             DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
+             // --- INICIO: NUEVOS SELECTS ---
+             'cat_dep.descripcion as nombre_departamento',
+             'mun.descripcion as nombre_municipio',
+             'dis.descripcion as nombre_distrito'
+             // --- FIN: NUEVOS SELECTS ---
+         ) 
+         ->where('id_institucion', '=', $codigo_institucion)->orderBy('id_institucion','asc')->limit(1)->get();
+     
+     // --- Extracción de variables (MODIFICADA) ---
+     $logo_uno_path = ''; $firma_director_path = ''; $sello_direccion_path = ''; $nombre_director = '';
+     $nombre_institucion = ''; $codigo_institucion_infra = '';
+     $direccion_institucion = ''; $nombre_municipio = ''; $nombre_distrito = ''; 
+     $nombre_departamento = ''; $numero_acuerdo = ''; // <-- AÑADIDAS
+
+     foreach($EstudianteInformacionInstitucion as $response_i){  
+         $nombre_institucion = mb_convert_encoding(trim($response_i->nombre_institucion),"ISO-8859-1","UTF-8");
+         $nombre_director = mb_convert_encoding(trim($response_i->full_name),"ISO-8859-1","UTF-8");
+         $codigo_institucion_infra = mb_convert_encoding(trim($response_i->codigo_institucion),"ISO-8859-1","UTF-8");
+         
+         // --- NUEVAS VARIABLES ---
+         $direccion_institucion = mb_convert_encoding(trim($response_i->direccion_institucion),"ISO-8859-1","UTF-8");
+         $nombre_departamento = mb_convert_encoding(trim($response_i->nombre_departamento),"ISO-8859-1","UTF-8"); // <-- AÑADIDA
+         $nombre_municipio = mb_convert_encoding(trim($response_i->nombre_municipio),"ISO-8859-1","UTF-8");
+         $nombre_distrito = mb_convert_encoding(trim($response_i->nombre_distrito),"ISO-8859-1","UTF-8");
+         $numero_acuerdo = mb_convert_encoding(trim($response_i->numero_acuerdo),"ISO-8859-1","UTF-8"); // <-- AÑADIDA
+         // --- FIN NUEVAS VARIABLES ---
+
+         $logo_uno_path = public_path('img/' . trim($response_i->logo_uno));
+         $firma_director_path = public_path('img/' . trim($response_i->logo_dos));
+         $sello_direccion_path = public_path('img/' . trim($response_i->logo_tres));
+     }
+
+           // --- INDICADOR 1: POSICIÓN DEL NUEVO ENCABEZADO MINED ---
             
-            $logo_uno_path = ''; $firma_director_path = ''; $sello_direccion_path = ''; $nombre_director = '';
-            $nombre_institucion = ''; $codigo_institucion_infra = '';
-
-            foreach($EstudianteInformacionInstitucion as $response_i){  
-                $nombre_institucion = mb_convert_encoding(trim($response_i->nombre_institucion),"ISO-8859-1","UTF-8");
-                $nombre_director = mb_convert_encoding(trim($response_i->full_name),"ISO-8859-1","UTF-8");
-                $codigo_institucion_infra = mb_convert_encoding(trim($response_i->codigo_institucion),"ISO-8859-1","UTF-8");
-                $logo_uno_path = public_path('img/' . trim($response_i->logo_uno));
-                $firma_director_path = public_path('img/' . trim($response_i->logo_dos));
-                $sello_direccion_path = public_path('img/' . trim($response_i->logo_tres));
-            }
-
-            // --- INDICADOR 1: POSICIÓN DEL NUEVO ENCABEZADO MINED ---
-            // (Este es el que querías mover)
-            $mined_X = 10;
-            $mined_Y = 10;
+            // Coordenadas del LOGO (escudo-sv.png)
+            $logo_X = 25;
+            $logo_Y = 10;
+            
             // (Opcional) Layout personalizado
             $mined_layout = [
-                'font_size_1' => 10, 'font_size_2' => 10, 'font_size_3' => 9,
-                'line_height' => 5, 'text_width' => 150
+                'logo_w' => 25,
+                'logo_h' => 22,
+                
+                // --- ¡Control Manual del Texto! ---
+                // Mueve estas X/Y para mover las 3 líneas de texto
+                'text_x' => 5, // Distancia del texto desde la izquierda
+                'text_y' => 32, // Distancia del texto desde arriba
+                
+                'text_align' => 'C', // 'L' (Izquierda), 'C' (Centro), 'R' (Derecha)
+                'text_width' => 65, // Ancho de la caja de texto
+                'line_height' => 4,  // Interlineado
+                'font_size_1' => 9,
+                'font_size_2' => 9,
+                'font_size_3' => 7
             ];
-            $this->dibujarEncabezadoMined($this->fpdf, $mined_X, $mined_Y, $codigo_modalidad, $mined_layout);
-
+            
+            // Llamamos a la función con las coordenadas del LOGO
+            $this->dibujarEncabezadoMined($this->fpdf, $logo_X, $logo_Y, $codigo_modalidad, $mined_layout);
 
                     // --- INDICADOR 2: POSICIÓN DEL BLOQUE "CENTRO ESCOLAR" ---
                     // (Lo movemos debajo del logo del MINED)
                     //$ce_X = 10;
                     //$ce_Y = 35; // Debajo del logo/texto MINED (Y=10 + H=20 + 5mm padding)
-                $ce_X = 10;
+                $ce_X = 43;
                 $ce_Y = $current_Y;
                 $this->fpdf->SetXY($ce_X, $ce_Y); 
+                $this->fpdf->SetFont('Arial', 'B', 10); 
                 if (file_exists($logo_uno_path)) {
                   //  $this->fpdf->image($logo_uno_path, $this->fpdf->GetX(), $this->fpdf->GetY(), 15, 20);
                 }
                 
-                $this->fpdf->SetXY($ce_X + 17, $ce_Y); // 10 (margen) + 15 (logo) + 2 (espacio)    
-                $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
-                $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion_infra . " - " .$nombre_institucion,1,1,'L');       
+               // $this->fpdf->SetXY($ce_X + 17, $ce_Y); // 10 (margen) + 15 (logo) + 2 (espacio)    
+               // $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
+               // $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion_infra . " - " .$nombre_institucion,1,1,'L');       
             
             // --- Dibujar Encabezado Derecho (Estadísticas) ---
             
@@ -825,28 +937,38 @@ class PdfRPGController extends Controller
                     // ====== INICIO: DIBUJAR ENCABEZADO DE GRADO (NUEVO BLOQUE) ======
                     // =================================================================
 
-                    // --- INDICADOR: POSICIÓN DEL BLOQUE "Nivel, Grado, Encargado" ---
-                    // Modifica estos X/Y para mover este bloque independientemente
-                    $header_info_X = 27;  // Distancia desde la izquierda
-                    
-                    // Se usa $current_Y para que se dibuje en la misma línea
-                    // que el bloque del Centro Escolar.
-                    $this->fpdf->SetXY($header_info_X, $current_Y + 5);
-                    
-                    $this->fpdf->SetFont('Arial', 'B', 9);
-                    $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Nivel","ISO-8859-1","UTF-8"),1,0,'L'); 
-                    $this->fpdf->Cell(135,$alto_cell[0],$nombre_modalidad_header,1,1,'L'); 
-                    $this->fpdf->SetX($header_info_X); // Vuelve al X inicial
-                    $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L'); 
-                    $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado_header,1,0,'L'); 
-                    $this->fpdf->Cell(15,$alto_cell[0],mb_convert_encoding("Sección","ISO-8859-1","UTF-8"),1,0,'L'); 
-                    $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion_header,1,0,'C'); 
-                    $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L'); 
-                    $this->fpdf->Cell(45,$alto_cell[0],$nombre_turno_header,1,1,'C'); 
-                    $this->fpdf->SetX($header_info_X); // Vuelve al X inicial
-                    $this->fpdf->Cell(55,$alto_cell[0],"Encargado de Grado: ",1,0,'L'); 
-                    $this->fpdf->Cell(120,$alto_cell[0],$nombre_personal_,1,1,'L');
-                   $this->fpdf->ln(); 
+                 // --- INDICADOR 5: POSICIÓN DEL BLOQUE "Información General" ---
+            // (Este bloque reemplaza al de "Nivel, Grado, Encargado")
+            $info_X = 70;  // Distancia desde la izquierda
+            $info_Y = 30;  // Distancia desde arriba (puedes ajustar esto)
+
+            // 1. Prepara los datos para la función
+            $data_info_general = [
+                'grado' => $nombre_grado_header,
+                'seccion' => $nombre_seccion_header,
+                'institucion' => $nombre_institucion,
+                'direccion' => $direccion_institucion,
+                'departamento' => $nombre_departamento, // <-- NUEVO
+                'municipio' => $nombre_municipio,
+                'distrito' => $nombre_distrito,
+                'acuerdo' => $numero_acuerdo // <-- NUEVO
+            ];
+            
+            // 2. (Opcional) Define un layout personalizado
+            $layout_info_general = [
+                'w_label_1' => 60, // Ancho para "NOMBRE DEL CE" y "DIRECCIÓN"
+                'w_label_2' => 30, // Ancho para "DEPARTAMENTO" y "DISTRITO"
+                'w_full' => 185,   // Ancho total del bloque
+                'h_line' => 4,     // Interlineado
+                'font_size_1' => 10,
+                'font_size_2' => 9
+            ];
+
+            // 3. Llama a la nueva función
+            $this->dibujarInformacionGeneral($this->fpdf, $info_X, $info_Y, $data_info_general, $layout_info_general);
+
+                        // 4. Guarda la Y donde terminó este bloque
+                        $y_info_fin = $this->fpdf->GetY();
                    
                    // Guardamos la Y actual para el texto rotado
                    $posicion_Y_texto_rotado = $this->fpdf->GetY() + $alto_cell[1]; // Y actual + alto de la cabecera
@@ -943,7 +1065,9 @@ class PdfRPGController extends Controller
                         
                         // --- INICIO: Casos Manuales ---
                         // Agrega más 'case' aquí según necesites
-                        
+                        case 10:
+                            $rotado_padding_Y = 22;
+                            break;
                          case 20:
                              $rotado_padding_Y = 9;
                              break;
