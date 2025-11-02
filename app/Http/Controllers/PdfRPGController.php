@@ -425,6 +425,9 @@ class PdfRPGController extends Controller
             case '18':
                 $linea_3_texto = "Dirección Nacional de Educación Básica";
                 break;
+            case '19':
+                $linea_3_texto = "Dirección Nacional de Educación Básica";
+                break;
             // AÑADE MÁS 'case' AQUÍ SI ES NECESARIO
             default:
                 $linea_3_texto = "Dirección Nacional de Educación"; // Un default genérico
@@ -528,7 +531,7 @@ class PdfRPGController extends Controller
             // 1. Define la posición Y inicial para el título
             $current_Y = 10; // 10mm desde arriba
             $this->fpdf->SetXY(10, $current_Y); 
-            $this->fpdf->SetFont('Arial', 'B', 12);
+            $this->fpdf->SetFont('Arial', 'B', 18);
             
             // 2. Dibuja el título centrado
             // Ancho usable = 355.6mm (Legal) - 5mm (Izq) - 5mm (Der) = 345.6
