@@ -445,9 +445,9 @@ use Illuminate\Support\Facades;
                             var valor_nota_final = 0; var valor_bm = "";
                             if(codigo_periodo == '06' || codigo_periodo == '07'){
 
-                                if(codigo_modalidad >= '03' && codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
+                                if(codigo_modalidad >= '03' && codigo_modalidad <= '05' || codigo_modalidad == '18'){ // EDUCACI{ON BASICA}
                                     valor_nota_final = 5; valor_bm = "Basica";
-                                }else if(codigo_modalidad >= '06' && codigo_modalidad <= '09'){   // EDUCACION MEDIA
+                                }else if(codigo_modalidad >= '06' && codigo_modalidad <= '09' || codigo_modalidad == '21' || codigo_modalidad == '15'){   // EDUCACION MEDIA
                                     valor_nota_final = 6; valor_bm = "Media";
                                     console.log("valor: " + valor_nota_final + " valor m: " + valor_bm);
                                 }else if(codigo_modalidad == '10' || codigo_modalidad == '12'){   // NOCTURNA BASICA

@@ -933,7 +933,7 @@ class PdfRPGController extends Controller
                     // --- Obtenemos los datos del encabezado (Nivel, Grado) del PRIMER estudiante ---
                         $firstStudent = $EstudianteBoleta[0];
                         $nombre_modalidad_header = mb_convert_encoding(trim($firstStudent->nombre_modalidad),"ISO-8859-1","UTF-8");  
-                        $nombre_grado_header = mb_convert_encoding(trim($firstStudent->nombre_grado),"ISO-8859-1","UTF-8");  
+                        $nombre_grado_header = (trim($firstStudent->nombre_grado));  
                         $nombre_seccion_header = mb_convert_encoding(trim($firstStudent->nombre_seccion),"ISO-8859-1","UTF-8");  
                         $nombre_turno_header = mb_convert_encoding(trim($firstStudent->nombre_turno),"ISO-8859-1","UTF-8");
                     // =================================================================
