@@ -31,6 +31,9 @@ if (!function_exists('resultado_final')) {
                 case ($codigo_modalidad == '17'): // EDUCACIÓN BÁSICA
                     $EvaluarCalificacionFinal = 5;
                 break;
+                case ($codigo_modalidad == '19'): // EDUCACIÓN BÁSICA
+                    $EvaluarCalificacionFinal = 5;
+                break;
                 case ($codigo_modalidad >= '03' && $codigo_modalidad <= '05'): // EDUCACIÓN BÁSICA 4.º A 9º.
                     $EvaluarCalificacionFinal = 5;
                 break;

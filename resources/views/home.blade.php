@@ -121,14 +121,14 @@ use Illuminate\Support\Facades;
                     <div class="col col-md-3 col-lg-3 col-xl-3">
                         {{-- card  REPORTES--}}
                         <div class="card text-black bg-default m-1 p-1">
-                            <div class="card-header p-1"><h5>Calificaciones</h5></div>
+                            <div class="card-header p-1"><h5>Cuadro de Notas</h5></div>
                                 <div class="card-body p-1">
                                     <h5 class="card-title"></h5>
                                     <p class="card-text">
                                     </p>
                                         {{-- BOTON DE INFORMACION --}}
                                         <button type="button" class="btn btn-dark btn-block" id="BuscarReportePorGrado" onclick="ReportePorGrado()" title="Informe">
-                                            <h2><i class="fas fa-search"></i></h2>    Por Grado
+                                            <h2><i class="fas fa-table"></i></h2>    Por Grado
                                         </button>
                                 </div>
                         </div> 
@@ -144,7 +144,7 @@ use Illuminate\Support\Facades;
                                     </p>
                                         {{-- BOTON DE INFORMACION --}}
                                         <button type="button" class="btn btn-dark btn-block" id="BuscarReportePorGrado" onclick="ReporteLicenciasPermisos()" title="Informe">
-                                            <h2><i class="fas fa-search"></i></h2>Ver
+                                            <h2><i class="fas fa-calendar-alt"></i></h2>Ver
                                         </button>
                                 </div>
                         </div> 
@@ -159,12 +159,28 @@ use Illuminate\Support\Facades;
                                     </p>
                                         {{-- BOTON DE INFORMACION --}}
                                         <button type="button" class="btn btn-dark btn-block" id="BuscarReportePorGrado" onclick="ReporteBoletaCalificaciones()" title="Informe">
-                                            <h2><i class="fas fa-search"></i></h2>    Calificaciones
+                                            <h2><i class="fas fa-id-badge"></i></h2>    Calificaciones
                                         </button>
                                 </div>
                         </div> 
                     </div>  {{-- COL --}}
-                </div> {{-- DIV ROW --}}
+
+                    <div class="col col-md-3 col-lg-3 col-xl-3">
+                        {{-- card  REPORTES--}}
+                        <div class="card text-black bg-default m-1 p-1">
+                            <div class="card-header p-1"><h5>Pre-matrícula</h5></div>
+                                <div class="card-body p-1">
+                                    <h5 class="card-title"></h5>
+                                    <p class="card-text">
+                                    </p>
+                                        {{-- BOTON DE INFORMACION --}}
+                                        <button type="button" class="btn btn-dark btn-block" id="BuscarReportePrematricula" onclick="ReportePrematricula()" title="Generar nómina de pre-matrícula">
+                                            <h2><i class="fas fa-clipboard-list"></i></h2>    Generar
+                                        </button>
+                                </div>
+                        </div> 
+                    </div>  {{-- COL --}}
+                    </div> {{-- DIV ROW --}}
         </div> {{-- JUMBOTRON --}}
     </div> 
 
@@ -521,6 +537,28 @@ use Illuminate\Support\Facades;
                 var url = '{{ url("/pdfRLyP", "id") }}';
                 url = url.replace('id', datos_personal);
             // abrir ventana emergente con el pdf de las califiaciones por asignatura.
+                AbrirVentana(url);
+        }
+        
+        // Reporte de Prematrícula
+        function ReportePrematricula() {
+            codigo_personal = $('#codigo_personal').val();
+            codigo_annlectivo = $('#codigo_annlectivo').val();
+            codigo_grado_seccion_turno = $('#codigo_grado_seccion_turno').val();
+            codigo_institucion = $("#codigo_institucion").val();
+            tablero = "Tablero";
+
+            if(codigo_annlectivo == "00" || codigo_grado_seccion_turno == "00"){
+                toastr.warning("Debe Seleccionar Año Lectivo y Grado-Sección-Turno", "Sistema");
+                    return;
+            }
+            var datos_estudiantes = tablero + "-" + codigo_grado_seccion_turno + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;
+            
+            // ARMAR URL (Asegúrate que esta ruta exista en routes/web.php)
+                var url = '{{ url("/prematricula", "id") }}';
+                url = url.replace('id', datos_estudiantes);
+            
+            // abrir ventana emergente con el pdf
                 AbrirVentana(url);
         }
         // Abrir ventana por el URL

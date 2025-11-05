@@ -14,6 +14,7 @@ use App\Http\Controllers\PdfRPGController;
 use App\Http\Controllers\PdfRLyPController;
 use App\Http\Controllers\asistenciaDiariaController;
 use App\Http\Controllers\PdfRPGEstudianteController;
+use App\Http\Controllers\PrematriculaController;
 
 // emailes
 use App\Mail\BoletaEstudiantes;
@@ -87,6 +88,7 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::post("getDatosMatriculaGuardar", "App\Http\Controllers\MatriculaController@getDatosMatriculaGuardar")->name('getDatosMatriculaGuardar');
     // para matriculaBuscarDatosMatriculados.
     Route::post("getGradoSeccionMatriculadosBuscar", "App\Http\Controllers\MatriculaController@getGradoSeccionMatriculadosBuscar")->name('getGradoSeccionMatriculadosBuscar');
+    Route::get('/prematricula/{id}', [PrematriculaController::class, 'index']);
     /////////////////////////////////////////
     //** REPORTES */
     ////////////////////////////////////////
