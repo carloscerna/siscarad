@@ -14,10 +14,14 @@ class PrematriculaController extends Controller
     public function __construct()
     {
         $this->fpdf = new Fpdf('L','mm','Legal');	// Formato Legal (Paisaje)
+
     }
+
 
     public function index($id) 
     {
+
+        
         // --- INDICADOR MANUAL: Alto de Fila ---
         // Modifica este valor para cambiar el alto de todas las filas de datos
         $alto_fila_manual = 9.5; // 8mm de alto (puedes cambiarlo a 10, 12, etc.)
@@ -47,8 +51,8 @@ class PrematriculaController extends Controller
             ->where('gr.codigo', $codigo_grado)
             ->first();
 
-        $nombre_grado_titulo = $infoGrado ? mb_convert_encoding(trim($infoGrado->nombre_grado), "ISO-8859-1", "UTF-8") : '______';
-        $nombre_seccion_titulo = $infoGrado ? mb_convert_encoding(trim($infoGrado->nombre_seccion), "ISO-8859-1", "UTF-8") : '______';
+        $nombre_grado_titulo = $infoGrado ? (trim($infoGrado->nombre_grado)) : '______';
+        $nombre_seccion_titulo = $infoGrado ? (trim($infoGrado->nombre_seccion)):'__';
         // --- FIN: NUEVA CONSULTA ---
 
         // --- INICIO: TÍTULO PRINCIPAL ---
@@ -196,6 +200,14 @@ class PrematriculaController extends Controller
         // --- Consulta principal de Estudiantes ---
             $EstudianteBoleta = DB::table('alumno_matricula AS am')
                 ->join('alumno AS a', 'a.id_alumno', '=', 'am.codigo_alumno')
+                
+                // --- INICIO DE LA MODIFICACIÓN (AÑADIR ENCARGADO) ---
+                ->leftJoin('alumno_encargado AS ae', function($join) {
+                    $join->on('ae.codigo_alumno', '=', 'a.id_alumno')
+                         ->where('ae.encargado', '=', true);
+                })
+                // --- FIN DE LA MODIFICACIÓN ---
+                
                 ->join('bachillerato_ciclo AS bach', 'bach.codigo','=','am.codigo_bach_o_ciclo')
                 ->join('grado_ano AS gr', 'gr.codigo','=','am.codigo_grado')
                 ->join('seccion AS sec', 'sec.codigo','=','am.codigo_seccion')
@@ -207,7 +219,13 @@ class PrematriculaController extends Controller
                     'am.nuevo_ingreso', // Columna 'nuevo_ingreso'
                     'bach.nombre AS nombre_modalidad', 'gr.nombre as nombre_grado', 'sec.nombre as nombre_seccion','tur.nombre as nombre_turno',
                     DB::raw("TRIM(CONCAT(BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno), CAST(' ' AS VARCHAR), BTRIM(a.nombre_completo))) as full_name"),
-                    DB::raw("TRIM(CONCAT(BTRIM(a.nombre_completo), CAST(' ' AS VARCHAR), BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno))) as full_nombres_apellidos")
+                    DB::raw("TRIM(CONCAT(BTRIM(a.nombre_completo), CAST(' ' AS VARCHAR), BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno))) as full_nombres_apellidos"),
+
+                    // --- INICIO DE LA MODIFICACIÓN (NUEVOS CAMPOS) ---
+                    'ae.dui AS encargado_dui',
+                    'ae.nombres AS encargado_nombre',
+                    'ae.telefono AS encargado_telefono'
+                    // --- FIN DE LA MODIFICACIÓN ---
                 )
                 ->where([
                     ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
@@ -252,7 +270,7 @@ class PrematriculaController extends Controller
 
             foreach($EstudianteBoleta as $response){
                 // ... (variables del estudiante) ...
-          $nombre_estudiante = mb_convert_encoding(trim($response->full_name),"ISO-8859-1","UTF-8");
+                    $nombre_estudiante = mb_convert_encoding(trim($response->full_name),"ISO-8859-1","UTF-8");
                     $codigo_nie = mb_convert_encoding(trim($response->codigo_nie),"ISO-8859-1","UTF-8");
                     $genero = (trim($response->codigo_genero) == '01') ? 'M' : 'F';
                     
@@ -268,11 +286,19 @@ class PrematriculaController extends Controller
                     if ($es_retirado) {
                         $resultado_final_str = 'Retirado';
                     } else if (isset($mapa_resultados[$id_matricula])) {
-                        $resultado_final_str = $mapa_resultados[$matricula_id]; // "Promovido" o "Retenido"
+                        $resultado_final_str = $mapa_resultados[$id_matricula]; // "Promovido" o "Retenido"
                     } else {
                         $resultado_final_str = 'Retenido'; 
                     }
                     $resultado_final_str_iso = mb_convert_encoding($resultado_final_str, 'ISO-8859-1', 'UTF-8');
+
+                    // --- INICIO DE LA MODIFICACIÓN (OBTENER DATOS ENCARGADO) ---
+                    // Obtener datos del encargado (usando ?? '' para manejar nulos del LEFT JOIN)
+                    $enc_dui = mb_convert_encoding(trim($response->encargado_dui ?? ''), "ISO-8859-1", "UTF-8");
+                    $enc_nombre = mb_convert_encoding(trim($response->encargado_nombre ?? ''), "ISO-8859-1", "UTF-8");
+                    $enc_telefono = mb_convert_encoding(trim($response->encargado_telefono ?? ''), "ISO-8859-1", "UTF-8");
+                    $enc_parentesco = mb_convert_encoding(trim($response->encargado_parentesco ?? ''), "ISO-8859-1", "UTF-8");
+                    // --- FIN DE LA MODIFICACIÓN ---
 
                     // --- INICIO: LÓGICA DE CONTEO PARA CONSOLIDADO ---
                     if ($genero == 'M') {
@@ -405,15 +431,16 @@ class PrematriculaController extends Controller
                 $this->fpdf->SetTextColor(0, 0, 0);
                 // --- FIN: LÓGICA "RESULTADO" ---
 
-
-                // Celdas vacías para "DATOS DEL ENCARGADO"
-                $this->fpdf->Cell($ancho_cols[7], $alto_fila_manual, '', 1, 0, 'L', true);
-                $this->fpdf->Cell($ancho_cols[8], $alto_fila_manual, '', 1, 0, 'L', true);
-                $this->fpdf->Cell($ancho_cols[9], $alto_fila_manual, '', 1, 0, 'L', true);
-                $this->fpdf->Cell($ancho_cols[10], $alto_fila_manual, '', 1, 0, 'L', true);
-                $this->fpdf->Cell($ancho_cols[11], $alto_fila_manual, '', 1, 0, 'L', true);
-                $this->fpdf->Cell($ancho_cols[12], $alto_fila_manual, '', 1, 0, 'L', true);
-                $this->fpdf->Cell($ancho_cols[13], $alto_fila_manual, '', 1, 1, 'L', true); // Salto de línea
+                // --- INICIO DE LA MODIFICACIÓN (REEMPLAZAR CELDAS VACÍAS) ---
+                // Celdas para "DATOS DEL ENCARGADO" (ahora con datos)
+                $this->fpdf->Cell($ancho_cols[7], $alto_fila_manual, $enc_dui, 1, 0, 'L', true);       // DUI
+                $this->fpdf->Cell($ancho_cols[8], $alto_fila_manual, $enc_nombre, 1, 0, 'L', true);    // NOMBRE
+                $this->fpdf->Cell($ancho_cols[9], $alto_fila_manual, '', 1, 0, 'L', true);          // FECHA N. (vacío)
+                $this->fpdf->Cell($ancho_cols[10], $alto_fila_manual, '', 1, 0, 'L', true);         // DIRECCION (vacío)
+                $this->fpdf->Cell($ancho_cols[11], $alto_fila_manual, $enc_telefono, 1, 0, 'L', true); // TELEFONO
+                $this->fpdf->Cell($ancho_cols[12], $alto_fila_manual, $enc_parentesco, 1, 0, 'L', true);// PARENTESCO
+                $this->fpdf->Cell($ancho_cols[13], $alto_fila_manual, '', 1, 1, 'L', true);          // FIRMA (vacío)
+                // --- FIN DE LA MODIFICACIÓN ---
                 
                 // =============================================================
                 // === FIN: CORRECCIÓN DE CELDAS ===
@@ -487,16 +514,16 @@ class PrematriculaController extends Controller
             $this->fpdf->SetFont('Arial', '', 9);
             $this->fpdf->SetX($x_consolidado);
             $this->fpdf->Cell($w_col1, $h_consolidado, 'Total Estudiantes', 1, 0, 'L');
-            $this->fpdf->Cell($w_col2, $h_consolidado, $total_m, 1, 0, 'C');
-            $this->fpdf->Cell($w_col3, $h_consolidado, $total_f, 1, 0, 'C');
-            $this->fpdf->Cell($w_col4, $h_consolidado, ($total_m + $total_f), 1, 1, 'C');
+            $this->fpdf->Cell($w_col2, $h_consolidado, '', 1, 0, 'C');
+            $this->fpdf->Cell($w_col3, $h_consolidado, '', 1, 0, 'C');
+            $this->fpdf->Cell($w_col4, $h_consolidado, '', 1, 1, 'C');
             
             // Fila: Nuevo Ingreso (CORREGIDO PARA MOSTRAR TOTALES)
             $this->fpdf->SetX($x_consolidado);
             $this->fpdf->Cell($w_col1, $h_consolidado, 'Nuevo Ingreso', 1, 0, 'L');
-            $this->fpdf->Cell($w_col2, $h_consolidado, $total_ni_m, 1, 0, 'C');
-            $this->fpdf->Cell($w_col3, $h_consolidado, $total_ni_f, 1, 0, 'C');
-            $this->fpdf->Cell($w_col4, $h_consolidado, ($total_ni_m + $total_ni_f), 1, 1, 'C');
+            $this->fpdf->Cell($w_col2, $h_consolidado, '', 1, 0, 'C');
+            $this->fpdf->Cell($w_col3, $h_consolidado, '', 1, 0, 'C');
+            $this->fpdf->Cell($w_col4, $h_consolidado, '', 1, 1, 'C');
 
             // --- Firma ---
             $y_firma = $this->fpdf->GetY() + 20; // 20mm debajo de la tabla
