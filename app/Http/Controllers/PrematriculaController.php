@@ -252,7 +252,7 @@ class PrematriculaController extends Controller
 
             foreach($EstudianteBoleta as $response){
                 // ... (variables del estudiante) ...
-                    $nombre_estudiante = mb_convert_encoding(trim($response->full_name),"ISO-8859-1","UTF-8");
+          $nombre_estudiante = mb_convert_encoding(trim($response->full_name),"ISO-8859-1","UTF-8");
                     $codigo_nie = mb_convert_encoding(trim($response->codigo_nie),"ISO-8859-1","UTF-8");
                     $genero = (trim($response->codigo_genero) == '01') ? 'M' : 'F';
                     
@@ -270,7 +270,6 @@ class PrematriculaController extends Controller
                     } else if (isset($mapa_resultados[$id_matricula])) {
                         $resultado_final_str = $mapa_resultados[$matricula_id]; // "Promovido" o "Retenido"
                     } else {
-                        // Esto cubre a estudiantes sin notas o que no cayeron en la lógica
                         $resultado_final_str = 'Retenido'; 
                     }
                     $resultado_final_str_iso = mb_convert_encoding($resultado_final_str, 'ISO-8859-1', 'UTF-8');
@@ -336,12 +335,8 @@ class PrematriculaController extends Controller
                    $this->fpdf->Cell($ancho_cols[1], $alto_cell_header, 'NIE', 1, 0, 'C', true);
                    $this->fpdf->Cell($ancho_cols[2], $alto_cell_header, 'NOMBRE DEL ESTUDIANTE', 1, 0, 'C', true);
                    $this->fpdf->Cell($ancho_cols[3], $alto_cell_header, 'SEXO', 1, 0, 'C', true);
-                   
-                   // --- TÍTULOS DE COLUMNA MODIFICADOS ---
                    $this->fpdf->Cell($ancho_cols[4], $alto_cell_header, 'Ret. S/N', 1, 0, 'C', true);
                    $this->fpdf->Cell($ancho_cols[5], $alto_cell_header, 'N.I. S/N', 1, 0, 'C', true);
-                   // --- FIN TÍTULOS MODIFICADOS ---
-
                    $this->fpdf->Cell($ancho_cols[6], $alto_cell_header, 'RESULTADO', 1, 0, 'C', true);
                    $this->fpdf->Cell($ancho_cols[7], $alto_cell_header, mb_convert_encoding('Nº DUI', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', true);
                    $this->fpdf->Cell($ancho_cols[8], $alto_cell_header, 'NOMBRE COMPLETO', 1, 0, 'C', true);
@@ -354,26 +349,38 @@ class PrematriculaController extends Controller
                    $header_dibujado = true; // Marcar como dibujado
               }
                 
-                // --- Dibujar fila de datos del estudiante ---
-                $this->fpdf->SetFillColor(255, 255, 255); $this->fpdf->SetTextColor(0,0,0); $this->fpdf->SetFont('Arial', '', 7);
+                // --- INICIO: LÓGICA DE COLOR DE FILA CORREGIDA ---
+                $this->fpdf->SetTextColor(0,0,0); 
+                $this->fpdf->SetFont('Arial', '', 7);
+
+                // 1. Establece el color de fondo ANTES de dibujar
+                if ($fill) {
+                    $this->fpdf->SetFillColor(255, 255, 255); // Blanco
+                } else {
+                    $this->fpdf->SetFillColor(212, 230, 252); // Azul claro
+                }
+                // --- FIN: LÓGICA DE COLOR DE FILA ---
                 
                 $this->fpdf->SetX($table_X_start); // Asegura que empiece en el X de la tabla
-                // Usamos $alto_fila_manual
-                $this->fpdf->Cell($ancho_cols[0], $alto_fila_manual, $fila_numero, 1, 0, 'C', $fill);
-                $this->fpdf->Cell($ancho_cols[1], $alto_fila_manual, $codigo_nie, 1, 0, 'L', $fill);
-                $this->fpdf->Cell($ancho_cols[2], $alto_fila_manual, $nombre_estudiante, 1, 0, 'L', $fill);
-                $this->fpdf->Cell($ancho_cols[3], $alto_fila_manual, $genero, 1, 0, 'C', $fill);
+                
+                // =============================================================
+                // === INICIO: CORRECCIÓN DE CELDAS (ÚLTIMO PARÁMETRO 'true') ===
+                // =============================================================
+                $this->fpdf->Cell($ancho_cols[0], $alto_fila_manual, $fila_numero, 1, 0, 'C', true);
+                $this->fpdf->Cell($ancho_cols[1], $alto_fila_manual, $codigo_nie, 1, 0, 'L', true);
+                $this->fpdf->Cell($ancho_cols[2], $alto_fila_manual, $nombre_estudiante, 1, 0, 'L', true);
+                $this->fpdf->Cell($ancho_cols[3], $alto_fila_manual, $genero, 1, 0, 'C', true);
                 
                 // --- INICIO: LÓGICA PARA "Ret. S/N" (Negrita si es SÍ) ---
                 if ($es_retirado) {
                     $this->fpdf->SetFont('Arial', 'B', 7); // BOLD
                 }
-                $this->fpdf->Cell($ancho_cols[4], $alto_fila_manual, $retirado_SN, 1, 0, 'C', $fill);
+                $this->fpdf->Cell($ancho_cols[4], $alto_fila_manual, $retirado_SN, 1, 0, 'C', true);
                 $this->fpdf->SetFont('Arial', '', 7); // Reset to REGULAR
                 // --- FIN: LÓGICA "Ret. S/N" ---
 
                 // --- MODIFICADO: Columna "N.I. S/N" vacía ---
-                $this->fpdf->Cell($ancho_cols[5], $alto_fila_manual, '', 1, 0, 'C', $fill);
+                $this->fpdf->Cell($ancho_cols[5], $alto_fila_manual, '', 1, 0, 'C', true);
                 
                 // --- INICIO: LÓGICA DE COLOR/NEGRILLA PARA "RESULTADO" ---
                 $this->fpdf->SetFont('Arial', 'B', 7); // Todos son BOLD
@@ -391,7 +398,7 @@ class PrematriculaController extends Controller
                         break;
                 }
                 
-                $this->fpdf->Cell($ancho_cols[6], $alto_fila_manual, $resultado_final_str_iso, 1, 0, 'L', $fill);
+                $this->fpdf->Cell($ancho_cols[6], $alto_fila_manual, $resultado_final_str_iso, 1, 0, 'L', true);
                 
                 // Resetear todo a la normalidad
                 $this->fpdf->SetFont('Arial', '', 7);
@@ -400,17 +407,23 @@ class PrematriculaController extends Controller
 
 
                 // Celdas vacías para "DATOS DEL ENCARGADO"
-                $this->fpdf->Cell($ancho_cols[7], $alto_fila_manual, '', 1, 0, 'L', $fill);
-                $this->fpdf->Cell($ancho_cols[8], $alto_fila_manual, '', 1, 0, 'L', $fill);
-                $this->fpdf->Cell($ancho_cols[9], $alto_fila_manual, '', 1, 0, 'L', $fill);
-                $this->fpdf->Cell($ancho_cols[10], $alto_fila_manual, '', 1, 0, 'L', $fill);
-                $this->fpdf->Cell($ancho_cols[11], $alto_fila_manual, '', 1, 0, 'L', $fill);
-                $this->fpdf->Cell($ancho_cols[12], $alto_fila_manual, '', 1, 0, 'L', $fill);
-                $this->fpdf->Cell($ancho_cols[13], $alto_fila_manual, '', 1, 1, 'L', $fill); // Salto de línea
+                $this->fpdf->Cell($ancho_cols[7], $alto_fila_manual, '', 1, 0, 'L', true);
+                $this->fpdf->Cell($ancho_cols[8], $alto_fila_manual, '', 1, 0, 'L', true);
+                $this->fpdf->Cell($ancho_cols[9], $alto_fila_manual, '', 1, 0, 'L', true);
+                $this->fpdf->Cell($ancho_cols[10], $alto_fila_manual, '', 1, 0, 'L', true);
+                $this->fpdf->Cell($ancho_cols[11], $alto_fila_manual, '', 1, 0, 'L', true);
+                $this->fpdf->Cell($ancho_cols[12], $alto_fila_manual, '', 1, 0, 'L', true);
+                $this->fpdf->Cell($ancho_cols[13], $alto_fila_manual, '', 1, 1, 'L', true); // Salto de línea
                 
+                // =============================================================
+                // === FIN: CORRECCIÓN DE CELDAS ===
+                // =============================================================
+
                 $fila_numero++; 
-                $fill=!$fill;
-                $this->fpdf->SetTextColor(0,0,0); $this->fpdf->SetFillColor(212,230,252);
+                $fill=!$fill; // Alterna el color para la SIGUIENTE fila
+                
+                // Estas líneas se quedan comentadas (¡Correcto!)
+                //$this->fpdf->SetTextColor(0,0,0); $this->fpdf->SetFillColor(212,230,252);
 
             } // FIN DEL FOREACH
 

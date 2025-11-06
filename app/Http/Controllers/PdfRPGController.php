@@ -572,7 +572,7 @@ class PdfRPGController extends Controller
                 foreach($CatalogoAreaAsignatura as $response_area){  $catalogo_area_asignatura_codigo[] = (trim($response_area->codigo)); $catalogo_area_asignatura_area[] = (trim($response_area->descripcion)); }
             $AsignacionAsignatura = DB::table('a_a_a_bach_o_ciclo as aaa')->join('asignatura as a','a.codigo','=','aaa.codigo_asignatura')->join('catalogo_area_asignatura AS cat_area','cat_area.codigo','=','a.codigo_area')
                     ->select('aaa.orden','a.nombre as nombre_asignatura','a.codigo as codigo_asignatura','a.codigo_cc as concepto_calificacion','a.codigo_area','cat_area.descripcion as nombre_area')
-                ->where([['codigo_bach_o_ciclo', '=', $codigo_modalidad],['codigo_grado', '=', $codigo_grado],['codigo_ann_lectivo', '=', $codigo_annlectivo],])->orderBy('aaa.orden','asc')->orderBy('a.codigo_area','asc')->get();
+                ->where([['aaa.codigo_bach_o_ciclo', '=', $codigo_modalidad],['aaa.codigo_grado', '=', $codigo_grado],['aaa.codigo_ann_lectivo', '=', $codigo_annlectivo],])->orderBy('aaa.orden','asc')->orderBy('a.codigo_area','asc')->get();
                 $datos_asignatura = array(); $fila_array_asignatura = 0; $count_asignaturas = array();
                 $datos_asignatura = [ "codigo" => [""], "nombre" => [""], "concepto" => [""], "codigo_area" => [""], "nombre_area" => [""] ];       
                 foreach($AsignacionAsignatura as $response_i){  
@@ -851,10 +851,10 @@ class PdfRPGController extends Controller
                     )
                         ->where([
                             ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
-                            ['codigo_grado', '=', $codigo_grado],
-                            ['codigo_seccion', '=', $codigo_seccion],
-                            ['codigo_turno', '=', $codigo_turno],
-                            ['codigo_ann_lectivo', '=', $codigo_annlectivo],
+                            ['am.codigo_grado', '=', $codigo_grado],
+                            ['am.codigo_seccion', '=', $codigo_seccion],
+                            ['am.codigo_turno', '=', $codigo_turno],
+                            ['am.codigo_ann_lectivo', '=', $codigo_annlectivo],
                             ['am.retirado', '=', 'f'],
                             ])
                         ->orderBy('full_name','asc')
@@ -1126,29 +1126,53 @@ class PdfRPGController extends Controller
                   $header_dibujado = true; // Marcar como dibujado
               }
                 
-                // --- Dibujar fila de notas del estudiante ---
-                // ... (toda tu lógica de $fill, $fila_asignatura, $fila_numero, etc.) ...
-                // (Esta parte es idéntica a tu código original)
-                $this->fpdf->SetFillColor(212, 230, 252); $this->fpdf->SetTextColor(0,0,0); $this->fpdf->SetFont('Arial', '', 7);
-                if($fila_asignatura == $total_asignaturas){ $this->fpdf->ln(); $fila_asignatura = 0; $fila_numero++; $fill=!$fill; }
-                if($fila_asignatura == 0){
-                    $this->fpdf->SetX($table_X_start); // Asegura que empiece en el X de la tabla
-                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$fila_numero,1,0,'L',$fill);            
-                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$codigo_nie,1,0,'L',$fill); // Columna NIE (estática 12)            
-                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$nombre_estudiante,1,0,'L',$fill); 
+              // --- Dibujar fila de notas del estudiante (BLOQUE CORREGIDO) ---
+                
+                $this->fpdf->SetTextColor(0,0,0);
+                $this->fpdf->SetFont('Arial', '', 7);
+
+                // 1. Lógica de fin de fila (se mueve al INICIO)
+                // Si la fila anterior de notas se completó...
+                if($fila_asignatura == $total_asignaturas){
+                    $this->fpdf->ln(); // Salta la línea
+                    $fila_asignatura = 0; // Reinicia el contador de notas
+                    $fila_numero++; // Siguiente estudiante
+                    $fill = !$fill; // Alterna el color para ESTA nueva fila
                 }
                 
-                // --- MODIFICADO ---
-                // Se reemplaza $ancho_cell[4] por $ancho_col_asignatura_dinamico para las celdas de nota
-                if($codigo_area == '07'){ $result_concepto = resultado_concepto($codigo_modalidad, $nota_final); if($result_concepto == "R"){ $this->fpdf->SetTextColor(255,0,0); } $this->fpdf->Cell($ancho_col_asignatura_dinamico,$alto_cell[0],$result_concepto,1,0,'C', $fill);
-                } else { $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final,$codigo_area); if($result[0] == "R"){ $this->fpdf->SetTextColor(255,0,0); } $this->fpdf->Cell($ancho_col_asignatura_dinamico,$alto_cell[0],round($result[1],0),1,0,'C', $fill); }
-                // --- FIN MODIFICADO ---
+                // 2. Establece el color de fondo basado en $fill
+                if ($fill) {
+                    $this->fpdf->SetFillColor(255, 255, 255); // Blanco
+                } else {
+                    $this->fpdf->SetFillColor(212, 230, 252); // Azul claro
+                }
 
+                // 3. Dibuja N, NIE, Nombre (si es la primera celda)
+                if($fila_asignatura == 0){
+                    $this->fpdf->SetX($table_X_start);
+                    // Dibuja las celdas usando 'true' para el parámetro de fondo
+                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$fila_numero,1,0,'L',true); 
+                    $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$codigo_nie,1,0,'L',true); 
+                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$nombre_estudiante,1,0,'L',true); 
+                }
+                
+                // 4. Dibuja la celda de nota (siempre usando 'true' para el fondo)
+                if($codigo_area == '07'){
+                    $result_concepto = resultado_concepto($codigo_modalidad, $nota_final); 
+                    if($result_concepto == "R"){ $this->fpdf->SetTextColor(255,0,0); } 
+                    $this->fpdf->Cell($ancho_col_asignatura_dinamico,$alto_cell[0],$result_concepto,1,0,'C', true);
+                } else { 
+                    $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final,$codigo_area); 
+                    if($result[0] == "R"){ $this->fpdf->SetTextColor(255,0,0); } 
+                    $this->fpdf->Cell($ancho_col_asignatura_dinamico,$alto_cell[0],round($result[1],0),1,0,'C', true); 
+                }
+                
                 $fila_asignatura++; $fila++; 
-                $this->fpdf->SetTextColor(0,0,0); $this->fpdf->SetFillColor(212,230,252);
+                $this->fpdf->SetTextColor(0,0,0); // Resetea el color del texto para la siguiente celda
+                // --- FIN DEL BLOQUE CORREGIDO ---
 
             } // FIN DEL FOREACH
-
+            $this->fpdf->ln();
         // ... (Tu lógica para $linea_faltante, $fill=!$fill, etc.) ...
             // --- BLOQUE 1: MODIFICACIÓN DE FILAS DE RELLENO ---
             
@@ -1156,7 +1180,7 @@ class PdfRPGController extends Controller
             $numero_maximo_filas = 50; 
 
             // El bucle ahora va desde el siguiente estudiante ($fila_numero) hasta 50
-            for ($i = $fila_numero; $i <= $numero_maximo_filas; $i++) {
+            for ($i = $fila_numero+1; $i <= $numero_maximo_filas; $i++) {
                 $this->fpdf->SetX($table_X_start); // Asegura que empiece en el X de la tabla
                 
                 // 1. Dibuja el número de fila
@@ -1180,7 +1204,8 @@ class PdfRPGController extends Controller
 // =================================================================
         // ====== INICIO: DIBUJAR FILAS DE TOTALES Y PROMEDIO (NUEVO) ======
         // =================================================================
-        
+        // Capturamos la Y después de la última fila de relleno
+        $Y_despues_de_relleno = $this->fpdf->GetY();
         $this->fpdf->SetFont('Arial', 'B', 7);
         $this->fpdf->SetFillColor(230, 230, 230); // Gris claro
         
@@ -1191,6 +1216,7 @@ class PdfRPGController extends Controller
 
 
         // --- Fila TOTAL DE PUNTOS ---
+        $this->fpdf->SetY($Y_despues_de_relleno);
         $this->fpdf->SetX($table_X_start);
         $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 0, 'L', true); // Celda vacía para N.º
         $this->fpdf->Cell($ancho_cell[4], $alto_cell[0], '', 1, 0, 'L', true); // Celda vacía para NIE (estática 12)
