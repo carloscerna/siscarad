@@ -24,7 +24,7 @@ class PrematriculaController extends Controller
         
         // --- INDICADOR MANUAL: Alto de Fila ---
         // Modifica este valor para cambiar el alto de todas las filas de datos
-        $alto_fila_manual = 9.5; // 8mm de alto (puedes cambiarlo a 10, 12, etc.)
+        $alto_fila_manual = 13.5; // 8mm de alto (puedes cambiarlo a 10, 12, etc.)
         // --- FIN DE INDICADOR MANUAL ---
         
         // Configurar PDF.
@@ -256,13 +256,13 @@ class PrematriculaController extends Controller
                 15,  // NIE
                 60,  // NOMBRE DEL ESTUDIANTE
                 8,   // SEXO
-                12,  // RETRADO SÍ/NO (Ret. S/N)
-                12,  // NUEVO INGRESO SÍ/NO (N.I. S/N)
+                8,  // RETRADO SÍ/NO (Ret. S/N)
+                8,  // NUEVO INGRESO SÍ/NO (N.I. S/N)
                 18,  // RESULTADO
                 25,  // Nº DUI
                 60,  // NOMBRE COMPLETO (Encargado)
                 20,  // FECHA DE NACIMIENTO
-                40,  // DIRECCION
+                45,  // DIRECCION
                 20,  // TELEFONO
                 20,  // PARENTESCO
                 27.6 // FIRMA (Total: 345.6mm)
@@ -427,7 +427,7 @@ class PrematriculaController extends Controller
                 $this->fpdf->Cell($ancho_cols[6], $alto_fila_manual, $resultado_final_str_iso, 1, 0, 'L', true);
                 
                 // Resetear todo a la normalidad
-                $this->fpdf->SetFont('Arial', '', 7);
+                $this->fpdf->SetFont('Arial', '', 8);
                 $this->fpdf->SetTextColor(0, 0, 0);
                 // --- FIN: LÓGICA "RESULTADO" ---
 

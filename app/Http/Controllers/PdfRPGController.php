@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use GuzzleHttp\Psr7\Header;
 use Illuminate\Support\Facades\DB;
+//use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 
 class PdfRPGController extends Controller
@@ -561,8 +562,43 @@ class PdfRPGController extends Controller
             foreach ($statsData as $row) { $gender = (trim($row->codigo_genero) == '01') ? 'M' : 'F'; $stats[$gender]['inicial'] = $row->total_inicial; $stats[$gender]['retirados'] = $row->total_retirados; $stats[$gender]['final'] = $row->total_final; $stats['Total']['inicial'] += $row->total_inicial; $stats['Total']['retirados'] += $row->total_retirados; $stats['Total']['final'] += $row->total_final; }
             $studentsForPromotion = DB::table('alumno_matricula as am')->join('alumno as a', 'a.id_alumno', '=', 'am.codigo_alumno')->join('nota as n', 'n.codigo_matricula', '=', 'am.id_alumno_matricula')->join('asignatura as asig', 'n.codigo_asignatura', '=', 'asig.codigo')->select('am.id_alumno_matricula', 'a.codigo_genero', 'n.recuperacion', 'n.nota_recuperacion_2', 'n.nota_final', 'asig.codigo_area')->where('am.codigo_bach_o_ciclo', $codigo_modalidad)->where('am.codigo_grado', $codigo_grado)->where('am.codigo_seccion', $codigo_seccion)->where('am.codigo_turno', $codigo_turno)->where('am.codigo_ann_lectivo', $codigo_annlectivo)->where('am.retirado', false)->get();
             $studentsGrades = [];
+
+        // --- INICIO: Definir grados de promoción masiva ---
+        // Estos códigos de grado se considerarán 100% promovidos (si están activos)
+        $grados_promocion_masiva = ['4P', '5P', '6P', '01'];
+        // --- FIN: Definir grados ---
             foreach ($studentsForPromotion as $grade) { $studentsGrades[$grade->id_alumno_matricula]['gender'] = (trim($grade->codigo_genero) == '01') ? 'M' : 'F'; $studentsGrades[$grade->id_alumno_matricula]['grades'][] = [ 'rec_1' => $grade->recuperacion, 'rec_2' => $grade->nota_recuperacion_2, 'final' => $grade->nota_final, 'area' => $grade->codigo_area ]; }
-            foreach ($studentsGrades as $matricula_id => $student) { $isRetenido = false; $gender = $student['gender']; if (empty($student['grades'])) { $isRetenido = true; } else { foreach ($student['grades'] as $grade) { $result = resultado_final( $codigo_modalidad, $grade['rec_1'], $grade['rec_2'], $grade['final'], $grade['area'] ); if ($result[0] == 'R') { $isRetenido = true; break; } } } if ($isRetenido) { $stats[$gender]['retenidos']++; $stats['Total']['retenidos']++; } else { $stats[$gender]['promovidos']++; $stats['Total']['promovidos']++; } }
+
+            foreach ($studentsGrades as $matricula_id => $student) { 
+                $isRetenido = false; 
+                $gender = $student['gender']; 
+                if (in_array($codigo_grado, $grados_promocion_masiva)) {
+                
+                // ¡PROMOCIÓN MASIVA!
+                // Como la consulta $studentsForPromotion ya filtró por `retirado = false`,
+                // sabemos que este estudiante está activo y, por lo tanto, debe ser promovido.
+                $isRetenido = false;
+                }
+                else { foreach ($student['grades'] as $grade) {
+                        $result = resultado_final( $codigo_modalidad, $grade['rec_1'], $grade['rec_2'], $grade['final'], $grade['area'] ); 
+                        if ($result[0] == 'R') 
+                            { $isRetenido = true; break; }
+                         }
+                         } 
+                        if ($isRetenido) 
+                            { $stats[$gender]['retenidos']++; $stats['Total']['retenidos']++; } 
+                    else 
+                        { $stats[$gender]['promovidos']++; $stats['Total']['promovidos']++;
+                 }
+                    // Esta lógica final ahora funciona para ambos casos:
+                        /*if ($isRetenido) { 
+                            $stats[$gender]['retenidos']++; 
+                            $stats['Total']['retenidos']++; 
+                        } else { 
+                            $stats[$gender]['promovidos']++; 
+                            $stats['Total']['promovidos']++; 
+                        }*/
+                }   // for each del $studentsGrades
 
         // ... (pega aquí tus consultas de $catalogo_area_asignatura, $AsignacionAsignatura, $EncargadoGrado, $EncargadoAsignatura) ...
             $catalogo_area_asignatura_codigo = array();	$catalogo_area_asignatura_area = array();
@@ -606,6 +642,62 @@ class PdfRPGController extends Controller
                 $nombre_personal_ea = '';
                 foreach($EncargadoAsignatura as $response_eg){ $codigo_personal_ = mb_convert_encoding(trim($response_eg->id_personal),"ISO-8859-1","UTF-8"); $nombre_personal_ea = mb_convert_encoding(trim($response_eg->full_name),"ISO-8859-1","UTF-8"); }
 
+                // =================================================================
+        // ====== INICIO: GUARDAR/ACTUALIZAR ESTADÍSTICAS EN BD (NUEVO) ======
+        // =================================================================
+        
+           // =================================================================
+        // ====== INICIO: GUARDAR/ACTUALIZAR ESTADÍSTICAS EN BD (NUEVO) ======
+        // =================================================================
+        // --- 1. HABILITAMOS EL LOG DE QUERIES ---
+        DB::enableQueryLog();
+
+        try {
+            DB::commit();
+            // --- Registro Masculino ---
+            DB::table('estadistica_grados')->updateOrInsert(
+                [
+                    // --- Atributos (Cláusula WHERE para buscar) ---
+                    'codigo_bachillerato_ciclo' => $codigo_modalidad,
+                    'codigo_ann_lectivo'        => $codigo_annlectivo,
+                    'codigo_grado'              => $codigo_grado,
+                    'codigo_seccion'            => $codigo_seccion,
+                    'genero'                    => 'Masculino'
+                ],
+                [
+                    // --- Valores (Campos para INSERT o UPDATE) ---
+                    'codigo_docente'      => $codigo_personal_,
+                    'matricula_inicial'   => $stats['M']['inicial'],
+                    'retirados'           => $stats['M']['retirados'],
+                    'matricula_final'     => $stats['M']['final'],
+                    'promovidos'          => $stats['M']['promovidos'],
+                    'retenidos'           => $stats['M']['retenidos']
+                ]
+            );
+
+            // --- Registro Femenino ---
+            DB::table('estadistica_grados')->updateOrInsert(
+                [
+                    'codigo_bachillerato_ciclo' => $codigo_modalidad,
+                    'codigo_ann_lectivo'        => $codigo_annlectivo,
+                    'codigo_grado'              => $codigo_grado,
+                    'codigo_seccion'            => $codigo_seccion,
+                    'genero'                    => 'Femenino'
+                ],
+                [
+                    'codigo_docente'      => $codigo_personal_,
+                    'matricula_inicial'   => $stats['F']['inicial'],
+                    'retirados'           => $stats['F']['retirados'],
+                    'matricula_final'     => $stats['F']['final'],
+                    'promovidos'          => $stats['F']['promovidos'],
+                    'retenidos'           => $stats['F']['retenidos']
+                ]
+            );
+
+        } catch (\Exception $e) {
+            // Si AHORA falla, lo registraremos
+         
+        }
 
         // =================================================================
         // ====== INICIO: DIBUJAR ENCABEZADOS Y ESTADÍSTICAS ======
@@ -1059,6 +1151,12 @@ class PdfRPGController extends Controller
                     // $total_asignaturas ya se calculó anteriormente
                     
                     switch ($total_asignaturas) {
+                        case 42:
+                            $rotado_padding_Y = 2;
+                            break;
+                        case 43:
+                            $rotado_padding_Y = 0;
+                            break;
                         case 9:
                             $rotado_padding_Y = 25;
                             break;

@@ -454,7 +454,7 @@ class CalificacionesPorAsignaturaController extends Controller
                             $nombre_periodo = $nombre_periodos[2];
                             $numero_periodo = '7';
                         break;
-                        case '08':  // nota_recuperacion_2
+                        case '08':  // nota final
                             $nombre_periodo = $nombre_periodos[3];
                             $numero_periodo = '8';
                         break;
