@@ -40,7 +40,7 @@ class CalificacionesPorAsignaturaController extends Controller
     {
         // vERIFICAR EL AÑO LECTIVO ACTIVO
         $annlectivo=Annlectivo::where('estatus', true)->orderBy('codigo', 'desc')->pluck('nombre','codigo')->toarray();
-            return view('CalificacionPorAsignatura.index', compact('annlectivo'));
+            return view('CalificacionPorAsignatura.index', compact('annlectivo'))9 ;
     }
 
     /**

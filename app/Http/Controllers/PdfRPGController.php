@@ -977,7 +977,8 @@ class PdfRPGController extends Controller
                 // Define las áreas que SÍ se deben sumar y promediar
                 $relevantAreas = ['01', '03', '08']; // 01=Básica, 03=Técnica, 08=Complementaria
                 // --- FIN: Inicialización de Acumuladores ---
-
+                // --- NUEVO: Inicializar array para el Ranking ---
+                    $ranking_estudiantes = [];
             foreach($EstudianteBoleta as $response){
                 // ... (toda tu lógica de variables $nombre_completo, $codigo_nie, $nota_actividades_0, etc.) ...
                     $nombre_completo = mb_convert_encoding(trim($response->full_nombres_apellidos),"ISO-8859-1","UTF-8");
@@ -1007,16 +1008,29 @@ class PdfRPGController extends Controller
                         $finalGrade = $result[1]; // El número (ej: 7 o 4)
                         $finalResultLetter = $result[0]; // 'A' o 'R'
 
-                        // 2. Acumulamos si el área es relevante
-                        if(in_array($codigo_area, $relevantAreas)){
-                            if (!isset($subjectTotals[$codigo_asignatura])) {
-                                $subjectTotals[$codigo_asignatura] = 0;
-                                $subjectCounts[$codigo_asignatura] = 0; // Contaremos por si acaso
-                            }
-                            // Sumamos la nota final calculada
-                            $subjectTotals[$codigo_asignatura] += $finalGrade;
-                            $subjectCounts[$codigo_asignatura] += 1;
+                        // --- ACUMULAR PARA RANKING ---
+                    // 1. Asegurar que el estudiante existe en el array
+                    if (!isset($ranking_estudiantes[$codigo_nie])) {
+                        $ranking_estudiantes[$codigo_nie] = [
+                            'nie' => $codigo_nie,
+                            'nombre' => $nombre_estudiante,
+                            'total_puntos' => 0
+                        ];
+                    }
+
+                    // 2. Sumar puntos si el área es relevante
+                    // (Asegúrate que $relevantAreas esté definido arriba en el Paso 1)
+                    if(in_array($codigo_area, $relevantAreas)){
+                        $ranking_estudiantes[$codigo_nie]['total_puntos'] += $finalGrade;
+                        
+                        // Acumuladores por asignatura (si los usas)
+                        if (!isset($subjectTotals[$codigo_asignatura])) {
+                            $subjectTotals[$codigo_asignatura] = 0;
                         }
+                        $subjectTotals[$codigo_asignatura] += $finalGrade;
+                    }
+                    // --- FIN ACUMULACIÓN ---
+                    
                         // --- FIN: Cálculo y Acumulación de Nota ---
                 // --- Dibujar cabecera de la tabla de notas (solo la primera vez) ---
                 if(!$header_dibujado){
@@ -1478,6 +1492,74 @@ class PdfRPGController extends Controller
             $this->fpdf->SetY($this->fpdf->GetPageHeight() - 15);
             $this->fpdf->SetFont('Arial', 'I', 8);
             $this->fpdf->Cell(0, 10, mb_convert_encoding('Generado el: ' . date('d/m/Y H:i:s'), 'ISO-8859-1', 'UTF-8'), 0, 0, 'R');
+
+// =================================================================
+        // ====== INICIO: PÁGINA DE CUADRO DE HONOR (RANKING) ======
+        // =================================================================
+        
+        if (!empty($ranking_estudiantes)) {
+            // 1. Ordenar el array por 'total_puntos' de mayor a menor (Descendente)
+            usort($ranking_estudiantes, function($a, $b) {
+                return $b['total_puntos'] <=> $a['total_puntos'];
+            });
+
+            // 2. Nueva Página
+            $this->fpdf->AddPage();
+            $this->fpdf->SetMargins(20, 20, 20);
+            $this->fpdf->SetY(20);
+
+            // 3. Título de la Página
+            $this->fpdf->SetFont('Arial', 'B', 14);
+            $this->fpdf->Cell(0, 10, mb_convert_encoding('CUADRO DE HONOR - PRIMEROS LUGARES', 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+            $this->fpdf->SetFont('Arial', '', 10);
+            $this->fpdf->Cell(0, 6, mb_convert_encoding("Grado: $nombre_grado_header   Sección: $nombre_seccion_header", 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+            $this->fpdf->Ln(10);
+
+            // 4. Configuración de la Tabla
+            $w_rank = 20;
+            $w_nie = 30;
+            $w_nom = 120; // Más espacio para el nombre
+            $w_pts = 40;
+            $h_row_rank = 8;
+
+            // Cabecera de Tabla
+            $this->fpdf->SetFont('Arial', 'B', 10);
+            $this->fpdf->SetFillColor(200, 200, 200);
+            $this->fpdf->Cell($w_rank, $h_row_rank, mb_convert_encoding('N.º', 'ISO-8859-1', 'UTF-8'), 1, 0, 'C', true);
+            $this->fpdf->Cell($w_nie, $h_row_rank, 'NIE', 1, 0, 'C', true);
+            $this->fpdf->Cell($w_nom, $h_row_rank, 'NOMBRE DEL ESTUDIANTE', 1, 0, 'C', true);
+            $this->fpdf->Cell($w_pts, $h_row_rank, 'TOTAL PUNTOS', 1, 1, 'C', true);
+
+            // 5. Dibujar Filas
+            $this->fpdf->SetFont('Arial', '', 10);
+            $posicion = 1;
+            
+            foreach ($ranking_estudiantes as $estudiante) {
+                // Destacar los primeros 3 lugares
+                if ($posicion <= 3) {
+                    $this->fpdf->SetFont('Arial', 'B', 10); // Negrita para el Top 3
+                } else {
+                    $this->fpdf->SetFont('Arial', '', 10);
+                }
+
+                $this->fpdf->Cell($w_rank, $h_row_rank, $posicion, 1, 0, 'C');
+                $this->fpdf->Cell($w_nie, $h_row_rank, $estudiante['nie'], 1, 0, 'C');
+                $this->fpdf->Cell($w_nom, $h_row_rank, $estudiante['nombre'], 1, 0, 'L');
+                
+                // Puntos con 1 decimal
+                $this->fpdf->Cell($w_pts, $h_row_rank, number_format($estudiante['total_puntos'], 0), 1, 1, 'C');
+
+                $posicion++;
+            }
+            
+            // Pie de página simple para esta hoja
+            $this->fpdf->Ln(5);
+            $this->fpdf->SetFont('Arial', 'I', 8);
+            $this->fpdf->Cell(0, 5, mb_convert_encoding('* Total de puntos calculado en base a asignaturas básicas/relevantes.', 'ISO-8859-1', 'UTF-8'), 0, 1, 'L');
+        }
+        // =================================================================
+        // ====== FIN: PÁGINA DE CUADRO DE HONOR ======
+        // =================================================================
 
         // Construir el nombre del archivo.
             $nombre_archivo = $nombre_modalidad.' '.$nombre_grado . ' ' . $nombre_seccion . ' ' . $nombre_turno . '.pdf';
