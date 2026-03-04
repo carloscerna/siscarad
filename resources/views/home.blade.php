@@ -285,32 +285,28 @@ use Illuminate\Support\Facades;
 
 @section('scripts')
     <script type="text/javascript">
-        $('#codigo_asignatura1').select2();
+        $(document).ready(function() {
+            $('#codigo_asignatura1').select2();
             $('#codigo_asignatura1').on('change', function(e){
                 let valor = $('#codigo_asignatura1').select2('val');
                 let text = $('#codigo_asignatura1 option:selected').text();
-                //@this.set('seleccionado', text);
-            })
+            });
+        });
   
         // BOTON PARA LA BUSQUEDA DE ESTUDIANTES PRESENTES
         $("#BuscarEstudiantesPresentes").click(function () {
-            var PR = 'f';
-           BuscarPresentesRetirados(PR);
-        }); // FIN DE LA FUNCION
+            BuscarPresentesRetirados('f');
+        }); 
 
         // BOTON PARA LA BUSQUEDA DE ESTUDIANTES RETIRADOS
         $("#BuscarEstudiantesRetirados").click(function () {
-            var PR = 't';
-                BuscarPresentesRetirados(PR);
-        }); // FIN DE LA FUNCION
+            BuscarPresentesRetirados('t');
+        }); 
 
-        // funcion onchange
         function BuscarPorAnnLectivo(AnnLectivo) {
-            url_ajax = '{{url("getGradoSeccion")}}' 
-            csrf_token = '{{csrf_token()}}' 
-
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
+            let url_ajax = '{{url("getGradoSeccion")}}'; 
+            let codigo_personal = $('#codigo_personal').val();
+            let codigo_annlectivo = $('#codigo_annlectivo').val();
 
             $.ajax({
                 type: "post",
@@ -318,254 +314,169 @@ use Illuminate\Support\Facades;
                 data: {
                     "_token": "{{ csrf_token() }}",
                     "id": codigo_personal, 
-                    codigo_annlectivo: codigo_annlectivo
+                    "codigo_annlectivo": codigo_annlectivo
                 },
                 dataType: 'json',
                 success:function(data) {
-                    // limpiar empty NominaEstudiantes
-                        $('#contenido').empty();
-                     var miselect=$("#codigo_grado_seccion_turno");
-                             miselect.empty();
-                             miselect.append('<option value="">Seleccionar...</option>');
-                                 $.each( data, function( key, value ) {
-                                        //console.log(value.codigo_gradoseccionturno);
-                                        //console.log(value.nombre_gradoseccionturno);
-                                            miselect.append('<option value="' + value.codigo_gradoseccionturno + '">' + value.nombre_gradoseccionturno + '</option>'); 
-                                });
-                } 
-            });
-        }
-        // funcion onchange. CUANDO SELECCIONO EL GRADO Y SECCION
-        function BuscarPorGradoSeccionIndicadores(GradoSeccion) {
-            // limpiar empty NominaEstudiantes
-                $('#contenido').empty();
-            url_ajax = '{{url("getGradoSeccionIndicadores")}}' 
-            csrf_token = '{{csrf_token()}}' 
-
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
-            codigo_grado_seccion_turno = $('#codigo_grado_seccion_turno').val();
-            // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
-            $.ajax({
-                type: "post",
-                url: url_ajax,
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    "id": codigo_personal, 
-                    codigo_annlectivo: codigo_annlectivo,
-                    codigo_gradoseccionturno: GradoSeccion
-                },
-                dataType: 'json',
-                success:function(data) {
-                    $.each( data, function( key, value ) {
-                        console.log(" Total: " + value.total_estudiantes + 
-                                    " Total Masculino: " + value.total_masculino + 
-                                    " Total Femenino: " + value.total_femenino + 
-                                    " Presentes: " + value.presentes + 
-                                    " Retirados Masculino: " + value.total_retirado_masculino + 
-                                    " Retirados Masculino: " + value.total_retirado_femenino + 
-                                    " Sobreedad: " + value.sobreedad +
-                                    " Repitentes: " + value.repitentes + 
-                                    " Codigo Personal: " + codigo_personal + 
-                                    " Año Lectivo: " + codigo_annlectivo + 
-                                    " Grado-Sección-Turno-Ciclo: " + codigo_grado_seccion_turno);
-                                     // TOTAL DE ALUMNOS MASCULINO Y FEMENINO
-                                            var masculino = Number(value.total_masculino);
-                                            var femenino = Number(value.total_femenino);
-                                            // TOTAL DE ALUMNOS MASCULINO Y FEMENINO RETIRADOS.
-                                            var femenino_retirado = Number(value.total_retirado_femenino);
-                                            var masculino_retirado = Number(value.total_retirado_masculino);
-                                            // TOTAL DE ALUMNOS MASCULINO Y FEMENINO RETIRADOS.
-                                                var total_femenino =  femenino - femenino_retirado;
-                                                var total_masculino = masculino - masculino_retirado;
-                                                var total_retirados = femenino_retirado + masculino_retirado;
-                                            // TOTAL DE ALUMNOS.
-                                            var total_estudiantes = (total_masculino + total_femenino);
-                                        // COLOAR VALOR EN LA ETIQUETA PARA LOS INDICADORES MASCULINO Y FEMENINO.  
-                                            $("label[for='totalEstudiantesFemenino']").text(value.total_femenino); 
-                                            $("label[for='totalEstudiantesMasculino']").text(value.total_masculino); 
-                                            $("label[for='totalEstudiantes']").text(value.total_estudiantes); 
-                                        // COLOAR VALOR EN LA ETIQUETA PARA LOS INDICADORES MASCULINO Y FEMENINO.  
-                                            $("label[for='totalEstudiantesFemeninoPresentes']").text(total_femenino); 
-                                            $("label[for='totalEstudiantesMasculinoPresentes']").text(total_masculino); 
-                                            $("label[for='totalEstudiantesPresentes']").text(total_estudiantes); 
-                                        // COLOAR VALOR EN LA ETIQUETA PARA LOS INDICADORES MASCULINO Y FEMENINO.  RETIRADOS
-                                            $("label[for='totalEstudiantesFemeninoRetirados']").text(femenino_retirado); 
-                                            $("label[for='totalEstudiantesMasculinoRetirados']").text(masculino_retirado); 
-                                            $("label[for='totalEstudiantesRetirados']").text(total_retirados); 
-                    });
-                } 
-            });
-        }
-
-        // FUNCION PARA PRESENTES O RETIRADOS.
-        function BuscarPresentesRetirados(PR) {
-            var codigo_annlectivo = $('#codigo_annlectivo').val();
-            var codigo_institucion = $('#codigo_institucion').val();
-            var codigo_gradoseccionturno = $('#codigo_grado_seccion_turno').val();
-            var presentes_retirados = PR;
-                console.log(codigo_annlectivo + ' ' + codigo_gradoseccionturno);
-            if(codigo_annlectivo == '00' || codigo_gradoseccionturno == '00'){
-                alert('Debe seleccionar Año Lectivo y Grado-Sección-Turno');
-                    $('#codigo_annlectivo').focus();
-            }else{
-                // Botón Otro... visible.
-				    $("#NominaEstudiantes").css("display","block");
-                // CUANDO SE HA SELECCIONADO UN GRADO...
-                url_ajax = '{{url("getGradoSeccionPresentes")}}' 
-                csrf_token = '{{csrf_token()}}' 
-
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
-            // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
-            $.ajax({
-                type: "post",
-                url: url_ajax,
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    "id": codigo_personal, 
-                    codigo_annlectivo: codigo_annlectivo,
-                    codigo_institucion: codigo_institucion,
-                    codigo_gradoseccionturno: codigo_gradoseccionturno,
-                    presentes_retirados: presentes_retirados
-                },
-                dataType: 'json',
-                success:function(data) {
-                    var linea = 0; var html= "";
                     $('#contenido').empty();
-                    $('#contenido').append(data);
+                    let miselect = $("#codigo_grado_seccion_turno");
+                    miselect.empty();
+                    miselect.append('<option value="00">Seleccionar...</option>');
                     $.each( data, function( key, value ) {
-                        linea = linea + 1;
-                        // validar para cambiar de color la l{inea}
-                        if (linea % 2 === 0) {
-                            fila_color = '<tr style=background:#A5FFA5; text-color:black;>';
-                        }else{
-                            fila_color = '<tr style=background: #FFFFFF; text-color:black;>';
-                        }
-                        // validar si es cero la calificación
-                        if(parseFloat(value.nota_actividad) == 0){
-                            style = " style='background: #FFC5C5; color: #FA4646;'";
-                        }else{
-                            style = " style='background: #FAFAFA; color: black;'";
-                        } 
-                        // ARMAR VARIABLE QUE CONTENGA LOS DATOS PARA PODER OBTENER LA INFORMACION DE LA BOLETA DE CALIFICACIONES
-                        //
-                            var codigo_nie = value.codigo_nie;
-                            var codigo_alumno = value.codigo_alumno;
-                            var nombre_foto = value.foto;
-
-                            var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim() + "-"+ codigo_personal;
-
-                            var descargar_si = "-SI";
-                            var descargar_no = "-NO";
-                        // ARMAR URL, para ver o descargar la boleta.
-                            var url = '{{ url("/pdf", "id") }}';
-                            url = url.replace('id', datos_estudiantes);
-                        // armar el thml de la tabla.
-                        html += fila_color +
-                        '<td>' + linea + '</td>' +
-                        '<td><img src=' +nombre_foto+ ' width=120 height=140></td>' +
-                        '<td>' + value.codigo_nie + '</td>' +
-                        '<td>' + value.apellidos_nombres_estudiantes + '</td>' +
-                        '<td><a class="btn btn-info" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
-                            '<a class="btn btn-secondary" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i>'+
-                                
-                            '</td>'+
-                        '</tr>';
-                        
+                        miselect.append('<option value="' + value.codigo_gradoseccionturno + '">' + value.nombre_gradoseccionturno + '</option>'); 
                     });
-                    $('#contenido').html(html);
-                    $('#contenido').focus();
-                        toastr.success("Registros Encontrados... " + linea, "Sistema");
                 } 
             });
+        }
+
+        function BuscarPorGradoSeccionIndicadores(GradoSeccion) {
+            $('#contenido').empty();
+            let url_ajax = '{{url("getGradoSeccionIndicadores")}}'; 
+
+            let codigo_personal = $('#codigo_personal').val();
+            let codigo_annlectivo = $('#codigo_annlectivo').val();
+            let codigo_grado_seccion_turno = $('#codigo_grado_seccion_turno').val();
+
+            $.ajax({
+                type: "post",
+                url: url_ajax,
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "id": codigo_personal, 
+                    "codigo_annlectivo": codigo_annlectivo,
+                    "codigo_gradoseccionturno": GradoSeccion
+                },
+                dataType: 'json',
+                success:function(data) {
+                    $.each( data, function( key, value ) {
+                        let masculino = Number(value.total_masculino);
+                        let femenino = Number(value.total_femenino);
+                        let femenino_retirado = Number(value.total_retirado_femenino);
+                        let masculino_retirado = Number(value.total_retirado_masculino);
+                        
+                        let total_femenino =  femenino - femenino_retirado;
+                        let total_masculino = masculino - masculino_retirado;
+                        let total_retirados = femenino_retirado + masculino_retirado;
+                        let total_estudiantes = (total_masculino + total_femenino);
+
+                        $("label[for='totalEstudiantesFemenino']").text(value.total_femenino); 
+                        $("label[for='totalEstudiantesMasculino']").text(value.total_masculino); 
+                        $("label[for='totalEstudiantes']").text(value.total_estudiantes); 
+                        
+                        $("label[for='totalEstudiantesFemeninoPresentes']").text(total_femenino); 
+                        $("label[for='totalEstudiantesMasculinoPresentes']").text(total_masculino); 
+                        $("label[for='totalEstudiantesPresentes']").text(total_estudiantes); 
+                        
+                        $("label[for='totalEstudiantesFemeninoRetirados']").text(femenino_retirado); 
+                        $("label[for='totalEstudiantesMasculinoRetirados']").text(masculino_retirado); 
+                        $("label[for='totalEstudiantesRetirados']").text(total_retirados); 
+                    });
+                } 
+            });
+        }
+
+        function BuscarPresentesRetirados(PR) {
+            let codigo_annlectivo = $('#codigo_annlectivo').val();
+            let codigo_institucion = $('#codigo_institucion').val();
+            let codigo_gradoseccionturno = $('#codigo_grado_seccion_turno').val();
+            
+            if(codigo_annlectivo == '00' || codigo_gradoseccionturno == '00' || codigo_gradoseccionturno == null){
+                alert('Debe seleccionar Año Lectivo y Grado-Sección-Turno');
+                $('#codigo_annlectivo').focus();
+            } else {
+                $("#NominaEstudiantes").css("display","block");
+                let url_ajax = '{{url("getGradoSeccionPresentes")}}'; 
+                let codigo_personal = $('#codigo_personal').val();
+
+                $.ajax({
+                    type: "post",
+                    url: url_ajax,
+                    data: {
+                        "_token": "{{ csrf_token() }}",
+                        "id": codigo_personal, 
+                        "codigo_annlectivo": codigo_annlectivo,
+                        "codigo_institucion": codigo_institucion,
+                        "codigo_gradoseccionturno": codigo_gradoseccionturno,
+                        "presentes_retirados": PR
+                    },
+                    dataType: 'json',
+                    success:function(data) {
+                        let linea = 0; 
+                        let html = "";
+                        $('#contenido').empty();
+                        // MEJORA: Eliminado el $('#contenido').append(data) que generaba el error.
+
+                        $.each( data, function( key, value ) {
+                            linea++;
+                            let fila_color = (linea % 2 === 0) ? '<tr style="background:#A5FFA5; color:black;">' : '<tr style="background:#FFFFFF; color:black;">';
+                            
+                            let datos_estudiantes = value.codigo_nie.trim() + "-" + value.codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() + "-" + codigo_institucion.trim() + "-" + codigo_personal;
+
+                            let url = '{{ url("/pdf", "id") }}'.replace('id', datos_estudiantes);
+
+                            html += fila_color +
+                            '<td>' + linea + '</td>' +
+                            '<td><img src="' + value.foto + '" width="60" height="70" class="img-thumbnail"></td>' +
+                            '<td>' + value.codigo_nie + '</td>' +
+                            '<td>' + value.apellidos_nombres_estudiantes + '</td>' +
+                            '<td><a class="btn btn-info mr-1" target="_blank" href="'+url+'-NO"><i class="fas fa-file"></i></a>'+
+                                '<a class="btn btn-secondary" target="_blank" href="'+url+'-SI"><i class="fas fa-download"></i></a>'+
+                            '</td></tr>';
+                        });
+
+                        $('#contenido').html(html);
+                        
+                        if(linea > 0) {
+                            toastr.success("Registros Encontrados: " + linea, "Sistema");
+                        } else {
+                            toastr.info("No se encontraron estudiantes.", "Sistema");
+                        }
+                    } 
+                });
             } 
         }
 
-        // Reporte de Calificaciones por Grado.
+        // Funciones de Reportes
         function ReportePorGrado() {
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
-            codigo_grado_seccion_turno = $('#codigo_grado_seccion_turno').val();
-            codigo_institucion = $("#codigo_institucion").val();
-            tablero = "Tablero";
-
-            if(codigo_annlectivo == "00" || codigo_grado_seccion_turno == "00"){
-                toastr.warning("Debe Seleccionar Año Lectivo y Grado-Sección-Turno", "Sistema");
-                    return;
-            }
-            var datos_estudiantes = tablero + "-" + codigo_grado_seccion_turno + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;
-            // ARMAR URL
-                var url = '{{ url("/pdfRPG", "id") }}';
-                url = url.replace('id', datos_estudiantes);
-            // abrir ventana emergente con el pdf de las califiaciones por asignatura.
-                AbrirVentana(url);
+            GenerarReporteGral('{{ url("/pdfRPG", "id") }}', "Tablero");
         }
-                // Reporte de Calificaciones Boletas.
         function ReporteBoletaCalificaciones() {
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
-            codigo_grado_seccion_turno = $('#codigo_grado_seccion_turno').val();
-            codigo_institucion = $("#codigo_institucion").val();
-            tablero = "Tablero";
-
-            if(codigo_annlectivo == "00" || codigo_grado_seccion_turno == "00"){
-                toastr.warning("Debe Seleccionar Año Lectivo y Grado-Sección-Turno", "Sistema");
-                    return;
-            }
-            var datos_estudiantes = tablero + "-" + codigo_grado_seccion_turno + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;
-            // ARMAR URL
-                var url = '{{ url("/pdf", "id") }}';
-                url = url.replace('id', datos_estudiantes);
-            // abrir ventana emergente con el pdf de las califiaciones por asignatura.
-                AbrirVentana(url);
+            GenerarReporteGral('{{ url("/pdf", "id") }}', "Tablero");
         }
-        // Reporte Licencias y Permisos.
-        function ReporteLicenciasPermisos() {
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
-            nombre_annlectivo = $('#codigo_annlectivo option:selected').html();
-            codigo_institucion = $("#codigo_institucion").val();
-            tablero = "Tablero";
-
-            if(codigo_annlectivo == "00" || codigo_grado_seccion_turno == "00"){
-                toastr.warning("Debe Seleccionar Año Lectivo", "Sistema");
-                    return;
-            }
-            var datos_personal = tablero + "-" + nombre_annlectivo.trim() + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;
-            // ARMAR URL
-                var url = '{{ url("/pdfRLyP", "id") }}';
-                url = url.replace('id', datos_personal);
-            // abrir ventana emergente con el pdf de las califiaciones por asignatura.
-                AbrirVentana(url);
-        }
-        
-        // Reporte de Prematrícula
         function ReportePrematricula() {
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
-            codigo_grado_seccion_turno = $('#codigo_grado_seccion_turno').val();
-            codigo_institucion = $("#codigo_institucion").val();
-            tablero = "Tablero";
-
-            if(codigo_annlectivo == "00" || codigo_grado_seccion_turno == "00"){
-                toastr.warning("Debe Seleccionar Año Lectivo y Grado-Sección-Turno", "Sistema");
-                    return;
-            }
-            var datos_estudiantes = tablero + "-" + codigo_grado_seccion_turno + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;
-            
-            // ARMAR URL (Asegúrate que esta ruta exista en routes/web.php)
-                var url = '{{ url("/prematricula", "id") }}';
-                url = url.replace('id', datos_estudiantes);
-            
-            // abrir ventana emergente con el pdf
-                AbrirVentana(url);
+            GenerarReporteGral('{{ url("/prematricula", "id") }}', "Tablero");
         }
-        // Abrir ventana por el URL
-        function AbrirVentana(url)
-            {
-                window.open(url, '_blank');
-                return false;
+        function ReporteLicenciasPermisos() {
+            let codigo_personal = $('#codigo_personal').val();
+            let codigo_annlectivo = $('#codigo_annlectivo').val();
+            let nombre_annlectivo = $('#codigo_annlectivo option:selected').html();
+            let codigo_institucion = $("#codigo_institucion").val();
+
+            if(codigo_annlectivo == "00"){
+                toastr.warning("Debe Seleccionar Año Lectivo", "Sistema");
+                return;
             }
+            let datos = "Tablero-" + nombre_annlectivo.trim() + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;
+            AbrirVentana('{{ url("/pdfRLyP", "id") }}'.replace('id', datos));
+        }
+
+        function GenerarReporteGral(ruta_url, tablero) {
+            let codigo_personal = $('#codigo_personal').val();
+            let codigo_annlectivo = $('#codigo_annlectivo').val();
+            let codigo_grado_seccion_turno = $('#codigo_grado_seccion_turno').val();
+            let codigo_institucion = $("#codigo_institucion").val();
+
+            if(codigo_annlectivo == "00" || codigo_grado_seccion_turno == "00" || codigo_grado_seccion_turno == null){
+                toastr.warning("Debe Seleccionar Año Lectivo y Grado-Sección-Turno", "Sistema");
+                return;
+            }
+            let datos = tablero + "-" + codigo_grado_seccion_turno + "-" + codigo_annlectivo.trim() + "-" + codigo_personal + "-" + codigo_institucion;
+            AbrirVentana(ruta_url.replace('id', datos));
+        }
+
+        function AbrirVentana(url) {
+            window.open(url, '_blank');
+            return false;
+        }
     </script>
 @endsection
