@@ -340,64 +340,203 @@ use Illuminate\Support\Facades;
                 $('#contenido').empty().append('<tr><td colspan="5" class="text-center">Seleccione Actividad...</td></tr>');
         }
         // funcion onchange. CUANDO SELECCIONO EL PERIODO
-        function BuscarPorActividadPorcentaje() {
-    var codigo_grado = $("#codigo_grado").val();
-    var codigo_seccion = $("#codigo_seccion").val();
-    var codigo_asignatura = $("#codigo_asignatura").val();
-    var codigo_periodo = $("#codigo_periodo").val();
-    var codigo_institucion = $("#codigo_institucion").val();
+        function BuscarPorActividadPorcentaje(ActividadPorcentaje) {
+			// Botón Otro... visible.
+				$("#NominaEstudiantes").css("display","block");
+            // Evaluar si es 00
+                if(ActividadPorcentaje == '00'){
+                    $("#contenido").empty().append('<tr><td colspan="5" class="text-center">Seleccione una Actividad...</td></tr>');
+                    return;
+                }
+            url_ajax = '{{url("getGradoSeccionCalificacionesAsignaturas")}}'; 
+            csrf_token = '{{csrf_token()}}'; 
 
-    if (!codigo_grado || !codigo_seccion || !codigo_asignatura || !codigo_periodo) return;
+            codigo_personal = $('#codigo_personal').val();
+            var codigo_annlectivo = $('#codigo_annlectivo').val();
+            codigo_asignatura_area = $("#codigo_asignatura").val();
 
-    $("#filas_nomina").empty().append('<tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando nómina...</td></tr>');
+            conteo_codigo_asignatura = codigo_asignatura_area.length;
+            if(conteo_codigo_asignatura == 4){
+                codigo_asignatura = codigo_asignatura_area.substring(0,2);
+                codigo_area = codigo_asignatura_area.substring(2,4);
+            }else if(conteo_codigo_asignatura == 6){
+                codigo_asignatura = codigo_asignatura_area.substring(0,4);
+                codigo_area = codigo_asignatura_area.substring(4,6);
+                console.log("Código Asignatura:  " + codigo_asignatura);
+                console.log("Código Area:  " + codigo_area);
+            }
+            else{
+                codigo_asignatura = codigo_asignatura_area.substring(0,3);
+                codigo_area = codigo_asignatura_area.substring(3,5);
+            }
+            // CDIGO PRERIO, GRADOSECCIONTURNO - CODIGO INSTTIUCION
+                codigo_periodo = $("#codigo_periodo").val();
+                //console.log("Código Período: " + codigo_periodo);
+                // codigo periodo 2 digitos. 
+                codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
+                // codigo modalidad.
+                codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
+                    console.log("Codigo Modalidad: " + codigo_modalidad);
+                codigo_institucion = $("#codigo_institucion").val();
+            // VALIDAR SELECT ANTES DE CONSULTAR LA INFORMACIÓN
+            //
+            //
+                if(codigo_asignatura_area == "" || codigo_asignatura_area == "00"){
+                    // Display an info toast with no title
+                        toastr.error("!Seleccione la Asignatura!", "Sistema");
+                        $("#NominaEstudiantes").css("display","none");
+                        exit;
+                }
+            // MUESTRA CARGANDO
+            $('#contenido').empty().append('<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando nómina...</td></tr>');
 
-    $.get("{{ url('calificaciones/buscar-estudiantes') }}", {
-        codigo_grado, codigo_seccion, codigo_asignatura, codigo_periodo, codigo_institucion
-    }, function(data) {
-        $("#filas_nomina").empty();
-        
-        $.each(data, function(index, element) {
-            // Extraer notas dinámicamente según periodo
-            let n1 = element['nota_a1_' + codigo_periodo] || 0;
-            let n2 = element['nota_a2_' + codigo_periodo] || 0;
-            let n3 = element['nota_a3_' + codigo_periodo] || 0;
-            let rec = element['nota_r_' + codigo_periodo] || 0;
-            let prom = element['nota_p_p_' + codigo_periodo] || 0;
+            $.ajax({
+                type: "post",
+                url: url_ajax,
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    codigo_annlectivo: codigo_annlectivo,
+                    codigo_gradoseccionturno: codigo_gradoseccionturno,
+                    codigo_asignatura: codigo_asignatura,
+                    codigo_area: codigo_area,
+                    codigo_actividad: ActividadPorcentaje,
+                    codigo_periodo: codigo_periodo
+                },
+                dataType: 'json',
+                success:function(data) {
+                    var linea = 0; var html= "";
+                    $('#contenido').empty();
+                    //$('#contenido').append(data); // Esto estaba mal, 'data' es JSON
+                    $.each( data, function( key, value ) {
+                        linea = linea + 1;
+                        // validar para cambiar de color la l{inea}
+                        if (linea % 2 === 0) {
+                            fila_color = '<tr style=background:#E2EAF4; text-color:black;>';
+                        }else{
+                            fila_color = '<tr style=background: #FFFFFF; text-color:black;>';
+                        }
+                        // validar si es cero la calificación
+                        if(parseFloat(value.nota_actividad) == 0){
+                            style = " style='background: #FFC5C5; color: #FA4646;'";
+                        }else{
+                            style = " style='background: #FAFAFA; color: black;'";
+                        } 
+                        // ARMAR VARIABLE QUE CONTENGA LOS DATOS PARA PODER OBTENER LA INFORMACION DE LA BOLETA DE CALIFICACIONES
+                        //
+                            var codigo_nie = value.codigo_nie;
+                            var codigo_alumno = value.codigo_alumno;
+                            var codigo_matricula = value.codigo_matricula;
 
-            $("#filas_nomina").append(`
-                <tr id="fila_${element.id_notas}">
-                    <td>${index + 1}</td>
-                    <td class="text-dark font-weight-bold">${element.nombre_completo}</td>
-                    <td><input type="number" name="notas[${element.id_notas}][n1]" value="${n1}" class="form-control form-control-sm text-center calc-prom" data-id="${element.id_notas}" step="0.1" min="0" max="10"></td>
-                    <td><input type="number" name="notas[${element.id_notas}][n2]" value="${n2}" class="form-control form-control-sm text-center calc-prom" data-id="${element.id_notas}" step="0.1" min="0" max="10"></td>
-                    <td><input type="number" name="notas[${element.id_notas}][n3]" value="${n3}" class="form-control form-control-sm text-center calc-prom" data-id="${element.id_notas}" step="0.1" min="0" max="10"></td>
-                    <td><input type="number" name="notas[${element.id_notas}][rec]" value="${rec}" class="form-control form-control-sm text-center bg-light" step="0.1" min="0" max="10"></td>
-                    <td class="text-center"><span class="badge badge-info prom-label" id="prom_${element.id_notas}">${prom}</span></td>
-                    <td class="text-center">
-                        <div class="custom-checkbox custom-control">
-                            <input type="checkbox" class="custom-control-input chk-estudiante" id="chk${element.id_notas}" data-email="${element.email}" data-id="${element.id_notas}">
-                            <label for="chk${element.id_notas}" class="custom-control-label">&nbsp;</label>
-                        </div>
-                    </td>
-                </tr>
-            `);
-        });
-    });
-}
+                            // String completo para generar PDF (igual al de la boleta individual)
+                            var datos_estudiantes_pdf = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim() + "-"+ codigo_personal;
+                            // Email del estudiante (como lo pediste)
+                            var email_estudiante = codigo_nie.trim() + '@clases.edu.sv';
 
-// Script para calcular promedio visualmente mientras escriben
-$(document).on('input', '.calc-prom', function() {
-    let id = $(this).data('id');
-    let n1 = parseFloat($(`input[name="notas[${id}][n1]"]`).val()) || 0;
-    let n2 = parseFloat($(`input[name="notas[${id}][n2]"]`).val()) || 0;
-    let n3 = parseFloat($(`input[name="notas[${id}][n3]"]`).val()) || 0;
-    
-    let total = (n1 * 0.35) + (n2 * 0.35) + (n3 * 0.30);
-    $(`#prom_${id}`).text(total.toFixed(1));
-    
-    if(total < 6) $(`#prom_${id}`).removeClass('badge-info').addClass('badge-danger');
-    else $(`#prom_${id}`).removeClass('badge-danger').addClass('badge-info');
-});
+                            var datos_estudiantes = codigo_nie.trim() + "-" + codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim() + "-"+ codigo_personal;
+                            var descargar_si = "-SI";
+                            var descargar_no = "-NO";
+                        // ARMAR URL
+                            var url = '{{ url("/pdf", "id") }}';
+                            url = url.replace('id', datos_estudiantes);
+                        //
+                        //  armar el thml de la tabla.
+                        //  EN ESTE APARTADO QUE DIFERENCIA CUANDO ES PERIODO NORMAL Y PERIODO EXTAORDINARIO.
+                        //  
+                            var valor_nota_final = 0; var valor_bm = "";
+                            if(codigo_periodo == '06' || codigo_periodo == '07'){
+
+                                if(codigo_modalidad >= '03' && codigo_modalidad <= '05' || codigo_modalidad == '18' || codigo_modalidad == '19' || codigo_modalidad == '17'){ // EDUCACI{ON BASICA}
+                                    valor_nota_final = 5; valor_bm = "Basica";
+                                }else if(codigo_modalidad >= '06' && codigo_modalidad <= '09' || codigo_modalidad == '21' || codigo_modalidad == '15'){   // EDUCACION MEDIA
+                                    valor_nota_final = 6; valor_bm = "Media";
+                                    console.log("valor: " + valor_nota_final + " valor m: " + valor_bm);
+                                }else if(codigo_modalidad == '10' || codigo_modalidad == '12'){   // NOCTURNA BASICA
+                                    valor_nota_final = 5; valor_bm = "Basica";
+                                }else if(codigo_modalidad == '11'){   // NOCTURNA MEDIA
+                                    valor_nota_final = 6; valor_bm = "Media";
+                                }else{
+                                    valor_nota_final = 5;
+                                }
+
+                                // validar matricula final. EDUCACIÓN BÁSICA
+                                    if(value.nota_final < valor_nota_final && valor_bm == "Basica"){
+                                        html += fila_color +
+                                            '<td>' + linea + '</td>' +
+                                            '<td>' + value.codigo_nie + '</td>' +
+                                            '<td>' + value.full_name + '</td>' +
+                                            "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
+                                                "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
+                                                "<input type=hidden name=_method value=PUT>"+"</td>" +
+                                            // ===== 3. AÑADIR EL TD PARA EL CHECKBOX INDIVIDUAL =====
+                                            '<td class="text-center">' +
+                                                            '<input type="checkbox" class="check-boleta" ' +
+                                                            'data-url-ver="'+url+descargar_no+'" ' +
+                                                            'data-url-descargar="'+url+descargar_si+'" '+
+                                                            'data-email="'+email_estudiante+'" ' +           // <-- AÑADIDO
+                                                            'data-pdf-string="'+datos_estudiantes_pdf+'">' + // <-- AÑADIDO
+                                                        '</td>' +
+                                                '<td><a class="btn btn-info btn-sm" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
+                                                '<a class="btn btn-secondary btn-sm" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
+                                            '</tr>';
+                                    }
+                                // validar matricula final. EDUCACIÓN MEDIA
+                                if(value.nota_final < valor_nota_final && valor_bm == "Media"){
+                                        html += fila_color +
+                                            '<td>' + linea + '</td>' +
+                                            '<td>' + value.codigo_nie + '</td>' +
+                                            '<td>' + value.full_name + '</td>' +
+                                            "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
+                                                "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
+                                                "<input type=hidden name=_method value=PUT>"+"</td>" +
+                                            // ===== 3. AÑADIR EL TD PARA EL CHECKBOX INDIVIDUAL =====
+                                            '<td class="text-center">' +
+                                                            '<input type="checkbox" class="check-boleta" ' +
+                                                            'data-url-ver="'+url+descargar_no+'" ' +
+                                                            'data-url-descargar="'+url+descargar_si+'" '+
+                                                            'data-email="'+email_estudiante+'" ' +           // <-- AÑADIDO
+                                                            'data-pdf-string="'+datos_estudiantes_pdf+'">' + // <-- AÑADIDO
+                                                        '</td>' +
+                                                '<td><a class="btn btn-info btn-sm" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file"></i>'+
+                                                '<a class="btn btn-secondary btn-sm" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></td>'+
+                                            '</tr>';
+                                    }
+                            }else{
+                                html += fila_color +
+                                '<td>' + linea + '</td>' +
+                                '<td>' + value.codigo_nie + '</td>' +
+                                '<td>' + value.full_name + '</td>' +
+                                "<td><input type=number step=0.1 class=form-control name=calificacion id=calificacion value=" + value.nota_actividad + " max=10.0 min=0.0 maxlength=4 " + style + " oninput='maxLengthNumber(this)'>" +
+                                    "<input type=hidden class=form-control name=codigo_calificacion id=codigo_calificacion value=" + value.id_notas + ">"+
+                                    "<input type=hidden name=_method value=PUT>"+"</td>" +
+                                // ===== 3. AÑADIR EL TD PARA EL CHECKBOX INDIVIDUAL =====
+                                '<td class="text-center">' +
+                                                            '<input type="checkbox" class="check-boleta" ' +
+                                                            'data-url-ver="'+url+descargar_no+'" ' +
+                                                            'data-url-descargar="'+url+descargar_si+'" '+
+                                                            'data-email="'+email_estudiante+'" ' +           // <-- AÑADIDO
+                                                            'data-pdf-string="'+datos_estudiantes_pdf+'">' + // <-- AÑADIDO
+                                                        '</td>' +
+                                    '<td><a class="btn btn-info btn-sm" target="_blank" href="'+url+descargar_no+'"><i class="fas fa-file-alt"></i></a> '+
+                                    '<a class="btn btn-secondary btn-sm" target="_blank" href="'+url+descargar_si+'"><i class="fas fa-download"></i></a></td>'+
+                                '</tr>';
+                            }
+                            
+                    });
+                    $('#contenido').html(html);
+                    $('#contenido').focus();
+                        // ===== 4. MOSTRAR BOTONES Y MENSAJE =====
+                        if(linea > 0){
+                            toastr.success("Registros Encontrados... " + linea, "Sistema");
+                            // Mostrar todos los botones de acciones masivas
+                            $('#btnVerSeleccionados, #btnDescargarSeleccionados, #btnEnviarCorreos').show();
+                        } else {
+                            // ... (tu toastr.info) ...
+                            $('#btnVerSeleccionados, #btnDescargarSeleccionados, #btnEnviarCorreos').hide();
+                        }
+                } 
+            });
+        }
+        // Reporte de Calificaciones por asignatura.
         function ReportePorAsignatura() {
             // ... (tu código) ...
              var codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
@@ -470,30 +609,76 @@ $(document).on('input', '.calc-prom', function() {
             }).then((result) => {
                 if (result.isConfirmed) {
                     // Si confirma, llama a la función original de guardado
-                    $("#btnGuardarCalificaciones").click(function(e) {
-                e.preventDefault();
-                let formData = $("#form-calificaciones").serialize(); // Asegúrate que tu tabla esté dentro de un <form id="form-calificaciones">
-
-                $.ajax({
-                    url: "{{ route('calificaciones.store') }}",
-                    type: "POST",
-                    data: formData + "&_token={{ csrf_token() }}&codigo_periodo=" + $("#codigo_periodo").val(),
-                    success: function(response) {
-                        if(response.status === 'success') toastr.success(response.message);
-                        else toastr.error(response.message);
-                    }
-                });
-            });
+                    GuardarRegistros();
                 }
             });
         }
 
         // funcionar para guardar las calificaciones. (Esta es la función original)
         function GuardarRegistros() {
-         
+            csrf_token = '{{csrf_token()}}';
+
+            codigo_personal = $('#codigo_personal').val();
+            codigo_annlectivo = $('#codigo_annlectivo').val();
+            codigo_asignatura_area = $("#codigo_asignatura").val();
+            conteo_codigo_asignatura = codigo_asignatura_area.length;
+            if(conteo_codigo_asignatura == 4){
+                codigo_asignatura = codigo_asignatura_area.substring(0,2);
+                codigo_area = codigo_asignatura_area.substring(2,4);
+            }else if(conteo_codigo_asignatura == 6){
+                codigo_asignatura = codigo_asignatura_area.substring(0,4);
+                codigo_area = codigo_asignatura_area.substring(4,6);
+                console.log("Código Asignatura:  " + codigo_asignatura);
+                console.log("Código Area:  " + codigo_area);
+            }else{
+                codigo_asignatura = codigo_asignatura_area.substring(0,3);
+                codigo_area = codigo_asignatura_area.substring(3,5);
+            }
+            codigo_actividad = $("#codigo_actividad_porcentaje").val();
+            codigo_periodo = $("#codigo_periodo").val();
+            codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
+            // leer tabla de datos con ID y calificaciòn.
+            var $objCuerpoTabla=$("#TablaNominaEstudiantes").children().prev().parent();
+                var codigo_calificacion_ = []; var calificacion_ = [];               
+                var fila = 0;
+                // recorre el contenido de la tabla.
+                $objCuerpoTabla.find("tbody tr").each(function(){
+                                var codigo_calificacion =$(this).find('td').eq(3).find("input[name='codigo_calificacion']").val();
+                                var calificacion =$(this).find('td').eq(3).find("input[name='calificacion']").val();
+                        // dar valor a las arrays.
+                        codigo_calificacion_[fila] = codigo_calificacion;
+                        calificacion_[fila] = calificacion;
+                        fila = fila + 1;
+                });
+                url_ajax = "{{ URL('/getActualizarCalificacion') }}"; 
+            //////
+            $.ajax({
+                type: "PUT",
+                url: url_ajax,
+                data: {
+                    _token:'{{ csrf_token() }}',
+                    codigo_annlectivo: codigo_annlectivo,
+                    codigo_gradoseccionturno: codigo_gradoseccionturno,
+                    codigo_asignatura: codigo_asignatura,
+                    codigo_area: codigo_area,
+                    codigo_actividad: codigo_actividad,
+                    codigo_periodo: codigo_periodo,
+                    codigo_calificacion: codigo_calificacion_,
+                    calificacion: calificacion_,
+                    fila: fila
+                },
+                dataType: 'json',
+                success:function(data) {
+                   $('#codigo_annlectivo').focus();
+                    // Display an info toast with no title
+                    toastr.success("¡Calificaciones actualizadas exitosamente!", "Sistema");
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    // Añadido manejo de error
+                    toastr.error("Error al guardar: " + errorThrown, "Sistema");
+                }
+            });
         }
-        
-        
         // MAXIM DE NUMEROS DEPENDE DE LA CALIFIACIÓN.
         function maxLengthNumber(valor) {
             // ... (tu código) ...

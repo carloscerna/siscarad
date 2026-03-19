@@ -58,6 +58,68 @@
 
 @include('profile.change_password')
 @include('profile.edit_profile')
+<script>
+    let timer;
+    // 5 minutos de espera antes del aviso
+    const inactivityTime = 5 * 60 * 1000; 
+
+    function resetTimer() {
+        clearTimeout(timer);
+        timer = setTimeout(showInactivityAlert, inactivityTime);
+    }
+
+    // Escuchar actividad del usuario
+    window.onload = resetTimer;
+    document.onmousemove = resetTimer;
+    document.onkeypress = resetTimer;
+    document.onclick = resetTimer;
+
+    function showInactivityAlert() {
+        Swal.fire({
+            title: '¿Sigues trabajando?',
+            text: "Tu sesión se cerrará pronto por inactividad para proteger los datos.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, mantener activa',
+            cancelButtonText: 'Salir ahora',
+            timer: 30000, // 30 segundos para responder
+            timerProgressBar: true,
+            allowOutsideClick: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Hacemos un "ping" al servidor para que Laravel reinicie el contador de sesión
+                fetch("{{ route('home') }}")
+                    .then(() => {
+                        toastr.success('Sesión extendida correctamente');
+                        resetTimer();
+                    })
+                    .catch(() => window.location.reload());
+            } else {
+                // Si elige salir o se acaba el tiempo del SweetAlert
+                window.location.href = "{{ route('login') }}";
+            }
+        });
+    }
+</script>
+
+<script>
+    // Ejecutar cada 10 minutos (600,000 ms) para mantener el token CSRF vivo
+    setInterval(function() {
+        fetch("{{ url('/refresh-csrf') }}")
+            .then(response => response.json())
+            .then(data => {
+                // Actualizamos el token en todos los meta tags y formularios de la página
+                document.querySelector('meta[name="csrf-token"]').content = data.token;
+                document.querySelectorAll('input[name="_token"]').forEach(input => {
+                    input.value = data.token;
+                });
+                console.log('Seguridad del sistema actualizada correctamente.');
+            })
+            .catch(error => console.error('Error al refrescar seguridad:', error));
+    }, 10 * 60 * 1000); 
+</script>
 
 </body>
 <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
@@ -72,9 +134,11 @@
     <!-- Scripts PLANTILLA PRINCIPAL-->
     <script src="{{ asset('js/app.js') }}" defer></script>
 
-
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+{{-- Elimina las líneas repetidas y deja solo estas para DataTables --}}
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
+{{-- Añade el complemento Responsive para que funcione en celulares --}}
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 
 
 

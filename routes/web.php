@@ -119,4 +119,11 @@ Route::group(['middleware'=> ['auth']], function(){
         //  return new BoletaEstudiantes("yonYOn");
       //});
 
+Route::get('/refresh-csrf', function() {
+    return response()->json(['token' => csrf_token()]);
+});
+
+// Ruta para el guardado masivo de la matriz de notas
+Route::post('calificaciones/guardar-matriz', [App\Http\Controllers\CalificacionesPorAsignaturaController::class, 'store'])->name('calificaciones.store');
+
 });

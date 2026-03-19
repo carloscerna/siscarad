@@ -59,52 +59,10 @@ class CalificacionesPorAsignaturaController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-public function store(Request $request)
-{
-    try {
-        $periodo = $request->codigo_periodo;
-        $notasData = $request->input('notas', []);
-
-        if (empty($notasData)) {
-            return response()->json(['status' => 'error', 'message' => 'No hay notas para guardar.']);
-        }
-
-        foreach ($notasData as $id_nota => $valores) {
-            // Definimos dinámicamente las columnas según tu estructura PostgreSQL
-            $col_a1 = "nota_a1_" . $periodo;
-            $col_a2 = "nota_a2_" . $periodo;
-            $col_a3 = "nota_a3_" . $periodo;
-            $col_rec = "nota_r_" . $periodo;
-            $col_prom = "nota_p_p_" . $periodo;
-
-            // Convertimos a número y aseguramos que si está vacío sea 0
-            $n1 = floatval($valores['n1'] ?? 0);
-            $n2 = floatval($valores['n2'] ?? 0);
-            $n3 = floatval($valores['n3'] ?? 0);
-            $rec = floatval($valores['rec'] ?? 0);
-
-            // Lógica de Promedio: (35% + 35% + 30%)
-            $promedio = ($n1 * 0.35) + ($n2 * 0.35) + ($n3 * 0.30);
-            
-            // Si hay nota de recuperación y es mayor al promedio, podrías ajustarlo aquí
-            // Por ahora guardamos el promedio calculado
-            
-            DB::table('notas')->where('id_notas', $id_nota)->update([
-                $col_a1 => $n1,
-                $col_a2 => $n2,
-                $col_a3 => $n3,
-                $col_rec => $rec,
-                $col_prom => round($promedio, 2),
-                'updated_at' => now()
-            ]);
-        }
-
-        return response()->json(['status' => 'success', 'message' => '¡Calificaciones del Periodo '.$periodo.' guardadas con éxito!']);
-
-    } catch (\Exception $e) {
-        return response()->json(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
+    public function store(Request $request)
+    {
+        //
     }
-}
 
     /**
      * Display the specified resource.
