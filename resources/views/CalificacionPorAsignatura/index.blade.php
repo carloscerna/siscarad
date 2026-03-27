@@ -1,708 +1,324 @@
-
 @extends('layouts.app')
 
 @php
-// llamada de valores
-use Illuminate\Support\Facades;
+use Illuminate\Support\Facades\Auth;
     $correo_docente = Auth::user()->email;                                        
     $nombre_docente = Auth::user()->name;
     $codigo_personal = Auth::user()->codigo_personal;   
-    $codigo_institucion = Auth::user()->codigo_institucion;                                                ;
+    $codigo_institucion = Auth::user()->codigo_institucion;                                                
 @endphp
 
 @section('content')
-@role("Docente")
 <section class="section">
     <div class="section-header">
-        <h5 class="page__heading">{{$nombre_docente}} - Ingreso de Calificaciones</h5>
+        <h5 class="page__heading">{{$nombre_docente}} - Gestión de Calificaciones</h5>
     </div>
-    {{-- Este DIV estaba vacío, lo he eliminado para evitar un card en blanco --}}
 </section>
-@endrole
 
 <div class="section-body">
     <div class="row">
         <div class="col-lg-12">
             
-            {{-- ===== MEJORA 1: CARD PARA LOS FILTROS ===== --}}
-            <div class="card">
-                <div class="card border-secondary shadow-lg">
-                    <strong><i class="fas fa-filter"></i> Panel de Selección</strong>
+            {{-- PANEL DE FILTROS --}}
+            <div class="card shadow-lg">
+                <div class="card-header border-secondary font-weight-bold">
+                    <i class="fas fa-filter"></i> Panel de Selección
                 </div>
                 <div class="card-body">
-                    {!! Form::hidden('codigo_personal', $codigo_personal,['id'=>'codigo_personal', 'class'=>'form-control']) !!}
-                    {!! Form::hidden('codigo_institucion', $codigo_institucion,['id'=>'codigo_institucion', 'class'=>'form-control']) !!}
-                    {!! Form::hidden('codigo_area', '00',['id'=>'codigo_area', 'class'=>'form-control']) !!}
-                    
-                    {{-- ===== MEJORA 2: GRID LAYOUT PARA FILTROS ===== --}}
-                    <div class="row">
-                        <div class="col-md-4">
+                    <form id="formFiltros" class="row">
+                        {{-- Filtro: Año Lectivo --}}
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="codigo_annlectivo"><i class="fas fa-calendar-alt"></i> Año Lectivo:</label>
-                                {!! Form::select('codigo_annlectivo', ['placeholder'=>'Selecciona'] + $annlectivo, null, ['id' => 'codigo_annlectivo', 'onchange' => 'BuscarPorAnnLectivo(this.value)','class' => 'form-control form-control-resaltado']) !!}
+                                <label for="codigo_ann_lectivo">Año Lectivo</label>
+                                <select id="codigo_ann_lectivo" name="codigo_ann_lectivo" class="form-control select2" required>
+                                    <option value="">Seleccione año...</option>
+                                    @if(isset($ann_lectivo))
+                                        @foreach($ann_lectivo as $ann)
+                                            <option value="{{ $ann->codigo }}">{{ $ann->nombre }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
                             </div>
                         </div>
-                        <div class="col-md-8">
+
+                        {{-- Filtro: Sección --}}
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="codigo_grado_seccion_turno"><i class="fas fa-school"></i> Grado-Sección-Turno:</label>
-                                {!! Form::select('codigo_grado_seccion_turno', ['placeholder'=>'Selecciona'], null, ['id' => 'codigo_grado_seccion_turno','onchange' => 'BuscarPorGradoSeccionAsignaturas(this.value)', 'class' => 'form-control form-control-resaltado']) !!}
+                                <label for="codigo_seccion">Sección / Grado</label>
+                                <select id="codigo_seccion" name="codigo_seccion" class="form-control select2" required>
+                                    <option value="">Seleccione sección...</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="col-md-4">
+
+                        {{-- Filtro: Asignatura --}}
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="codigo_asignatura"><i class="fas fa-book"></i> Asignatura:</label>
-                                {!! Form::select('codigo_asignatura', ['placeholder'=>'Selecciona'], null, ['class' => 'form-control form-control-resaltado', 'id' => 'codigo_asignatura', 'onchange' => 'BuscarPorAsignatura(this.value)']) !!}
+                                <label for="codigo_asignatura">Asignatura</label>
+                                <select id="codigo_asignatura" name="codigo_asignatura" class="form-control select2" required>
+                                    <option value="">Seleccione asignatura...</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="col-md-4">
+
+                        {{-- Filtro: Periodo --}}
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="codigo_periodo"><i class="fas fa-list-ol"></i> Período:</label>
-                                {!! Form::select('codigo_periodo', ['00'=>'Seleccionar...','01'=>'Periodo 1','02'=>'Periodo 2','03'=>'Periodo 3'], null, ['id' => 'codigo_periodo','onchange' => 'BuscarPorPeriodo(this.value)', 'class' => 'form-control form-control-resaltado']) !!}
+                                <label for="periodo">Periodo</label>
+                                <select id="periodo" name="periodo" class="form-control" required>
+                                    <option value="1">Periodo 1</option>
+                                    <option value="2">Periodo 2</option>
+                                    <option value="3">Periodo 3</option>
+                                    <option value="4">Periodo 4</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="codigo_actividad_porcentaje"><i class="fas fa-percentage"></i> Actividades (%):</label>
-                                {!! Form::select('codigo_actividad_porcentaje', ['00'=>'Seleccionar...','01'=>'Actividad 1 (35%)','02'=>'Actividad 2 (35%)','03'=>'Examen o Prueba Objetiva (30%)','04'=>'Recuperación (10%)'], null, ['id' => 'codigo_actividad_porcentaje','onchange' => 'BuscarPorActividadPorcentaje(this.value)', 'class' => 'form-control form-control-resaltado']) !!}
-                            </div>
+
+                        <div class="col-md-12 text-right">
+                            <button type="button" class="btn btn-primary" onclick="buscarEstudiantes()">
+                                <i class="fas fa-search"></i> Cargar Listado
+                            </button>
                         </div>
-                    </div>
-                </div>
-                <div class="card-footer bg-light">
-                    {{-- Lo dejamos vacío para que actúe solo como un separador visual --}}
-                    &nbsp;
+                    </form>
                 </div>
             </div>
 
-            {{-- ===== MEJORA 3: ESTILO DE NÓMINA ===== --}}
-            <div class="card" id="NominaEstudiantes" style="display: none;">
-                <div class="card-header bg-primary text-white p-2"> {{-- Color cambiado y padding ajustado --}}
-                    <div class="row align-items-center" style="width: 100%;">
-                        <div class="col-12 col-md-5">
-                            <h5 class="mb-0">Nómina de Estudiantes</h5>
-                        </div>
-                        <div class="col-12 col-md-7 text-md-right"> {{-- Ajuste de alineación --}}
-                            <span class="mr-2">Reportes:</span>
-                            <button type="button" class="btn btn-info btn-sm" id="goReportePorAsignatura" onclick="ReportePorAsignatura()" title="Reporte Por Asignatura">
-                                <i class="fas fa-clipboard-list"></i> Por Asignatura
-                            </button>
-                            <button type="button" class="btn btn-dark btn-sm" id="goReportePorGrado" onclick="ReportePorGrado()" title="Reporte Por Grado">
-                                <i class="fas fa-clipboard-user"></i> Por Grado {{-- Icono cambiado --}}
-                            </button>
-                        </div>
-                    </div>
+            {{-- TABLA DE NOTAS --}}
+            <div class="card shadow-lg mt-4" id="contenedorNotas" style="display: none;">
+                <div class="card-header bg-primary text-white font-weight-bold">
+                    <i class="fas fa-edit"></i> Ingreso de Notas: <span id="infoPeriodo"></span>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive" style="width:100%;overflow:auto; max-height:600px;">
-                        <table class="table table-sm table-bordered table-condensed table-hover" id="TablaNominaEstudiantes">
-                          <thead>
-                              <tr class="bg-secondary">
-                                <th>N.°</th>
-                                <th>NIE</th>
-                                <th>Nombre del Estudiante</th>
-                                <th>Calificación</th>
-                                {{-- ===== 1. AÑADIR ESTA COLUMNA PARA EL CHECKBOX MAESTRO ===== --}}
-                                <th class="text-center" style="width: 50px;">
-                                    <input type="checkbox" id="checkAllBoletas" title="Seleccionar Todos">
-                                </th>
-                                <th>Boleta</th> {{-- Añadido título de columna --}}
-                              </tr>
-                          </thead>
-                          <tbody id="contenido">
-                              <tr>
-                                <td colspan="5" class="text-center">Seleccione los filtros para cargar la nómina.</td>
-                              </tr>
-                          </tbody>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-dark text-center">
+                                <tr>
+                                    <th width="10%">NIE</th>
+                                    <th>Nombre del Estudiante</th>
+                                    <th width="12%">Actividad 1</th>
+                                    <th width="12%">Actividad 2</th>
+                                    <th width="12%">Actividad 3</th>
+                                    <th width="12%">Recuperación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpoTablaEstudiantes"></tbody>
                         </table>
-                      </div>
+                    </div>
+                    <div class="text-right mt-3">
+                        <button type="button" class="btn btn-success btn-lg" onclick="guardarTodasLasNotas()" id="btnGuardarNotas">
+                            <i class="fas fa-save"></i> Guardar Todo el Periodo
+                        </button>
+                    </div>
                 </div>
-                <div class="card-footer text-right bg-light"> {{-- Alineación de botón --}}
-                    {{-- ===== 2. AÑADIR ESTOS BOTONES NUEVOS ===== --}}
-                    <button type="button" class="btn btn-info" id="btnVerSeleccionados" style="display: none;">
-                        <i class="fas fa-eye"></i> Ver Seleccionados
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="btnDescargarSeleccionados" style="display: none;">
-                        <i class="fas fa-file-download"></i> Descargar Seleccionados
-                    </button>
-                    <button type="button" class="btn btn-warning" id="btnEnviarCorreos" style="display: none;">
-                        <i class="fas fa-paper-plane"></i> Enviar Correos
-                    </button>
-                    {{-- ===== MEJORA 4: SWEETALERT AL GUARDAR ===== --}}
-                    <button type="button" class="btn btn-success" id="goCalificacionGuardar" onclick="ConfirmarGuardarRegistros()">
-                        <i class="fas fa-save"></i> Guardar Calificaciones
-                    </button>
-                </div>
-              </div>
+            </div>
+
         </div>
     </div>
 </div>
 @endsection
 
+
 @section('css')
 <style>
-#collapse{
-    max-height:300px;
+    .nota-reprobada {
+        color: #e74c3c !important; /* Rojo intenso */
+        font-weight: bold;
     }
-
-/* Esta regla se aplica a los <select> de Stisla (custom-select)
-  y a cualquier otro input (form-control) que tenga tu clase.
-*/
-.custom-select.form-control-resaltado,
-.form-control.form-control-resaltado {
-    background-color: rgb(205, 229, 251) !important; 
-    border-color: #fd5502 !important;
-}
+    .nota-input.reprobada {
+        border-color: #e74c3c;
+        background-color: #fdf2f2;
+    }
 </style>
 @endsection
 
 @section('scripts')
-{{-- Añadimos SweetAlert --}}
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    $.ajaxSetup({
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+    });
 
-    <script type="text/javascript">
-        
-        {{-- Se eliminó el script huérfano de select2 --}}
-        // Al inicio de las 4 funciones de filtro
-            $('#btnVerSeleccionados, #btnDescargarSeleccionados, #btnEnviarCorreos').hide();
-        // funcion onchange
-        function BuscarPorAnnLectivo(AnnLectivo) {
-            // ... (tu código AJAX) ...
-            url_ajax = '{{url("getGradoSeccion")}}' 
-            csrf_token = '{{csrf_token()}}' 
 
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
 
-            $.ajax({
-                type: "post",
-                url: url_ajax,
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    "id": codigo_personal, 
-                    codigo_annlectivo: codigo_annlectivo
-                },
-                dataType: 'json',
-                success:function(data) {
-                     var miselect=$("#codigo_grado_seccion_turno");
-                             miselect.empty();
-                             miselect.append('<option value="">Seleccionar...</option>');
-                                 $.each( data, function( key, value ) {
-                                        //console.log(value.codigo_gradoseccionturno);
-                                        //console.log(value.nombre_gradoseccionturno);
-                                            miselect.append('<option value="' + value.codigo_gradoseccionturno + '">' + value.nombre_gradoseccionturno + '</option>'); 
-                                });
-                } 
+$(document).on('input', '.input-a1, .input-a2, .input-a3, .input-r', function() {
+    let fila = $(this).closest('tr');
+    let fullCodigo = $('#codigo_seccion').val();
+    let modalidad = fullCodigo.substring(6,8);
+    
+    // Determinamos la nota mínima según tu lógica de grados/modalidades
+    // Grados 02-09 (Básica) -> 5.0 | Media y otros -> 6.0
+    let notaMinima = (modalidad >= '17' && modalidad <= '19') ? 5.0 : 6.0;
+
+    let a1 = parseFloat(fila.find('.input-a1').val()) || 0;
+    let a2 = parseFloat(fila.find('.input-a2').val()) || 0;
+    let a3 = parseFloat(fila.find('.input-a3').val()) || 0;
+    let r  = parseFloat(fila.find('.input-r').val()) || 0;
+
+    // Lógica de recuperación (reemplaza la menor entre A1 y A2)
+    let a1_calc = a1, a2_calc = a2;
+    if (r > 0) {
+        if (a1 < a2) { a1_calc = (r > a1) ? r : a1; } 
+        else { a2_calc = (r > a2) ? r : a2; }
+    }
+
+    let promedio = (a1_calc * 0.35) + (a2_calc * 0.35) + (a3 * 0.30);
+    let spanPromedio = fila.find('.label-promedio');
+    
+    spanPromedio.text(promedio.toFixed(1));
+
+    // APLICAR COLOR ROJO SI REPROBÓ
+    if (promedio < notaMinima) {
+        spanPromedio.addClass('nota-reprobada');
+    } else {
+        spanPromedio.removeClass('nota-reprobada');
+    }
+
+    // Opcional: Pintar el input individual si es menor a la mínima
+    $(this).toggleClass('reprobada', parseFloat($(this).val()) < notaMinima);
+});
+
+    $(document).ready(function() {
+            // Al cambiar AÑO -> Cargar SECCIONES
+            $('#codigo_ann_lectivo').on('change', function() {
+                let ann = $(this).val();
+                if(!ann) return;
+                
+                $.get("{{ url('get-secciones') }}", { codigo_ann: ann }, function(data) {
+                    let h = '<option value="">Seleccione sección...</option>';
+                    $.each(data, function(i, o) { 
+                        h += `<option value="${o.codigo}">${o.nombre}</option>`; 
+                    });
+                    $('#codigo_seccion').html(h);
+                    $('#codigo_asignatura').html('<option value="">Seleccione asignatura...</option>');
+                });
             });
-        }
-        // function onchange- CUANDO SELECCIONO LA ASIGNATURA.
-        function BuscarPorAsignatura(CodigoAsignatura) {
-            // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
-                $('#codigo_periodo').val('00');
-                $('#codigo_actividad_porcentaje').val('00');
-                $('#codigo_area').val(CodigoAsignatura);
-                $('#contenido').empty().append('<tr><td colspan="5" class="text-center">Seleccione Período y Actividad...</td></tr>');
-        }
-       // funcion onchange. CUANDO SELECCIONO EL GRADO Y SECCION
-        function BuscarPorGradoSeccionAsignaturas(GradoSeccion) {
-            url_ajax = '{{url("getGradoSeccionAsignaturas")}}' 
-            csrf_token = '{{csrf_token()}}' 
-            // VARIABLES
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
-            // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
-            $.ajax({
-                type: "post",
-                url: url_ajax,
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    "id": codigo_personal, 
-                    codigo_annlectivo: codigo_annlectivo,
-                    codigo_gradoseccionturno: GradoSeccion
-                },
-                dataType: 'json',
-                success:function(data) {
-                     var miselect=$("#codigo_asignatura");
-                             miselect.empty();
-                             miselect.append('<option value="00">Seleccionar...</option>');
-                                 $.each( data, function( key, value ) {
-                                        console.log("codigo_asignatura: " + value.codigo_asignatura + " codigo area: " + value.codigo_area + " Nombre: " + value.nombre_asignatura);
-                                            miselect.append('<option value="' + value.codigo_asignatura + value.codigo_area + '">' + value.nombre_asignatura + '</option>'); 
-                                    // rellenar hidden
-                                        $("#codigo_area").val(value.codigo_area);
-                                    // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
-                                        $('#codigo_asignatura option:nth-child(1)').val();
-                                        $('#codigo_periodo').val('00');
-                                        $('#codigo_actividad_porcentaje').val('00');
-                                        $('#contenido').empty().append('<tr><td colspan="5" class="text-center">Seleccione Asignatura...</td></tr>');
-                                });
-                } 
-            });
-            // BUSCAR DEPENDIENDO DE LA FECHA EL PERIODO PARA HABILITAR.
-            //
-            url_ajax = '{{url("getPeriodo")}}' 
-            csrf_token = '{{csrf_token()}}' 
 
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
-            // BUSCAR LA CARGA ACADEMICA DEL DOCENTE.
-            $.ajax({
-                type: "post",
-                url: url_ajax,
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    "id": codigo_personal, 
-                    codigo_annlectivo: codigo_annlectivo,
-                    codigo_gradoseccionturno: GradoSeccion
-                },
-                dataType: 'json',
-                success:function(data) {
-                     var miselect=$("#codigo_periodo");
-                             miselect.empty();
-                             miselect.append('<option value="">Seleccionar...</option>');
-                                 $.each( data, function( key, value ) {
-                                        console.log("codigo_periodo: " + value.codigo_periodo + " Nombre: " + value.nombre_periodo + " Fecha: " + value.fecha + " Fecha desde: " + value.fecha_desde);
-                                            miselect.append('<option value="' + value.codigo_periodo + '">' + value.nombre_periodo + '</option>'); 
-                                    // rellenar hidden
-                                        //$("#codigo_area").val(value.codigo_area);
-                                    // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
-                                        $('#codigo_periodo option:nth-child(1)').val();
-                                        $('#codigo_periodo').val('00');
-                                        $('#codigo_actividad_porcentaje').val('00');
-                                        $('#contenido').empty().append('<tr><td colspan="5" class="text-center">Seleccione Asignatura...</td></tr>');
-                                });
-                } 
+            // Al cambiar SECCIÓN -> Cargar ASIGNATURAS (enviando también el año)
+            $('#codigo_seccion').on('change', function() {
+                let sec = $(this).val();
+                let ann = $('#codigo_ann_lectivo').val();
+                if(!sec) return;
+
+                $.get("{{ url('get-asignaturas') }}", { codigo_seccion: sec, codigo_ann: ann }, function(data) {
+                    let h = '<option value="">Seleccione asignatura...</option>';
+                    $.each(data, function(i, o) { 
+                        h += `<option value="${o.codigo}">${o.nombre}</option>`; 
+                    });
+                    $('#codigo_asignatura').html(h);
+                });
             });
+    });
+
+    function buscarEstudiantes() {
+   let v = $('#codigo_seccion').val(); // Ejemplo: "0902021726" (Noveno, Sec 02, Turno 02, Mod 17, Año 26)
+
+    let params = {
+        codigo_asignatura: $('#codigo_asignatura').val(),
+        periodo: $('#periodo').val(),
+        // Cortes precisos
+        codigo_grado:     v.substring(0,2),
+        codigo_seccion:   v.substring(2,4),
+        codigo_turno:     v.substring(4,6),
+        codigo_modalidad: v.substring(6,8),
+        codigo_ann_lectivo: v.substring(8,10) // <-- Ya no lo sacamos del otro select, sino de aquí
+    };
+
+    $('#contenedorNotas').hide();
+
+    $.get("{{ url('calificaciones/buscar-estudiantes') }}", params, function(res) {
+        if(res.status === 'locked') {
+            Swal.fire('Periodo Cerrado', res.message, 'error');
+            $('#contenedorNotas').hide();
+            return;
         }
-        // funcion onchange
-        function BuscarPorPeriodo(Periodo) {
-            // ... (tu código de lógica de períodos) ...
-            codigo_asignatura_area = $("#codigo_asignatura").val();
+
+        let filas = '';
+        $.each(res.estudiantes, function(i, e) {
+            // Calculamos el promedio visualmente si es necesario o mostramos el de DB
+            let promedioActual = parseFloat(e.nota_p) || 0;
+            let fullCodigo = $('#codigo_seccion').val();
+            let mod = fullCodigo.substring(6,8);
+            let minima = (mod >= '17' && mod <= '19') ? 5.0 : 6.0;
+
+            let claseRoja = (promedioActual < minima) ? 'nota-reprobada' : '';
             
-            conteo_codigo_asignatura = codigo_asignatura_area.length;
-            console.log("Conteo asignatura: " + conteo_codigo_asignatura);
-            if(conteo_codigo_asignatura == 4){
-                codigo_asignatura = codigo_asignatura_area.substring(0,2);
-                codigo_area = codigo_asignatura_area.substring(2,4);
-                console.log("Código Asignatura: " + codigo_asignatura);
-                console.log("Código Area: " + codigo_area);
-            }else if(conteo_codigo_asignatura == 6){
-                codigo_asignatura = codigo_asignatura_area.substring(0,4);
-                codigo_area = codigo_asignatura_area.substring(4,6);
-                console.log("Código Asignatura:  " + codigo_asignatura);
-                console.log("Código Area:  " + codigo_area);
-            }
-            else{
-                codigo_asignatura = codigo_asignatura_area.substring(0,3);
-                codigo_area = codigo_asignatura_area.substring(3,5);
-                console.log("Código Asignatura: " + codigo_asignatura);
-                console.log("Código Area: " + codigo_area);
-            }
-            if(codigo_area == '01' || codigo_area == '02' || codigo_area == '03' || codigo_area == '08'){
-                miselect = $("#codigo_actividad_porcentaje");
-                miselect.empty();
-                // Evaluar si es recuperación o Actividades.
-                // Extraer datos del periodo
-                    codigo_periodo = $("#codigo_periodo").val();
-                    var valor_periodo = $("#codigo_periodo option:selected");
-                    // enviar resultados a la consola
-                        console.log(valor_periodo.val() + " Texto: "  + valor_periodo.text());
-                    //
-                    if(valor_periodo.val() == '06' || valor_periodo.val() == '07' || codigo_asignatura == '234' || valor_periodo.val() == '08'){
-                        miselect.append('<option value=00 selected>Seleccionar...</option>'); 
-                        miselect.append('<option value='+valor_periodo.val()+'>'+valor_periodo.text()+'</option>'); 
-                    }else{
-                        miselect.append('<option value=00 selected>Seleccionar...</option>'); 
-                        miselect.append('<option value=01>Actividad 1 (35%)</option>'); 
-                        miselect.append('<option value=02>Actividad 2 (35%)</option>'); 
-                        miselect.append('<option value=03>Examen o Prueba Objetiva (30%)</option>'); 
-                        miselect.append('<option value=04>Recuperación</option>'); 
-                    }
-            }else{
-                // Extraer datos del periodo
-                codigo_periodo = $("#codigo_periodo").val();
-                var valor_periodo = $("#codigo_periodo option:selected");
-                // enviar resultados a la consola
-                    console.log(valor_periodo.val() + " Texto: "  + valor_periodo.text());
-                //
-                miselect = $("#codigo_actividad_porcentaje");
-                miselect.empty();
-                miselect.append('<option value=00 selected>Seleccionar...</option>'); 
-                miselect.append('<option value='+valor_periodo.val()+'>'+valor_periodo.text()+'</option>'); 
-                    // Llamar a la funciond e busqueda
-                    BuscarPorActividadPorcentaje(Periodo);
-            }
-            // Botón Otro... visible.
-            $("#NominaEstudiantes").css("display","none");
-            // 	lIMPIAR SECTION QUE CONTIENE EL PORTAFOLIO.
-		    $('#ListarPortafolio').empty();
-            // SELECCIONAR EL PRIMERO ELEMENTO DE CADA SELECT Y LIMPIAR LA TABLA.
-                $('#codigo_actividad_porcentaje').val('00');
-                $('#contenido').empty().append('<tr><td colspan="5" class="text-center">Seleccione Actividad...</td></tr>');
-        }
-        // funcion onchange. CUANDO SELECCIONO EL PERIODO
-        function BuscarPorActividadPorcentaje() {
-    var codigo_grado = $("#codigo_grado").val();
-    var codigo_seccion = $("#codigo_seccion").val();
-    var codigo_asignatura = $("#codigo_asignatura").val();
-    var codigo_periodo = $("#codigo_periodo").val();
-    var codigo_institucion = $("#codigo_institucion").val();
-
-    if (!codigo_grado || !codigo_seccion || !codigo_asignatura || !codigo_periodo) return;
-
-    $("#filas_nomina").empty().append('<tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando nómina...</td></tr>');
-
-    $.get("{{ url('calificaciones/buscar-estudiantes') }}", {
-        codigo_grado, codigo_seccion, codigo_asignatura, codigo_periodo, codigo_institucion
-    }, function(data) {
-        $("#filas_nomina").empty();
-        
-        $.each(data, function(index, element) {
-            // Extraer notas dinámicamente según periodo
-            let n1 = element['nota_a1_' + codigo_periodo] || 0;
-            let n2 = element['nota_a2_' + codigo_periodo] || 0;
-            let n3 = element['nota_a3_' + codigo_periodo] || 0;
-            let rec = element['nota_r_' + codigo_periodo] || 0;
-            let prom = element['nota_p_p_' + codigo_periodo] || 0;
-
-            $("#filas_nomina").append(`
-                <tr id="fila_${element.id_notas}">
-                    <td>${index + 1}</td>
-                    <td class="text-dark font-weight-bold">${element.nombre_completo}</td>
-                    <td><input type="number" name="notas[${element.id_notas}][n1]" value="${n1}" class="form-control form-control-sm text-center calc-prom" data-id="${element.id_notas}" step="0.1" min="0" max="10"></td>
-                    <td><input type="number" name="notas[${element.id_notas}][n2]" value="${n2}" class="form-control form-control-sm text-center calc-prom" data-id="${element.id_notas}" step="0.1" min="0" max="10"></td>
-                    <td><input type="number" name="notas[${element.id_notas}][n3]" value="${n3}" class="form-control form-control-sm text-center calc-prom" data-id="${element.id_notas}" step="0.1" min="0" max="10"></td>
-                    <td><input type="number" name="notas[${element.id_notas}][rec]" value="${rec}" class="form-control form-control-sm text-center bg-light" step="0.1" min="0" max="10"></td>
-                    <td class="text-center"><span class="badge badge-info prom-label" id="prom_${element.id_notas}">${prom}</span></td>
-                    <td class="text-center">
-                        <div class="custom-checkbox custom-control">
-                            <input type="checkbox" class="custom-control-input chk-estudiante" id="chk${element.id_notas}" data-email="${element.email}" data-id="${element.id_notas}">
-                            <label for="chk${element.id_notas}" class="custom-control-label">&nbsp;</label>
-                        </div>
+            filas += `
+                <tr class="fila-estudiante" data-alumno="${e.codigo_alumno}" data-matricula="${e.codigo_matricula}">
+                    <td class="text-center">${e.codigo_nie}</td>
+                    <td>${e.nombre_completo}</td>
+                    <td><input type="number" step="0.1" class="form-control text-center input-a1" value="${e.nota_a1 || ''}"></td>
+                    <td><input type="number" step="0.1" class="form-control text-center input-a2" value="${e.nota_a2 || ''}"></td>
+                    <td><input type="number" step="0.1" class="form-control text-center input-a3" value="${e.nota_a3 || ''}"></td>
+                    <td><input type="number" step="0.1" class="form-control text-center input-r" value="${e.nota_r || ''}"></td>
+                    <td class="text-center align-middle font-weight-bold bg-light">
+                        <span class="label-promedio ${claseRoja}">${promedioActual.toFixed(1)}</span>
                     </td>
-                </tr>
-            `);
+                </tr>`;
         });
+        $('#cuerpoTablaEstudiantes').html(filas);
+        $('#contenedorNotas').fadeIn();
     });
 }
 
-// Script para calcular promedio visualmente mientras escriben
-$(document).on('input', '.calc-prom', function() {
-    let id = $(this).data('id');
-    let n1 = parseFloat($(`input[name="notas[${id}][n1]"]`).val()) || 0;
-    let n2 = parseFloat($(`input[name="notas[${id}][n2]"]`).val()) || 0;
-    let n3 = parseFloat($(`input[name="notas[${id}][n3]"]`).val()) || 0;
+    // Función para guardar todo el listado
+function guardarTodasLasNotas() {
+    let notasData = [];
+    let fullCodigo = $('#codigo_seccion').val();
     
-    let total = (n1 * 0.35) + (n2 * 0.35) + (n3 * 0.30);
-    $(`#prom_${id}`).text(total.toFixed(1));
+    // Mostramos un loading
+    $('#btnGuardarNotas').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
+
+    $('.fila-estudiante').each(function() {
+        let fila = $(this);
+        notasData.push({
+            codigo_matricula: fila.data('matricula'),
+            nota_a1: fila.find('.input-a1').val() || 0,
+            nota_a2: fila.find('.input-a2').val() || 0,
+            nota_a3: fila.find('.input-a3').val() || 0,
+            nota_r:  fila.find('.input-r').val() || 0
+        });
+    });
+
+    let payload = {
+        _token: '{{ csrf_token() }}',
+        periodo: $('#periodo').val(),
+        codigo_asignatura: $('#codigo_asignatura').val(),
+        codigo_modalidad: fullCodigo.substring(6,8), // Enviamos la modalidad para el cálculo
+        notas: notasData
+    };
+
+    $.ajax({
+        type: "POST",
+        url: "{{ url('calificaciones/guardar-todas') }}",
+        data: JSON.stringify(payload),
+        contentType: "application/json",
+        success: function(res) {
+            Swal.fire('¡Éxito!', res.message, 'success');
+        },
+        error: function(err) {
+            Swal.fire('Error', 'No se pudieron guardar las notas.', 'error');
+        },
+        complete: function() {
+            $('#btnGuardarNotas').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Todo el Periodo');
+        }
+    });
+}
+
+// Escuchador para validación de colores en tiempo real
+$(document).on('input', '.form-control', function() {
+    let fila = $(this).closest('tr');
+    let mod = $('#codigo_seccion').val().substring(6,8);
     
-    if(total < 6) $(`#prom_${id}`).removeClass('badge-info').addClass('badge-danger');
-    else $(`#prom_${id}`).removeClass('badge-danger').addClass('badge-info');
+    // Definir mínima según tus reglas: 17, 18, 19 (Básica) -> 5.0 | Resto -> 6.0
+    let minima = (mod >= '17' && mod <= '19') ? 5.0 : 6.0;
+    
+    // Obtenemos el promedio que calculamos en el paso anterior
+    let promedio = parseFloat(fila.find('.label-promedio').text()) || 0;
+
+    if (promedio < minima) {
+        fila.find('.label-promedio').css('color', 'red');
+    } else {
+        fila.find('.label-promedio').css('color', 'black');
+    }
 });
-        function ReportePorAsignatura() {
-            // ... (tu código) ...
-             var codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
-            var codigo_annlectivo = $('#codigo_annlectivo').val();
-            var codigo_asignatura_area = $("#codigo_asignatura").val();
-            var codigo_personal = $('#codigo_personal').val();
-            
-            var conteo_codigo_asignatura = codigo_asignatura_area.length;
-            if(conteo_codigo_asignatura == 4){
-                codigo_asignatura = codigo_asignatura_area.substring(0,2);
-                codigo_area = codigo_asignatura_area.substring(2,4);
-            }else if(conteo_codigo_asignatura == 6){
-                codigo_asignatura = codigo_asignatura_area.substring(0,4);
-                codigo_area = codigo_asignatura_area.substring(4,6);
-                console.log("Código Asignatura:  " + codigo_asignatura);
-                console.log("Código Area:  " + codigo_area);
-            }else{
-                codigo_asignatura = codigo_asignatura_area.substring(0,3);
-                codigo_area = codigo_asignatura_area.substring(3,5);
-            }
-
-            var datos_estudiantes = codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim()+"-"+codigo_asignatura+"-"+codigo_area+"-"+codigo_personal;
-            // ARMAR URL
-                var url = '{{ url("/pdfRPA", "id") }}';
-                url = url.replace('id', datos_estudiantes);
-            // abrir ventana emergente con el pdf de las califiaciones por asignatura.
-                AbrirVentana(url);
-        }
-        // Reporte de Calificaciones por asignatura.
-        function ReportePorGrado() {
-            // ... (tu código) ...
-            var codigo_gradoseccionturno = $("#codigo_grado_seccion_turno").val();
-            var codigo_annlectivo = $('#codigo_annlectivo').val();
-            var codigo_asignatura_area = $("#codigo_asignatura").val();
-            var codigo_personal = $('#codigo_personal').val();
-            
-            var conteo_codigo_asignatura = codigo_asignatura_area.length;
-            if(conteo_codigo_asignatura == 4){
-                codigo_asignatura = codigo_asignatura_area.substring(0,2);
-                codigo_area = codigo_asignatura_area.substring(2,4);
-            }else if(conteo_codigo_asignatura == 6){
-                codigo_asignatura = codigo_asignatura_area.substring(0,4);
-                codigo_area = codigo_asignatura_area.substring(4,6);
-                console.log("Código Asignatura:  " + codigo_asignatura);
-                console.log("Código Area:  " + codigo_area);
-            }else{
-                codigo_asignatura = codigo_asignatura_area.substring(0,3);
-                codigo_area = codigo_asignatura_area.substring(3,5);
-            }
-
-            var datos_estudiantes = codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() +"-"+ codigo_institucion.trim()+"-"+codigo_asignatura+"-"+codigo_area+"-"+codigo_personal;
-            // ARMAR URL
-                var url = '{{ url("/pdfRPG", "id") }}';
-                url = url.replace('id', datos_estudiantes);
-            // abrir ventana emergente con el pdf de las califiaciones por asignatura.
-                AbrirVentana(url);
-        }
-        
-        {{-- ===== MEJORA 5: FUNCIÓN DE CONFIRMACIÓN ===== --}}
-        function ConfirmarGuardarRegistros() {
-            Swal.fire({
-                title: '¿Guardar Calificaciones?',
-                text: "Se actualizarán todas las notas en la nómina actual. Esta acción no se puede deshacer.",
-                icon: 'info',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745', // Verde
-                cancelButtonColor: '#6c757d', // Gris
-                confirmButtonText: 'Sí, guardar ahora',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Si confirma, llama a la función original de guardado
-                    $("#btnGuardarCalificaciones").click(function(e) {
-                e.preventDefault();
-                let formData = $("#form-calificaciones").serialize(); // Asegúrate que tu tabla esté dentro de un <form id="form-calificaciones">
-
-                $.ajax({
-                    url: "{{ route('calificaciones.store') }}",
-                    type: "POST",
-                    data: formData + "&_token={{ csrf_token() }}&codigo_periodo=" + $("#codigo_periodo").val(),
-                    success: function(response) {
-                        if(response.status === 'success') toastr.success(response.message);
-                        else toastr.error(response.message);
-                    }
-                });
-            });
-                }
-            });
-        }
-
-        // funcionar para guardar las calificaciones. (Esta es la función original)
-        function GuardarRegistros() {
-         
-        }
-        
-        
-        // MAXIM DE NUMEROS DEPENDE DE LA CALIFIACIÓN.
-        function maxLengthNumber(valor) {
-            // ... (tu código) ...
-            // Extraer el codigo area y codigo modalidad.
-                codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
-                codigo_asignatura_area = $("#codigo_asignatura").val();
-                conteo_codigo_asignatura = codigo_asignatura_area.length;
-                var MaximaValorCalificacion = 10;
-            // comprar para extraer codigo area.
-                if(conteo_codigo_asignatura == 4){
-                    codigo_asignatura = codigo_asignatura_area.substring(0,2);
-                    codigo_area = codigo_asignatura_area.substring(2,4);
-                }else if(conteo_codigo_asignatura == 6){
-                codigo_asignatura = codigo_asignatura_area.substring(0,4);
-                codigo_area = codigo_asignatura_area.substring(4,6);
-                console.log("Código Asignatura:  " + codigo_asignatura);
-                console.log("Código Area:  " + codigo_area);
-                }else{
-                    codigo_asignatura = codigo_asignatura_area.substring(0,3);
-                    codigo_area = codigo_asignatura_area.substring(3,5);
-                }
-            //
-            if(codigo_area == '03' && codigo_modalidad == "15"){
-                MaximaValorCalificacion = 5;
-            }
-            //
-            console.log(valor.value);
-            {
-		    var amount = valor.value;
-		    console.log(amount);
-            //d+ permite caracteres enteros
-            //si hay un caracter que no es dígito entonces evalua lo que está en paréntesis (?) significa opcional
-		    var patron = /^(\d+(.{1}\d{1})?)$/;     		    
-                    if (!patron.test(amount))
-		   		 	{
-		       	 		console.log('cantidad ingresada incorrectamente');
-		        		valor.value = "";
-		        		return false;
-        			}
-		   			 else if(amount > MaximaValorCalificacion){
-                     console.log('cantidad ingresada incorrectamente');
-                     valor.value = "";
-                     return false;
-                     }
-                     else{
-		        		return true;}
-		  }
-        }
-        // ABRIR NUEVA PESTAÑA PARA LOS DIFERENTES INFORMES.
-        function AbrirVentana(url)
-            {
-                window.open(url, '_blank');
-                return false;
-            }
-    
-
-        // ===== 5. LÓGICA PARA CHECKBOXES Y ACCIONES MASIVAS =====
-
-        // Función para "Seleccionar Todos"
-        $('#TablaNominaEstudiantes').on('click', '#checkAllBoletas', function() {
-            // 'this.checked' es true si el master checkbox está marcado
-            // Busca todos los checkboxes con clase '.check-boleta' dentro del tbody
-            $('#TablaNominaEstudiantes tbody .check-boleta').prop('checked', this.checked);
-        });
-
-        // Función para desmarcar "Seleccionar Todos" si un checkbox individual se desmarca
-        $('#TablaNominaEstudiantes').on('click', '.check-boleta', function() {
-            if (!this.checked) {
-                $('#checkAllBoletas').prop('checked', false);
-            }
-        });
-
-        // Listeners para los nuevos botones
-        $(document).ready(function() {
-            $('#btnVerSeleccionados').on('click', function() {
-                AccionMasivaBoletas('ver');
-            });
-
-            $('#btnDescargarSeleccionados').on('click', function() {
-                AccionMasivaBoletas('descargar');
-            });
-            // ===== AÑADIR ESTE LISTENER =====
-            $('#btnEnviarCorreos').on('click', function() {
-                ConfirmarEnvioCorreos();
-            });
-        });
-
-        // === ¡LA NUEVA FUNCIÓN QUE PEDISTE! ===
-        function AccionMasivaBoletas(accion) {
-            var urls = [];
-            var tipoAccion = (accion === 'ver') ? 'Ver' : 'Descargar';
-            var dataAttr = (accion === 'ver') ? 'data-url-ver' : 'data-url-descargar';
-            var confirmColor = (accion === 'ver') ? '#3085d6' : '#5c6c7a'; // Azul para ver, gris para descargar
-
-            // 1. Recolectar todas las URLs de los checkboxes marcados
-            $('.check-boleta:checked').each(function() {
-                urls.push($(this).attr(dataAttr));
-            });
-
-            // 2. Validar si seleccionó alguno
-            if (urls.length === 0) {
-                Swal.fire('Ningún Estudiante', 'Por favor, seleccione al menos un estudiante de la lista.', 'info');
-                return;
-            }
-
-            // 3. ¡Mostrar el SweetAlert!
-            Swal.fire({
-                title: '¿' + tipoAccion + ' ' + urls.length + ' Boleta(s)?',
-                text: "Esto intentará abrir " + urls.length + " pestaña(s) nueva(s). Su navegador podría bloquearlas. ¿Desea continuar?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: confirmColor,
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Sí, continuar',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // 4. Si confirma, abrir todas las pestañas
-                    toastr.info('Iniciando ' + tipoAccion + '... Por favor, revise si su navegador bloqueó las pestañas.', 'Sistema');
-                    urls.forEach(function(url) {
-                        window.open(url, '_blank');
-                    });
-                }
-            });
-        }
-    
-    /**
-         * Muestra la confirmación de SweetAlert antes de enviar correos.
-         */
-         function ConfirmarEnvioCorreos() {
-            var estudiantes = [];
-            
-            // 1. Recolectar datos de los checkboxes marcados
-            $('.check-boleta:checked').each(function() {
-                estudiantes.push({
-                    email: $(this).data('email'),
-                    datos_pdf: $(this).data('pdf-string')
-                });
-            });
-
-
-            // ===== ¡AQUÍ ESTÁ LA VERIFICACIÓN EN CONSOLA! =====
-            console.log("-----------------------------------------");
-            console.log("VERIFICACIÓN ANTES DE ENVÍO DE CORREOS");
-            console.log("Total de estudiantes seleccionados:", estudiantes.length);
-            console.log("Datos que se enviarán al servidor:", estudiantes);
-            console.log("Código de Institución:", $("#codigo_institucion").val());
-            console.log("-----------------------------------------");
-            // =====================================================
-
-            // 2. Validar si seleccionó alguno
-            if (estudiantes.length === 0) {
-                Swal.fire('Ningún Estudiante', 'Por favor, seleccione al menos un estudiante para enviar el correo.', 'info');
-                return;
-            }
-
-            // 3. ¡Mostrar el SweetAlert!
-            Swal.fire({
-                title: '¿Enviar ' + estudiantes.length + ' Correo(s)?',
-                html: "Se enviarán las boletas a las direcciones institucionales (<b>NIE@clases.edu.sv</b>).<br><br>Esta acción se pondrá en cola y puede tardar unos minutos en completarse.",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#ffc107', // Color Naranja (Warning)
-                cancelButtonText: 'Cancelar',
-                confirmButtonText: 'Sí, enviar ahora'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // 4. Si confirma, llamar a la función AJAX
-                    EnviarCorreosMasivos(estudiantes);
-                }
-            });
-        }
-
-/**
-         * Envía la lista de estudiantes al controlador de Laravel (usando PHPMailer).
-         */
-        function EnviarCorreosMasivos(estudiantes) {
-            // Muestra un 'cargando'
-            toastr.info('Encolando correos para envío... Por favor espere.', 'Sistema');
-
-            // Deshabilita el botón para evitar doble clic
-            $('#btnEnviarCorreos').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Enviando...');
-
-            $.ajax({
-                type: "POST", // Usar POST para enviar un array de datos
-                url: "{{ url('calificaciones/enviar-correos') }}", // Esta es la URL de tu ruta
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    estudiantes: estudiantes, // El array de objetos (email y datos_pdf)
-                    codigo_institucion: $("#codigo_institucion").val() // Para los datos generales
-                },
-                dataType: 'json',
-                success: function(response) {
-                    if(response.status === 'success') {
-                        Swal.fire('¡Éxito!', response.message, 'success');
-                    } else {
-                        Swal.fire('Error', response.message, 'error');
-                    }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    console.log("Respuesta del error:", jqXHR.responseText); // Muestra el error completo en consola
-                    Swal.fire('Error de Servidor', 'No se pudo contactar al servidor. (' + errorThrown + ')', 'error');
-                },
-                complete: function() {
-                    // Vuelve a habilitar el botón
-                    $('#btnEnviarCorreos').prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Enviar Correos');
-                }
-            });
-        }
-
-    </script>
+</script>
 @endsection

@@ -123,7 +123,12 @@ Route::get('/refresh-csrf', function() {
     return response()->json(['token' => csrf_token()]);
 });
 
-// Ruta para el guardado masivo de la matriz de notas
-Route::post('calificaciones/guardar-matriz', [App\Http\Controllers\CalificacionesPorAsignaturaController::class, 'store'])->name('calificaciones.store');
+// Ruta para obtener los alumnos y sus notas (Matriz)
+Route::get('calificaciones/buscar-estudiantes', [CalificacionesPorAsignaturaController::class, 'buscarEstudiantes']);
 
+// Ruta para guardar la matriz (asegúrate de que el nombre coincida con la vista)
+Route::post('calificaciones/guardar-matriz', [CalificacionesPorAsignaturaController::class, 'store'])->name('calificaciones.store');
+
+Route::get('get-secciones', [CalificacionesPorAsignaturaController::class, 'getSecciones']);
+Route::get('get-asignaturas', [CalificacionesPorAsignaturaController::class, 'getAsignaturas']);
 });

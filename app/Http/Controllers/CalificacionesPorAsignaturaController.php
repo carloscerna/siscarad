@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Estudiante;
 use App\Models\Tablas\Annlectivo;
@@ -39,8 +41,17 @@ class CalificacionesPorAsignaturaController extends Controller
     public function index()
     {
         // vERIFICAR EL AÑO LECTIVO ACTIVO
-        $annlectivo=Annlectivo::where('estatus', true)->orderBy('codigo', 'desc')->pluck('nombre','codigo')->toarray();
-            return view('CalificacionPorAsignatura.index', compact('annlectivo'));
+        // Obtenemos los registros y nos aseguramos de que no sea nulo
+    $ann_lectivo = Annlectivo::where('estatus', true)
+                    ->orderBy('nombre', 'desc')
+                    ->get();
+
+    // Si por alguna razón está vacío, enviamos un array vacío para que no explote
+    if (!$ann_lectivo) {
+        $ann_lectivo = collect(); 
+    }
+        //$annlectivo=Annlectivo::where('estatus', true)->orderBy('codigo', 'desc')->pluck('nombre','codigo')->toarray();
+            return view('CalificacionPorAsignatura.index', compact('ann_lectivo'));
     }
 
     /**
@@ -59,52 +70,10 @@ class CalificacionesPorAsignaturaController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-public function store(Request $request)
-{
-    try {
-        $periodo = $request->codigo_periodo;
-        $notasData = $request->input('notas', []);
-
-        if (empty($notasData)) {
-            return response()->json(['status' => 'error', 'message' => 'No hay notas para guardar.']);
-        }
-
-        foreach ($notasData as $id_nota => $valores) {
-            // Definimos dinámicamente las columnas según tu estructura PostgreSQL
-            $col_a1 = "nota_a1_" . $periodo;
-            $col_a2 = "nota_a2_" . $periodo;
-            $col_a3 = "nota_a3_" . $periodo;
-            $col_rec = "nota_r_" . $periodo;
-            $col_prom = "nota_p_p_" . $periodo;
-
-            // Convertimos a número y aseguramos que si está vacío sea 0
-            $n1 = floatval($valores['n1'] ?? 0);
-            $n2 = floatval($valores['n2'] ?? 0);
-            $n3 = floatval($valores['n3'] ?? 0);
-            $rec = floatval($valores['rec'] ?? 0);
-
-            // Lógica de Promedio: (35% + 35% + 30%)
-            $promedio = ($n1 * 0.35) + ($n2 * 0.35) + ($n3 * 0.30);
-            
-            // Si hay nota de recuperación y es mayor al promedio, podrías ajustarlo aquí
-            // Por ahora guardamos el promedio calculado
-            
-            DB::table('notas')->where('id_notas', $id_nota)->update([
-                $col_a1 => $n1,
-                $col_a2 => $n2,
-                $col_a3 => $n3,
-                $col_rec => $rec,
-                $col_prom => round($promedio, 2),
-                'updated_at' => now()
-            ]);
-        }
-
-        return response()->json(['status' => 'success', 'message' => '¡Calificaciones del Periodo '.$periodo.' guardadas con éxito!']);
-
-    } catch (\Exception $e) {
-        return response()->json(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
+    public function store(Request $request)
+    {
+        //
     }
-}
 
     /**
      * Display the specified resource.
@@ -1299,5 +1268,218 @@ public function enviarCorreosMasivos(Request $request)
             return $fpdfError->Output('S');
         }
     }
+
+// Añade estos métodos a tu controlador
+// 1. Método para cargar las Secciones/Grados del docente
+public function getSecciones(Request $request)
+{
+    $codigo_personal = Auth::user()->codigo_personal;
+    $codigo_annlectivo = $request->codigo_ann; // Ej: "26"
+
+    $secciones = DB::table('carga_docente')
+        ->distinct()
+        ->join('bachillerato_ciclo', 'carga_docente.codigo_bachillerato', '=', 'bachillerato_ciclo.codigo')
+        ->join('grado_ano', 'carga_docente.codigo_grado', '=', 'grado_ano.codigo')
+        ->join('seccion', 'carga_docente.codigo_seccion', '=', 'seccion.codigo')
+        ->select(
+            // Concatenamos todo para que el value sea único y completo
+            DB::raw("CONCAT(
+                carga_docente.codigo_grado, 
+                carga_docente.codigo_seccion, 
+                carga_docente.codigo_turno, 
+                carga_docente.codigo_bachillerato,
+                carga_docente.codigo_ann_lectivo
+            ) as codigo_compuesto"),
+            DB::raw("CONCAT(grado_ano.nombre, ' ', seccion.nombre, ' - ', bachillerato_ciclo.nombre) as nombre_mostrar")
+        )
+        ->where('codigo_docente', '=', $codigo_personal)
+        ->where('codigo_ann_lectivo', '=', $codigo_annlectivo)
+        ->get();
+
+    return response()->json($secciones->map(function($item) {
+        return [
+            'codigo' => $item->codigo_compuesto,
+            'nombre' => $item->nombre_mostrar
+        ];
+    }));
+}
+public function getAsignaturas(Request $request)
+{
+    $codigo_personal = Auth::user()->codigo_personal;
+    $v = $request->codigo_seccion; // El código de 10 dígitos
+
+    $asignaturas = DB::table('carga_docente')
+        ->distinct()
+        ->join('asignatura', 'carga_docente.codigo_asignatura', '=', 'asignatura.codigo')
+        ->select('asignatura.codigo', 'asignatura.nombre')
+        ->where('codigo_docente', '=', $codigo_personal)
+        ->where('codigo_grado', '=', substr($v, 0, 2))
+        ->where('codigo_seccion', '=', substr($v, 2, 2))
+        ->where('codigo_turno', '=', substr($v, 4, 2))
+        ->where('codigo_bachillerato', '=', substr($v, 6, 2))
+        ->where('codigo_ann_lectivo', '=', substr($v, 8, 2)) // Aquí usamos el año del select
+        ->get();
+
+    return response()->json($asignaturas);
+}
+
+/**
+     * Busca estudiantes y sus 4 notas del periodo seleccionado.
+     */
+public function buscarEstudiantes(Request $request)
+{
+    $periodo = $request->periodo;
+    $codigo_ann = $request->codigo_ann_lectivo;
+    $codigo_asignatura = $request->codigo_asignatura;
+    
+    // Capturamos los códigos individuales que envía el JS (usando substring en el JS)
+    $grado     = $request->codigo_grado;
+    $seccion   = $request->codigo_seccion;
+    $turno     = $request->codigo_turno;
+    $modalidad = $request->codigo_modalidad;
+
+    // Validación de Periodo Calendario
+    $hoy = \Carbon\Carbon::now()->format('Y-m-d');
+    $periodoActivo = DB::table('periodo_calendario')
+        ->where('codigo_annlectivo', $codigo_ann)
+        ->where('codigo_modalidad', $modalidad)
+        ->where('codigo_periodo', $periodo)
+        ->whereDate('fecha_desde', '<=', $hoy)
+        ->whereDate('fecha_registro_academico', '>=', $hoy)
+        ->first();
+
+    if (!$periodoActivo) {
+        return response()->json([
+            'status' => 'locked',
+            'message' => "El registro para la modalidad $modalidad y periodo $periodo no está habilitado hoy ($hoy)."
+        ]);
+    }
+
+    // Columnas dinámicas según periodo
+    $col1 = "nota_a1_{$periodo}";
+    $col2 = "nota_a2_{$periodo}";
+    $col3 = "nota_a3_{$periodo}";
+    $colR = "nota_r_{$periodo}";
+    $colP = "nota_p_p_{$periodo}"; // PROMEDIO
+
+    $estudiantes = DB::table('alumno as al')
+        ->join('alumno_matricula as am', 'al.id_alumno', '=', 'am.codigo_alumno')
+        ->leftJoin('nota as n', function($join) use ($codigo_asignatura) {
+            $join->on('am.id_alumno_matricula', '=', 'n.codigo_matricula')
+                 ->where('n.codigo_asignatura', '=', $codigo_asignatura);
+        })
+        ->where('am.codigo_ann_lectivo', $codigo_ann)
+        ->where('am.codigo_grado', $grado)
+        ->where('am.codigo_seccion', $seccion)
+        ->where('am.codigo_turno', $turno)
+        ->where('am.retirado', false)
+        ->select(
+            'al.id_alumno as codigo_alumno',
+            'al.nombre_completo',
+            'al.codigo_nie',
+            'am.id_alumno_matricula as codigo_matricula',
+            "n.{$col1} as nota_a1",
+            "n.{$col2} as nota_a2",
+            "n.{$col3} as nota_a3",
+            "n.{$colR} as nota_r",
+            "n.{$colP} as nota_p"
+        )
+        ->orderBy('al.apellido_paterno')
+        ->get();
+
+    return response()->json([
+        'status' => 'success',
+        'estudiantes' => $estudiantes
+    ]);
+}
+public function guardarTodas(Request $request)
+{
+    try {
+        $notas = $request->notas;
+        $periodo = $request->periodo;
+        $codigo_asig = $request->codigo_asignatura;
+        $modalidad = $request->codigo_modalidad;
+
+        // 1. Obtener reglas académicas del catálogo
+        $regla = DB::table('catalogo_periodo')
+            ->where('codigo_modalidad', $modalidad)
+            ->first();
+
+        // Valores por defecto si no existe la regla
+        $divisor = $regla ? $regla->cantidad_periodos : 4;
+        $nota_minima = $regla ? $regla->calificacion_minima : 6;
+
+        foreach ($notas as $n) {
+            $a1 = floatval($n['nota_a1']);
+            $a2 = floatval($n['nota_a2']);
+            $a3 = floatval($n['nota_a3']);
+            $r  = floatval($n['nota_r']);
+
+            // 2. Lógica de Recuperación: Mejora la nota más baja entre A1 y A2
+            $a1_final = $a1;
+            $a2_final = $a2;
+
+            if ($r > 0) {
+                if ($a1 < $a2) {
+                    $a1_final = ($r > $a1) ? $r : $a1;
+                } else {
+                    $a2_final = ($r > $a2) ? $r : $a2;
+                }
+            }
+
+            // 3. Cálculo del Promedio del Periodo (35%, 35%, 30%)
+            $promedio_p = ($a1_final * 0.35) + ($a2_final * 0.35) + ($a3 * 0.30);
+            $promedio_p = round($promedio_p, 1);
+
+            // 4. Guardar o Actualizar en la tabla 'nota'
+            $columnas = [
+                "nota_a1_{$periodo}" => $a1,
+                "nota_a2_{$periodo}" => $a2,
+                "nota_a3_{$periodo}" => $a3,
+                "nota_r_{$periodo}"  => $r,
+                "nota_p_p_{$periodo}" => $promedio_p,
+                'updated_at' => now()
+            ];
+
+            DB::table('nota')->updateOrInsert(
+                [
+                    'codigo_matricula' => $n['codigo_matricula'], 
+                    'codigo_asignatura' => $codigo_asig
+                ],
+                $columnas
+            );
+
+            // 5. Recalcular Nota Final Global
+            $this->actualizarNotaFinalGlobal($n['codigo_matricula'], $codigo_asig, $divisor);
+        }
+
+        return response()->json(['status' => 'success', 'message' => 'Notas guardadas y promedios actualizados.']);
+
+    } catch (\Exception $e) {
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+    }
+}
+
+private function actualizarNotaFinalGlobal($matricula, $asignatura, $divisor)
+{
+    $registro = DB::table('nota')
+        ->where('codigo_matricula', $matricula)
+        ->where('codigo_asignatura', $asignatura)
+        ->first();
+
+    if ($registro) {
+        $suma = ($registro->nota_p_p_1 ?? 0) + 
+                ($registro->nota_p_p_2 ?? 0) + 
+                ($registro->nota_p_p_3 ?? 0) + 
+                ($registro->nota_p_p_4 ?? 0) + 
+                ($registro->nota_p_p_5 ?? 0);
+
+        $nota_final = $suma / $divisor;
+        
+        DB::table('nota')
+            ->where('id_nota', $registro->id_nota)
+            ->update(['nota_final' => round($nota_final, 1)]);
+    }
+}
 
 }   // fin de la función.

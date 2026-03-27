@@ -9,5 +9,5 @@ class Annlectivo extends Model
 {
     use HasFactory;
     protected $table = "ann_lectivo";
-
+    protected $fillable = ['codigo','nombre','estatus'];
 }
