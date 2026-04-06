@@ -94,6 +94,8 @@ Route::group(['middleware'=> ['auth']], function(){
     ////////////////////////////////////////
     // REPORTES boleta de califiación
     Route::get('pdf/{id}', [PdfController::class, 'index']);
+Route::get('reportes/boleta-masiva', [PdfController::class, 'boletaMasiva']);
+
     // REPORTES boleta de califiación por asignatura
     Route::get('pdfRPA/{id}', [PdfRPAController::class, 'index']);
     // REPORTES boleta de califiación por asignatura
@@ -131,4 +133,6 @@ Route::post('calificaciones/guardar-matriz', [CalificacionesPorAsignaturaControl
 
 Route::get('get-secciones', [CalificacionesPorAsignaturaController::class, 'getSecciones']);
 Route::get('get-asignaturas', [CalificacionesPorAsignaturaController::class, 'getAsignaturas']);
+// Busca dónde tienes las rutas de calificaciones y agrega esta línea:
+Route::post('calificaciones/guardar-todas', [CalificacionesPorAsignaturaController::class, 'guardarTodas']);
 });

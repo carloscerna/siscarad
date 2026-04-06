@@ -1375,7 +1375,7 @@ public function buscarEstudiantes(Request $request)
         ->where('am.retirado', false)
         ->select(
             'al.id_alumno as codigo_alumno',
-            'al.nombre_completo',
+            DB::raw("CONCAT(al.apellido_paterno, ' ', al.apellido_materno, ', ', al.nombre_completo) as nombre_completo"),
             'al.codigo_nie',
             'am.id_alumno_matricula as codigo_matricula',
             "n.{$col1} as nota_a1",
@@ -1401,7 +1401,7 @@ public function guardarTodas(Request $request)
         $modalidad = $request->codigo_modalidad;
 
         // 1. Obtener reglas académicas del catálogo
-        $regla = DB::table('catalogo_periodo')
+        $regla = DB::table('catalogo_periodos')
             ->where('codigo_modalidad', $modalidad)
             ->first();
 
@@ -1477,7 +1477,7 @@ private function actualizarNotaFinalGlobal($matricula, $asignatura, $divisor)
         $nota_final = $suma / $divisor;
         
         DB::table('nota')
-            ->where('id_nota', $registro->id_nota)
+            ->where('id_notas', $registro->id_notas)
             ->update(['nota_final' => round($nota_final, 1)]);
     }
 }

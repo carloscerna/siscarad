@@ -1256,6 +1256,59 @@ class PdfController extends Controller
                     exit;
     }
 }    //pdf controller contenedor
+
+
+public function boletaMasiva(Request $request)
+{
+    // 1. Recolectar parámetros de la URL
+    $matriculasStr = $request->input('matriculas'); // Viene como "45,46,47"
+    $periodoActivo = $request->input('periodo');    // Viene como "1", "2", etc.
+    $accion = $request->input('accion', 'ver');     // 'ver' o 'descargar'
+
+    if (!$matriculasStr) {
+        return "No se han seleccionado estudiantes.";
+    }
+
+    // Convertir el string "45,46,47" en un array real [45, 46, 47]
+    $arrayMatriculas = explode(',', $matriculasStr);
+
+    // 2. Configurar el PDF (Letter Horizontal)
+    $this->fpdf->SetFont('Arial', 'B', 9);
+    $this->fpdf->SetMargins(15, 5, 5);
+    $this->fpdf->SetAutoPageBreak(true, 5);
+
+    // 3. Obtener el catálogo de áreas (Tu mismo código del index)
+    $catalogo_area_asignatura_codigo = array();
+    $catalogo_area_asignatura_area = array();
+    $CatalogoAreaAsignatura = DB::table('catalogo_area_asignatura')->select('codigo','descripcion')->get();
+    foreach($CatalogoAreaAsignatura as $response_area){
+        $catalogo_area_asignatura_codigo[] = trim($response_area->codigo);
+        $catalogo_area_asignatura_area[] = trim($response_area->descripcion);
+    }
+
+    // 4. BUCLE PRINCIPAL: Iteramos por cada matrícula seleccionada
+    foreach ($arrayMatriculas as $codigo_matricula) {
+        
+        // Añadimos una página nueva por cada estudiante
+        $this->fpdf->AddPage();
+        $this->fpdf->SetX(30);
+
+        // Aquí adentro colocarías TODA la lógica de consultas de la base de datos 
+        // y el dibujado de celdas que ya tienes en tu método index() actual, 
+        // pero usando la variable $codigo_matricula.
+        
+        // Nota: Asegúrate de reiniciar las variables lógicas como
+        // $catalogo_area_basica = true; para que las etiquetas se pinten bien en cada hoja.
+        
+    }
+
+    // 5. Salida del PDF
+    $nombre_archivo = 'Boletas_Masivas_' . date('Ymd_His') . '.pdf';
+    $modoSalida = ($accion === 'descargar') ? 'D' : 'I'; 
+
+    return response($this->fpdf->Output($modoSalida, $nombre_archivo))
+            ->header('Content-Type', 'application/pdf');
+}
 }
 
 

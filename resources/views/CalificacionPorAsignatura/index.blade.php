@@ -90,6 +90,23 @@ use Illuminate\Support\Facades\Auth;
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
+                      <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="btn-group" role="group">
+                                <button type="button" id="btnVerSeleccionados" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i> Ver Boletas
+                                </button>
+                                <button type="button" id="btnDescargarSeleccionados" class="btn btn-outline-secondary">
+                                    <i class="fas fa-download"></i> Descargar Boletas
+                                </button>
+                                <button type="button" id="btnEnviarCorreos" class="btn btn-outline-success">
+                                    <i class="fas fa-envelope"></i> Enviar por Correo
+                                </button>
+                            </div>
+                            <span class="text-muted ml-2" id="textoSeleccionados">(0 seleccionados)</span>
+                        </div>
+                    </div>
+
                         <table class="table table-bordered table-hover">
                             <thead class="thead-dark text-center">
                                 <tr>
@@ -140,6 +157,27 @@ use Illuminate\Support\Facades\Auth;
 
 
 $(document).on('input', '.input-a1, .input-a2, .input-a3, .input-r', function() {
+let input = $(this);
+    let valor = parseFloat(input.val());
+
+    // --- BLOQUEO DE RANGO (0 a 10) ---
+    if (valor > 10) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'warning',
+            title: 'La nota máxima es 10',
+            showConfirmButton: false,
+            timer: 2000
+        });
+        input.val(10); // Le forzamos el valor máximo
+        valor = 10;
+    } else if (valor < 0) {
+        input.val(0); // No permitimos notas negativas
+        valor = 0;
+    }
+    // ---------------------------------
+
     let fila = $(this).closest('tr');
     let fullCodigo = $('#codigo_seccion').val();
     let modalidad = fullCodigo.substring(6,8);
@@ -177,6 +215,40 @@ $(document).on('input', '.input-a1, .input-a2, .input-a3, .input-r', function() 
 });
 
     $(document).ready(function() {
+// Función para marcar/desmarcar todos
+$(document).on('change', '#checkTodos', function() {
+    let checked = $(this).prop('checked');
+    $('.check-estudiante').prop('checked', checked);
+    actualizarContador();
+});
+
+// Función para actualizar el contador al marcar uno individual
+$(document).on('change', '.check-estudiante', function() {
+    actualizarContador();
+    
+    // Si desmarcas uno, desmarcamos el "Todos" por coherencia
+    if(!$(this).prop('checked')) {
+        $('#checkTodos').prop('checked', false);
+    }
+});
+
+function actualizarContador() {
+    let seleccionados = $('.check-estudiante:checked').length;
+    $('#textoSeleccionados').text(`(${seleccionados} seleccionados)`);
+}
+
+// Escuchamos el cambio en cualquiera de los selects de filtro
+$('#codigo_ann_lectivo, #codigo_seccion, #codigo_asignatura, #periodo').on('change', function() {
+    // 1. Ocultamos el contenedor de la tabla con un efecto suave
+    $('#contenedorNotas').hide();
+    
+    // 2. Vaciamos el cuerpo de la tabla
+    $('#cuerpoTablaEstudiantes').html('');
+    
+    // 3. Opcional: Puedes poner un mensaje sutil si lo prefieres
+    // $('#cuerpoTablaEstudiantes').html('<tr><td colspan="7" class="text-center text-muted">Realice una nueva búsqueda</td></tr>');
+});
+        
             // Al cambiar AÑO -> Cargar SECCIONES
             $('#codigo_ann_lectivo').on('change', function() {
                 let ann = $(this).val();
@@ -207,22 +279,35 @@ $(document).on('input', '.input-a1, .input-a2, .input-a3, .input-r', function() 
                 });
             });
     });
+function buscarEstudiantes() {
+    let fullCodigo = $('#codigo_seccion').val(); 
+    
+    if(!fullCodigo || !$('#codigo_asignatura').val()){
+        Swal.fire('Atención', 'Seleccione todos los filtros antes de buscar.', 'warning');
+        return;
+    }
 
-    function buscarEstudiantes() {
-   let v = $('#codigo_seccion').val(); // Ejemplo: "0902021726" (Noveno, Sec 02, Turno 02, Mod 17, Año 26)
+    // --- 1. EFECTO VISUAL DE CARGA ---
+    // Guardamos el botón en una variable
+    let btnBuscar = $('#btnCargarListado'); // Asegúrate de que tu botón tenga este id="btnCargarListado"
+    
+    // Lo deshabilitamos y le cambiamos el texto por un spinner
+    btnBuscar.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Cargando...');
+    
+    // Limpiamos la tabla y ponemos un mensaje de espera
+    $('#cuerpoTablaEstudiantes').html('<tr><td colspan="7" class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Obteniendo listado de estudiantes, por favor espere...</td></tr>');
+    $('#contenedorNotas').fadeIn();
+    // ---------------------------------
 
     let params = {
         codigo_asignatura: $('#codigo_asignatura').val(),
         periodo: $('#periodo').val(),
-        // Cortes precisos
-        codigo_grado:     v.substring(0,2),
-        codigo_seccion:   v.substring(2,4),
-        codigo_turno:     v.substring(4,6),
-        codigo_modalidad: v.substring(6,8),
-        codigo_ann_lectivo: v.substring(8,10) // <-- Ya no lo sacamos del otro select, sino de aquí
+        codigo_grado:     fullCodigo.substring(0,2),
+        codigo_seccion:   fullCodigo.substring(2,4),
+        codigo_turno:     fullCodigo.substring(4,6),
+        codigo_modalidad: fullCodigo.substring(6,8),
+        codigo_ann_lectivo: fullCodigo.substring(8,10)
     };
-
-    $('#contenedorNotas').hide();
 
     $.get("{{ url('calificaciones/buscar-estudiantes') }}", params, function(res) {
         if(res.status === 'locked') {
@@ -233,38 +318,42 @@ $(document).on('input', '.input-a1, .input-a2, .input-a3, .input-r', function() 
 
         let filas = '';
         $.each(res.estudiantes, function(i, e) {
-            // Calculamos el promedio visualmente si es necesario o mostramos el de DB
             let promedioActual = parseFloat(e.nota_p) || 0;
-            let fullCodigo = $('#codigo_seccion').val();
-            let mod = fullCodigo.substring(6,8);
-            let minima = (mod >= '17' && mod <= '19') ? 5.0 : 6.0;
-
+            let minima = (params.codigo_modalidad >= '17' && params.codigo_modalidad <= '19') ? 5.0 : 6.0;
             let claseRoja = (promedioActual < minima) ? 'nota-reprobada' : '';
-            
+
             filas += `
                 <tr class="fila-estudiante" data-alumno="${e.codigo_alumno}" data-matricula="${e.codigo_matricula}">
-                    <td class="text-center">${e.codigo_nie}</td>
-                    <td>${e.nombre_completo}</td>
-                    <td><input type="number" step="0.1" class="form-control text-center input-a1" value="${e.nota_a1 || ''}"></td>
-                    <td><input type="number" step="0.1" class="form-control text-center input-a2" value="${e.nota_a2 || ''}"></td>
-                    <td><input type="number" step="0.1" class="form-control text-center input-a3" value="${e.nota_a3 || ''}"></td>
-                    <td><input type="number" step="0.1" class="form-control text-center input-r" value="${e.nota_r || ''}"></td>
+                    <td class="text-center align-middle">
+                        <input type="checkbox" class="check-estudiante" value="${e.codigo_matricula}">
+                    </td>
+                    <td class="text-center align-middle">${e.codigo_nie}</td>
+                    <td class="align-middle">${e.nombre_completo}</td>
+                    <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-a1" value="${e.nota_a1 || ''}"></td>
+                    <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-a2" value="${e.nota_a2 || ''}"></td>
+                    <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-a3" value="${e.nota_a3 || ''}"></td>
+                    <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-r" value="${e.nota_r || ''}"></td>
                     <td class="text-center align-middle font-weight-bold bg-light">
                         <span class="label-promedio ${claseRoja}">${promedioActual.toFixed(1)}</span>
                     </td>
                 </tr>`;
         });
-        $('#cuerpoTablaEstudiantes').html(filas);
-        $('#contenedorNotas').fadeIn();
+
+        $('#cuerpoTablaEstudiantes').html(filas || '<tr><td colspan="7" class="text-center">No hay registros</td></tr>');
+        
+    }).fail(function() {
+        Swal.fire('Error', 'No se pudo realizar la búsqueda.', 'error');
+    }).always(function() {
+        // --- 2. RESTAURAR EL BOTÓN AL FINALIZAR ---
+        // El bloque .always() se ejecuta SIEMPRE (si sale bien o si sale mal la petición)
+        btnBuscar.prop('disabled', false).html('<i class="fas fa-users"></i> Cargar Listado');
     });
 }
 
-    // Función para guardar todo el listado
-function guardarTodasLasNotas() {
+   function guardarTodasLasNotas() {
     let notasData = [];
     let fullCodigo = $('#codigo_seccion').val();
     
-    // Mostramos un loading
     $('#btnGuardarNotas').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
 
     $('.fila-estudiante').each(function() {
@@ -282,20 +371,22 @@ function guardarTodasLasNotas() {
         _token: '{{ csrf_token() }}',
         periodo: $('#periodo').val(),
         codigo_asignatura: $('#codigo_asignatura').val(),
-        codigo_modalidad: fullCodigo.substring(6,8), // Enviamos la modalidad para el cálculo
+        codigo_modalidad: fullCodigo.substring(6,8),
         notas: notasData
     };
 
     $.ajax({
         type: "POST",
         url: "{{ url('calificaciones/guardar-todas') }}",
-        data: JSON.stringify(payload),
-        contentType: "application/json",
+        data: payload, // Quitamos JSON.stringify para enviar como datos de formulario tradicional
+        dataType: 'json',
         success: function(res) {
             Swal.fire('¡Éxito!', res.message, 'success');
         },
-        error: function(err) {
-            Swal.fire('Error', 'No se pudieron guardar las notas.', 'error');
+        error: function(jqXHR, textStatus, errorThrown) {
+            // ESTO ES LO IMPORTANTE: Imprimirá el error real en la consola F12
+            console.error("Error del servidor:", jqXHR.responseText);
+            Swal.fire('Error', 'No se pudieron guardar las notas. Revisa la consola (F12) para más detalles.', 'error');
         },
         complete: function() {
             $('#btnGuardarNotas').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Todo el Periodo');
@@ -320,5 +411,62 @@ $(document).on('input', '.form-control', function() {
         fila.find('.label-promedio').css('color', 'black');
     }
 });
+
+        // Listeners para los nuevos botones
+        $(document).ready(function() {
+            $('#btnVerSeleccionados').on('click', function() {
+                AccionMasivaBoletas('ver');
+            });
+
+            $('#btnDescargarSeleccionados').on('click', function() {
+                AccionMasivaBoletas('descargar');
+            });
+            // ===== AÑADIR ESTE LISTENER =====
+            $('#btnEnviarCorreos').on('click', function() {
+                ConfirmarEnvioCorreos();
+            });
+        });
+
+function AccionMasivaBoletas(accion) {
+    let matriculas = [];
+    let tipoAccion = (accion === 'ver') ? 'Ver' : 'Descargar';
+    
+    // 1. Recolectar solo los códigos de matrícula marcados
+    $('.check-estudiante:checked').each(function() {
+        matriculas.push($(this).val());
+    });
+
+    // 2. Validar si seleccionó alguno
+    if (matriculas.length === 0) {
+        Swal.fire('Ningún Estudiante', 'Por favor, seleccione al menos un estudiante de la lista.', 'info');
+        return;
+    }
+
+    // 3. ¡Mostrar el SweetAlert!
+    Swal.fire({
+        title: '¿' + tipoAccion + ' ' + matriculas.length + ' Boleta(s)?',
+        text: "Se procesarán las boletas de los estudiantes seleccionados en un solo archivo. ¿Desea continuar?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, continuar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            toastr.info('Generando archivo... Por favor espere.', 'Sistema');
+
+            // 4. Creamos una URL limpia enviando el array de matrículas como parámetro
+            // Convertimos el array [12, 15, 18] en una cadena "12,15,18"
+            let matriculasStr = matriculas.join(',');
+            
+            // Reemplaza 'reportes/boleta-masiva' por la ruta real que uses para el PDF
+            let urlFinal = `{{ url('reportes/boleta-masiva') }}?matriculas=${matriculasStr}&accion=${accion}&periodo=${$('#periodo').val()}`;
+
+            // Abrimos UNA SOLA pestaña con el PDF completo
+            window.open(urlFinal, '_blank');
+        }
+    });
+}
 </script>
 @endsection
