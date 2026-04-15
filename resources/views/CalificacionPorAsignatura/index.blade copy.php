@@ -595,7 +595,7 @@ use Illuminate\Support\Facades;
                 AbrirVentana(url);
         }
         
-        {{-- ===== MEJORA 5: FUNCIÓN DE CONFIRMACIÓN ===== --}}
+        //{{-- ===== MEJORA 5: FUNCIÓN DE CONFIRMACIÓN ===== --}}
         function ConfirmarGuardarRegistros() {
             Swal.fire({
                 title: '¿Guardar Calificaciones?',

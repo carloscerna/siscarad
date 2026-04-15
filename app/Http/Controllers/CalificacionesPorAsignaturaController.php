@@ -877,7 +877,7 @@ public function enviarCorreosMasivos(Request $request)
      * @param string $datosPdfString El string (NIE-Alumno-Matricula-etc...)
      * @return string Los datos binarios del PDF
      */
-    private function generarBoletaPdf($datosPdfString)
+    private function generarBoletaPdf($datosPdfString, $accion="ver")
     {
         Log::info('Iniciando generación de PDF (FPDF) para: ' . $datosPdfString);
 
@@ -1253,8 +1253,17 @@ public function enviarCorreosMasivos(Request $request)
             // =================================================================
             // 6. DEVOLVER EL PDF COMO STRING
             // =================================================================
-            return $fpdf->Output('S'); // 'S' devuelve el contenido como string
+           // return $fpdf->Output('S'); // 'S' devuelve el contenido como string
+          //  $nombre_archivo_personalizado = "Boleta - " . date('YmdHis') . ".pdf"; 
+        
+        // Si tienes acceso a los datos del estudiante aquí, puedes armarlo mejor:
+         $nombre_archivo_personalizado = "{$nombre_completo} - {$codigo_nie}.pdf";
 
+        // 3. LA SALIDA DINÁMICA
+            $modo_salida = ($accion == 'descargar') ? 'D' : 'I';
+
+        // IMPORTANTE: Si esta función devuelve el objeto FPDF o el contenido:
+            return $fpdf->Output($modo_salida, $nombre_archivo_personalizado);
         } catch (\Exception $e) {
             Log::error('Error al generar PDF (FPDF): ' . $e->getMessage() . ' en línea ' . $e->getLine() . ' Archivo: ' . $e->getFile());
             // Genera un PDF de error simple si falla
@@ -1369,6 +1378,7 @@ public function buscarEstudiantes(Request $request)
                  ->where('n.codigo_asignatura', '=', $codigo_asignatura);
         })
         ->where('am.codigo_ann_lectivo', $codigo_ann)
+        ->where('am.codigo_bach_o_ciclo', $modalidad)
         ->where('am.codigo_grado', $grado)
         ->where('am.codigo_seccion', $seccion)
         ->where('am.codigo_turno', $turno)

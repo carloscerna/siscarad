@@ -18,6 +18,8 @@ class PdfRPAController extends Controller
 
     public function index($id) 
     {
+
+    
         // Configurar PDF.
             $this->fpdf->SetFont('Arial', 'B', 9);
             $this->fpdf->AddPage();
@@ -26,15 +28,25 @@ class PdfRPAController extends Controller
             $this->fpdf->SetX(30);
         // Variables
         // NIE - ID - CODIGO MATRICULOA - (CODIGO GRADO - SECCION - TURNO -MODALIDAD) - ANNLECTIVO
+        // 10 02 04 21 26
             $EstudianteMatricula = explode("-",$id);
+            
             $codigo_gradoseccionturnomodalidad = $EstudianteMatricula[0];
             $codigo_modalidad = substr($codigo_gradoseccionturnomodalidad,6,2);
             $codigo_turno = substr($codigo_gradoseccionturnomodalidad,4,2);
             $codigo_seccion = substr($codigo_gradoseccionturnomodalidad,2,2);
             $codigo_grado = substr($codigo_gradoseccionturnomodalidad,0,2);
+
+          /*  print "Modalidad:" . $codigo_modalidad ."<br>";
+            print "Turno:" . $codigo_turno ."<br>";
+            print "Sección:" . $codigo_seccion ."<br>";
+            print "Grado:" . $codigo_grado ."<br>";
+
+            dd($EstudianteMatricula);
+*/
             $codigo_annlectivo = $EstudianteMatricula[1];
             $codigo_institucion = $EstudianteMatricula[2];
-            $codigo_asignatura = $EstudianteMatricula[3];
+            $codigo_asignatura = $EstudianteMatricula[4];
             $codigo_area_asignatura = $EstudianteMatricula[4];
             $codigo_personal = $EstudianteMatricula[5];
             ////////////////////////////////////////////////////////////////////

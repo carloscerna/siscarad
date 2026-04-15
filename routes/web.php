@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RolController;
@@ -96,6 +97,10 @@ Route::group(['middleware'=> ['auth']], function(){
     Route::get('pdf/{id}', [PdfController::class, 'index']);
 Route::get('reportes/boleta-masiva', [PdfController::class, 'boletaMasiva']);
 
+
+// Asegúrate de que la ruta acepte el parámetro 'accion'
+Route::get('/boleta/pdf/{id}/{accion}', [App\Http\Controllers\PdfController::class, 'boletaMasiva'])->name('boleta.pdf');
+
     // REPORTES boleta de califiación por asignatura
     Route::get('pdfRPA/{id}', [PdfRPAController::class, 'index']);
     // REPORTES boleta de califiación por asignatura
@@ -135,4 +140,62 @@ Route::get('get-secciones', [CalificacionesPorAsignaturaController::class, 'getS
 Route::get('get-asignaturas', [CalificacionesPorAsignaturaController::class, 'getAsignaturas']);
 // Busca dónde tienes las rutas de calificaciones y agrega esta línea:
 Route::post('calificaciones/guardar-todas', [CalificacionesPorAsignaturaController::class, 'guardarTodas']);
+Route::get('/pdfRPA/{id}', [PdfRPAController::class, 'index'])->name('pdf.asignatura');
+
+Route::get('/test-consulta', function() {
+$col1 = 'nota_a1_1';
+$col2 = 'nota_a2_1';
+$col3 = 'nota_a3_1';
+$colR = 'nota_r_1';
+$colP = 'nota_p_p_1';
+$codigo_ann = '2026';
+$grado = '10';
+$seccion = '01';
+$turno = '04';
+$codigo_asignatura='720';
+
+$codigo_modalidad = '21';
+$codigo_grado = '10';
+$codigo_seccion = '02';
+$codigo_turno = '04';
+$codigo_annlectivo = '26';
+$codigo_asignatura = '1092';
+
+    $EstudianteBoleta = DB::table('alumno as a')
+                ->join('alumno_matricula AS am','a.id_alumno','=','am.codigo_alumno')
+                ->join('nota AS n','am.id_alumno_matricula','=','n.codigo_matricula')
+                ->join('bachillerato_ciclo AS bach', 'bach.codigo','=','am.codigo_bach_o_ciclo')
+                ->join('grado_ano AS gr', 'gr.codigo','=','am.codigo_grado')
+                ->join('seccion AS sec', 'sec.codigo','=','am.codigo_seccion')
+                ->join('turno AS tur', 'tur.codigo','=','am.codigo_turno')
+                ->join('asignatura AS asig','asig.codigo','=','n.codigo_asignatura')
+                ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno', 'a.foto', 'a.codigo_genero',
+                        'am.id_alumno_matricula as codigo_matricula','am.codigo_bach_o_ciclo as codigo_modalidad','am.codigo_grado','am.codigo_seccion','am.codigo_turno','am.codigo_ann_lectivo',
+                        'n.id_notas','n.codigo_asignatura',
+                        'bach.nombre AS nombre_modalidad', 'gr.nombre as nombre_grado', 'sec.nombre as nombre_seccion','tur.nombre as nombre_turno',
+                        'n.nota_a1_1', 'n.nota_a2_1', 'n.nota_a3_1', 'nota_r_1', 'n.nota_p_p_1', 
+                        'n.nota_a1_2', 'n.nota_a2_2', 'n.nota_a3_2', 'nota_r_2', 'n.nota_p_p_2',
+                        'n.nota_a1_3', 'n.nota_a2_3', 'n.nota_a3_3', 'nota_r_3', 'n.nota_p_p_3', 
+                        'n.nota_a1_4', 'n.nota_a2_4', 'n.nota_a3_4', 'nota_r_4', 'n.nota_p_p_4',
+                        'n.nota_a1_5', 'n.nota_a2_5', 'n.nota_a3_5', 'nota_r_5', 'n.nota_p_p_5', 
+                        'n.nota_final', 'n.recuperacion', 'n.nota_recuperacion_2',
+                        'asig.codigo_area','asig.codigo as codigo_asignatura','asig.nombre as nombre_asignatura',
+                    DB::raw("TRIM(CONCAT(BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno), CAST(' ' AS VARCHAR), BTRIM(a.nombre_completo))) as full_name"),
+                    DB::raw("TRIM(CONCAT(BTRIM(a.nombre_completo), CAST(' ' AS VARCHAR), BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno))) as full_nombres_apellidos")
+                    )
+                        ->where([
+                            ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
+                            ['codigo_grado', '=', $codigo_grado],
+                            ['codigo_seccion', '=', $codigo_seccion],
+                            ['codigo_turno', '=', $codigo_turno],
+                            ['codigo_ann_lectivo', '=', $codigo_annlectivo],
+                            ['codigo_asignatura', '=', $codigo_asignatura],
+                            ['am.retirado', '=', 'f'],
+                            ])
+                        ->orderBy('full_name','asc')
+                        ->get();
+
+
+    dd($EstudianteBoleta);
+});
 });

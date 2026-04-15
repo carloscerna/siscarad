@@ -26,6 +26,10 @@ use Illuminate\Support\Facades\Auth;
                 </div>
                 <div class="card-body">
                     <form id="formFiltros" class="row">
+            {{-- CAMPOS OCULTOS --}}
+            <input type="hidden" id="codigo_personal" value="{{ $codigo_personal }}">
+            <input type="hidden" id="codigo_institucion" value="{{ $codigo_institucion }}">
+
                         {{-- Filtro: Año Lectivo --}}
                         <div class="col-md-3">
                             <div class="form-group">
@@ -102,19 +106,24 @@ use Illuminate\Support\Facades\Auth;
                                 <button type="button" id="btnEnviarCorreos" class="btn btn-outline-success">
                                     <i class="fas fa-envelope"></i> Enviar por Correo
                                 </button>
+                                <button type="button" id="btnReporteAsignatura" class="btn btn-info">
+                                    <i class="fas fa-book"></i> Informe por Asignatura
+                                </button>
                             </div>
                             <span class="text-muted ml-2" id="textoSeleccionados">(0 seleccionados)</span>
                         </div>
                     </div>
 
-                        <table class="table table-bordered table-hover">
+                        <table id="tabla_estudiantes" class="table table-bordered table-hover">
                             <thead class="thead-dark text-center">
                                 <tr>
+                                    <th width="5%">
+                                        <input type="checkbox" id="checkTodos" title="Seleccionar/Deseleccionar Todos">
                                     <th width="10%">NIE</th>
                                     <th>Nombre del Estudiante</th>
                                     <th width="12%">Actividad 1</th>
                                     <th width="12%">Actividad 2</th>
-                                    <th width="12%">Actividad 3</th>
+                                    <th width="12%">PO</th>
                                     <th width="12%">Recuperación</th>
                                 </tr>
                             </thead>
@@ -150,11 +159,12 @@ use Illuminate\Support\Facades\Auth;
 
 @section('scripts')
 <script>
+// 1. Definimos la ruta base para las boletas (sin el ID y la ACCION al final)
+    const urlBaseBoleta = "{{ url('boleta/pdf') }}"; 
+    const urlBaseAsignatura = "{{ url('/pdfRPA') }}";
     $.ajaxSetup({
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
     });
-
-
 
 $(document).on('input', '.input-a1, .input-a2, .input-a3, .input-r', function() {
 let input = $(this);
@@ -290,7 +300,9 @@ function buscarEstudiantes() {
     // --- 1. EFECTO VISUAL DE CARGA ---
     // Guardamos el botón en una variable
     let btnBuscar = $('#btnCargarListado'); // Asegúrate de que tu botón tenga este id="btnCargarListado"
-    
+    // 2. ¡MUY IMPORTANTE! Limpiar la tabla antes de la petición o al recibir respuesta
+    $('#tabla_estudiantes tbody').empty();
+
     // Lo deshabilitamos y le cambiamos el texto por un spinner
     btnBuscar.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Cargando...');
     
@@ -321,6 +333,15 @@ function buscarEstudiantes() {
             let promedioActual = parseFloat(e.nota_p) || 0;
             let minima = (params.codigo_modalidad >= '17' && params.codigo_modalidad <= '19') ? 5.0 : 6.0;
             let claseRoja = (promedioActual < minima) ? 'nota-reprobada' : '';
+
+// CONSTRUCCIÓN DE LAS URLS INDIVIDUALES
+    // El formato final será: /boleta/pdf/ID/ver
+    let urlVer = `${urlBaseBoleta}/${e.codigo_matricula}/ver`;
+    let urlDescargar = `${urlBaseBoleta}/${e.codigo_matricula}/descargar`;
+
+    // En la sección de scripts, cerca de urlBaseBoleta
+    const urlBaseAsignatura = "{{ url('/pdfRPA') }}";
+    const codigo_institucion = "{{ Auth::user()->codigo_institucion }}"; // Asegúrate de tener el código de institución
 
             filas += `
                 <tr class="fila-estudiante" data-alumno="${e.codigo_alumno}" data-matricula="${e.codigo_matricula}">
@@ -427,6 +448,41 @@ $(document).on('input', '.form-control', function() {
             });
         });
 
+/*
+function AccionMasivaBoletas(accion) {
+    var urls = [];
+    var dataAttr = (accion === 'ver') ? 'data-url-ver' : 'data-url-descargar';
+
+    $('.check-estudiante:checked').each(function() {
+        urls.push($(this).attr(dataAttr));
+    });
+
+    if (urls.length === 0) {
+        Swal.fire('Atención', 'Seleccione al menos un estudiante.', 'info');
+        return;
+    }
+
+    Swal.fire({
+        title: '¿Procesar ' + urls.length + ' boletas?',
+        text: "Su navegador podría solicitar permisos para múltiples descargas.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, iniciar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Usamos un intervalo para que no se abran todas al mismo milisegundo
+            urls.forEach(function(url, index) {
+                setTimeout(function() {
+                    window.open(url, '_blank');
+                }, index * 800); // 800ms de retraso entre cada una
+            });
+            
+            toastr.success('Iniciando descargas procesadas...');
+        }
+    });
+}
+*/
+
 function AccionMasivaBoletas(accion) {
     let matriculas = [];
     let tipoAccion = (accion === 'ver') ? 'Ver' : 'Descargar';
@@ -465,8 +521,63 @@ function AccionMasivaBoletas(accion) {
 
             // Abrimos UNA SOLA pestaña con el PDF completo
             window.open(urlFinal, '_blank');
-        }
+        }; // 800ms de retraso entre cada una
     });
 }
+
+$(document).ready(function() {
+    $('#btnReporteAsignatura').on('click', function() {
+        ReportePorAsignatura();
+    });
+});
+
+function ReportePorAsignatura() {
+    // 1. Obtener valores de los selects actuales
+    var codigo_gradoseccionturno = $("#codigo_seccion").val();
+    var codigo_annlectivo = $('#codigo_ann_lectivo').val();
+    var codigo_asignatura_area = $("#codigo_asignatura").val();
+    var codigo_personal = $('#codigo_personal').val();
+    var codigo_institucion = $('#codigo_institucion').val();
+
+    // Validar que se haya seleccionado una asignatura
+    if (!codigo_asignatura_area) {
+        Swal.fire('Atención', 'Por favor seleccione una asignatura primero.', 'warning');
+        return;
+    }
+
+    // 2. Lógica de substrings (tu lógica original)
+    var codigo_asignatura = "";
+    var codigo_area = "";
+    var conteo = codigo_asignatura_area.length;
+
+    if(conteo == 4){
+        codigo_asignatura = codigo_asignatura_area.substring(0,2);
+        codigo_area = codigo_asignatura_area.substring(2,4);
+    } else if(conteo == 6){
+        codigo_asignatura = codigo_asignatura_area.substring(0,4);
+        codigo_area = codigo_asignatura_area.substring(4,6);
+    } else {
+        codigo_asignatura = codigo_asignatura_area.substring(0,3);
+        codigo_area = codigo_asignatura_area.substring(3,5);
+    }
+
+    // Convertimos a String y luego aplicamos trim para evitar errores
+    var ann_trim = String(codigo_annlectivo).trim();
+    var inst_trim = String(codigo_institucion).trim();
+
+    // 3. Armar el ID compuesto que espera el controlador
+    // Formato: GGSSTT-ANN-INST-ASIG-AREA-PERS
+    var datos_estudiantes = codigo_gradoseccionturno + "-" + 
+                            ann_trim + "-" + 
+                            inst_trim + "-" + 
+                            codigo_asignatura + "-" + 
+                            codigo_area + "-" + 
+                            codigo_personal;
+
+    // 4. Construir URL y abrir
+    var url = urlBaseAsignatura + "/" + datos_estudiantes;
+    window.open(url, '_blank');
+}
+
 </script>
 @endsection

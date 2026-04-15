@@ -8,6 +8,9 @@ use Illuminate\Mail\Mailer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use App\Mail\BoletaEstudiantes;
+use Illuminate\Support\Facades\Auth;
+
+
 
 class PdfController extends Controller
 {
@@ -18,7 +21,7 @@ class PdfController extends Controller
         $this->fpdf = new Fpdf('L','mm','Letter');	// Formato Letter;
     }
 
-    public function index($id) 
+    public function index($id, $accion = "ver") 
     {
         // Configurar PDF.
             $this->fpdf->SetFont('Arial', 'B', 9);
@@ -1260,47 +1263,503 @@ class PdfController extends Controller
 
 public function boletaMasiva(Request $request)
 {
-    // 1. Recolectar parámetros de la URL
-    $matriculasStr = $request->input('matriculas'); // Viene como "45,46,47"
-    $periodoActivo = $request->input('periodo');    // Viene como "1", "2", etc.
-    $accion = $request->input('accion', 'ver');     // 'ver' o 'descargar'
+    // 1. Validar que el usuario esté autenticado (opcional pero recomendado)
+    if (!Auth::check()) {
+        return redirect()->route('login');
+    }
 
+    // 2. Obtener datos del docente logueado
+    $codigo_institucion = Auth::user()->codigo_institucion;
+    
+    // 3. Obtener matrículas enviadas por el parámetro del JS
+    $matriculasStr = $request->input('matriculas');
     if (!$matriculasStr) {
         return "No se han seleccionado estudiantes.";
     }
-
-    // Convertir el string "45,46,47" en un array real [45, 46, 47]
     $arrayMatriculas = explode(',', $matriculasStr);
 
-    // 2. Configurar el PDF (Letter Horizontal)
+// Obtener el nombre para ponerlo en la firma
+$nombre_personal = Auth::user()->name;
+
+   // 1. Recolectar parámetros de la URL
+    $matriculasStr = $request->input('matriculas'); // Viene como "28304,28305"
+    $periodoActivo = $request->input('periodo');    // Viene como "1", "2", etc.
+    $accion = $request->input('accion', 'ver');     // 'ver' o 'descargar'
+
+    
+    // 2. Configurar el PDF (Letter Horizontal) tal como lo tienes
     $this->fpdf->SetFont('Arial', 'B', 9);
     $this->fpdf->SetMargins(15, 5, 5);
     $this->fpdf->SetAutoPageBreak(true, 5);
 
-    // 3. Obtener el catálogo de áreas (Tu mismo código del index)
+    // --------------------------------------------------------
+    // 3. OBTENER INFORMACIÓN INSTITUCIONAL (SÓLO UNA VEZ)
+    // --------------------------------------------------------
+    // Extraemos la institución basándonos en la primera matrícula de la lista
+    $primeraMatricula = DB::table('alumno_matricula')->where('id_alumno_matricula', $arrayMatriculas[0])->first();
+    //$codigo_institucion = $primeraMatricula->codigo_institucion ?? '00000'; // Default por seguridad
+    $codigo_annlectivo = $primeraMatricula->codigo_ann_lectivo;
+    $codigo_modalidad = $primeraMatricula->codigo_bach_o_ciclo;
+    $codigo_grado = $primeraMatricula->codigo_grado;
+
+    $EstudianteInformacionInstitucion = DB::table('informacion_institucion as inf')
+            ->leftjoin('personal as p','p.id_personal','=',DB::raw("CAST(inf.nombre_director AS INTEGER)")) 
+            ->select('inf.id_institucion','inf.codigo_institucion','inf.nombre_institucion','inf.telefono_uno','inf.logo_uno','inf.direccion_institucion','inf.nombre_director',
+                        'inf.logo_dos','inf.logo_tres',
+                    DB::raw("TRIM(CONCAT(BTRIM(p.nombres), CAST(' ' AS VARCHAR), BTRIM(p.apellidos))) as full_name"),
+                    )
+            ->where([
+                ['id_institucion', '=', $codigo_institucion],
+                ])
+            ->orderBy('id_institucion','asc')
+            ->first();
+
+//dd($EstudianteInformacionInstitucion);
+
+    if($EstudianteInformacionInstitucion){
+        $nombre_institucion = mb_convert_encoding(trim($EstudianteInformacionInstitucion->nombre_institucion),'ISO-8859-1','UTF-8');
+        $logo_uno = "/img/".mb_convert_encoding(trim($EstudianteInformacionInstitucion->logo_uno),'ISO-8859-1','UTF-8');
+        $codigo_infraestructura = mb_convert_encoding(trim($EstudianteInformacionInstitucion->codigo_institucion),'ISO-8859-1','UTF-8');
+        $nombre_director = mb_convert_encoding(trim($EstudianteInformacionInstitucion->full_name),'ISO-8859-1','UTF-8');
+        $firma_director = "/img/".mb_convert_encoding(trim($EstudianteInformacionInstitucion->logo_dos),'ISO-8859-1','UTF-8');
+        $sello_direccion = "/img/".mb_convert_encoding(trim($EstudianteInformacionInstitucion->logo_tres),'ISO-8859-1','UTF-8');
+    }
+
+    // CATALOGO ASIGNATURA (SÓLO UNA VEZ)
     $catalogo_area_asignatura_codigo = array();
     $catalogo_area_asignatura_area = array();
     $CatalogoAreaAsignatura = DB::table('catalogo_area_asignatura')->select('codigo','descripcion')->get();
     foreach($CatalogoAreaAsignatura as $response_area){
-        $catalogo_area_asignatura_codigo[] = trim($response_area->codigo);
-        $catalogo_area_asignatura_area[] = trim($response_area->descripcion);
+        $catalogo_area_asignatura_codigo[] = (trim($response_area->codigo));
+        $catalogo_area_asignatura_area[] = (trim($response_area->descripcion));
     }
 
-    // 4. BUCLE PRINCIPAL: Iteramos por cada matrícula seleccionada
-    foreach ($arrayMatriculas as $codigo_matricula) {
+    // ASIGNACIÓN DE ASIGNATURAS SEGÚN EL GRADO (SÓLO UNA VEZ)
+    $AsignacionAsignatura = DB::table('a_a_a_bach_o_ciclo as aaa')
+        ->join('asignatura as a','a.codigo','=','aaa.codigo_asignatura')
+        ->select('aaa.orden','a.nombre as nombre_asignatura','a.codigo as codigo_asignatura','a.codigo_cc as concepto_calificacion','a.codigo_area')
+        ->where([
+            ['codigo_bach_o_ciclo', '=', $codigo_modalidad],
+            ['codigo_grado', '=', $codigo_grado],
+            ['codigo_ann_lectivo', '=', $codigo_annlectivo],
+        ])
+        ->orderBy('aaa.orden','asc')
+        ->get();
+
+    $datos_asignatura = ["codigo" => [], "nombre" => [], "concepto" => [], "codigo_area" => []];                   
+    foreach($AsignacionAsignatura as $response_i){
+        $datos_asignatura["codigo"][] = mb_convert_encoding(trim($response_i->codigo_asignatura),"ISO-8859-1","UTF-8");
+        $datos_asignatura["nombre"][] = mb_convert_encoding(trim($response_i->nombre_asignatura),"ISO-8859-1","UTF-8");
+        $datos_asignatura["concepto"][] = mb_convert_encoding(trim($response_i->concepto_calificacion),"ISO-8859-1","UTF-8");
+        $datos_asignatura["codigo_area"][] = mb_convert_encoding(trim($response_i->codigo_area),"ISO-8859-1","UTF-8");
+    }
+
+$periodos_a = ['PERIODO 1', 'PERIODO 2', 'PERIODO 3', 'PERIODO 4', 'PERIODO 5', 'PROMEDIO FINAL', 'R'];
+$actividad_periodo = ['A1','A2','PO','R','PP','PF'];
+$alto_cell = [5]; // Altura de celda estándar
+$ancho_cell = [60, 10, 50]; // [Nombre Asig, Notas, Periodos]
+
+    // --------------------------------------------------------
+    // 4. BUCLE PRINCIPAL: RECORRER MATRÍCULA POR MATRÍCULA
+    // --------------------------------------------------------
+    foreach ($arrayMatriculas as $id_matricula) {
         
-        // Añadimos una página nueva por cada estudiante
+        // Agregar una hoja nueva para cada alumno
         $this->fpdf->AddPage();
         $this->fpdf->SetX(30);
 
-        // Aquí adentro colocarías TODA la lógica de consultas de la base de datos 
-        // y el dibujado de celdas que ya tienes en tu método index() actual, 
-        // pero usando la variable $codigo_matricula.
-        
-        // Nota: Asegúrate de reiniciar las variables lógicas como
-        // $catalogo_area_basica = true; para que las etiquetas se pinten bien en cada hoja.
-        
+        // Variables lógicas que se deben resetear en cada hoja
+        $catalogo_area_basica = true;
+        $catalogo_area_formativa = true;
+        $catalogo_area_tecnica = true;
+        $catalogo_area_cc = true;
+        $catalogo_area_complementaria = true;
+
+        // Consulta de las notas del alumno específico
+        $EstudianteBoleta = DB::table('alumno as a')
+            ->join('alumno_matricula AS am','a.id_alumno','=','am.codigo_alumno')
+            ->join('nota AS n','am.id_alumno_matricula','=','n.codigo_matricula')
+            ->join('bachillerato_ciclo AS bach', 'bach.codigo','=','am.codigo_bach_o_ciclo')
+            ->join('grado_ano AS gr', 'gr.codigo','=','am.codigo_grado')
+            ->join('seccion AS sec', 'sec.codigo','=','am.codigo_seccion')
+            ->join('turno AS tur', 'tur.codigo','=','am.codigo_turno')
+            ->join('asignatura AS asig','asig.codigo','=','n.codigo_asignatura')
+            ->join('ann_lectivo AS ann','ann.codigo','=','am.codigo_ann_lectivo')
+            ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno', 'a.foto', 'a.codigo_genero', 'a.direccion_email as correo_estudiante',
+                     'am.id_alumno_matricula as codigo_matricula','n.id_notas','n.codigo_asignatura',
+                     'bach.nombre AS nombre_modalidad', 'gr.nombre as nombre_grado', 'sec.nombre as nombre_seccion','tur.nombre as nombre_turno',
+                     'bach.codigo as codigo_modalidad', 'gr.codigo as codigo_grado', 'sec.codigo as codigo_seccion','tur.codigo as codigo_turno',
+                     'asig.codigo_area',
+                     'n.nota_a1_1', 'n.nota_a2_1', 'n.nota_a3_1', 'nota_r_1', 'n.nota_p_p_1', 
+                     'n.nota_a1_2', 'n.nota_a2_2', 'n.nota_a3_2', 'nota_r_2', 'n.nota_p_p_2',
+                     'n.nota_a1_3', 'n.nota_a2_3', 'n.nota_a3_3', 'nota_r_3', 'n.nota_p_p_3', 
+                     'n.nota_a1_4', 'n.nota_a2_4', 'n.nota_a3_4', 'nota_r_4', 'n.nota_p_p_4',
+                     'n.nota_a1_5', 'n.nota_a2_5', 'n.nota_a3_5', 'nota_r_5', 'n.nota_p_p_5', 
+                     'n.nota_final', 'n.recuperacion', 'n.nota_recuperacion_2',
+                     'asig.codigo_area', 'ann.nombre as nombre_annlectivo',
+                     DB::raw("TRIM(CONCAT(BTRIM(a.nombre_completo), CAST(' ' AS VARCHAR), BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno))) as full_nombres_apellidos"))
+            ->where('am.id_alumno_matricula', '=', $id_matricula)
+            ->orderBy('n.orden','asc')
+            ->get();
+
+        if ($EstudianteBoleta->isEmpty()) {
+            continue; // Si no hay notas para esta matrícula, saltar al siguiente
+        }
+
+        // Extraer datos fijos de la cabecera del alumno
+        $primerRegistro = $EstudianteBoleta->first();
+        $nombre_completo = mb_convert_encoding(trim($primerRegistro->full_nombres_apellidos),'ISO-8859-1','UTF-8');
+        $codigo_nie = trim($primerRegistro->codigo_nie);
+        $correo_estudiante = trim($primerRegistro->correo_estudiante);
+        $nombre_modalidad = mb_convert_encoding(trim($primerRegistro->nombre_modalidad),'ISO-8859-1','UTF-8');
+        $codigo_modalidad = mb_convert_encoding(trim($primerRegistro->codigo_modalidad),'ISO-8859-1','UTF-8');
+        $codigo_area = mb_convert_encoding(trim($primerRegistro->codigo_area),'ISO-8859-1','UTF-8');
+        $nombre_grado = mb_convert_encoding(trim($primerRegistro->nombre_grado),'ISO-8859-1','UTF-8');
+        $nombre_seccion = mb_convert_encoding(trim($primerRegistro->nombre_seccion),'ISO-8859-1','UTF-8');
+        $nombre_turno = mb_convert_encoding(trim($primerRegistro->nombre_turno),'ISO-8859-1','UTF-8');
+        $nombre_annlectivo = mb_convert_encoding(trim($primerRegistro->nombre_annlectivo),'ISO-8859-1','UTF-8');
+        $nombre_foto = trim($primerRegistro->foto);
+        $codigo_genero = trim($primerRegistro->codigo_genero);
+        $codigo_alumno_seguro = trim($primerRegistro->codigo_alumno);
+
+        $alto_cell = array('5'); 
+        $ancho_cell = array('60','6','30','30','180');
+
+        // AQUÍ DIBUJAMOS LA CABECERA DEL ALUMNO
+        $this->fpdf->image(URL::to($logo_uno),10,10,20,25);
+        $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
+        $this->fpdf->Cell(135, $alto_cell[0],$codigo_infraestructura . " - " .$nombre_institucion,1,1,'L');       
+
+        $this->fpdf->SetX(30); 
+        $this->fpdf->Cell(40,$alto_cell[0],"Estudiante",1,0,'L');       
+        $this->fpdf->Cell(135,$alto_cell[0],$codigo_nie . " - " . $nombre_completo,1,1,'L');       
+        $this->fpdf->SetX(30); 
+                            $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Correo Electrónico","ISO-8859-1","UTF-8"),1,0,'L');       
+                            $this->fpdf->Cell(135,$alto_cell[0],$correo_estudiante,1,1,'L');       
+                            //Nivel
+                            $this->fpdf->SetX(30); 
+                            $this->fpdf->Cell(40,$alto_cell[0],mb_convert_encoding("Nivel","ISO-8859-1","UTF-8"),1,0,'L');       
+                            $this->fpdf->Cell(115,$alto_cell[0],$nombre_modalidad,1,1,'L');       
+                            // Grado
+                            $this->fpdf->SetX(30); 
+                            $this->fpdf->Cell(15,$alto_cell[0],"Grado",1,0,'L');       
+                            $this->fpdf->Cell(70,$alto_cell[0],$nombre_grado,1,0,'L');       
+                            // Sección.
+                            $this->fpdf->Cell(15,$alto_cell[0],mb_convert_encoding("Sección","ISO-8859-1","UTF-8"),1,0,'L');       
+                            $this->fpdf->Cell(10,$alto_cell[0],$nombre_seccion,1,0,'C');       
+                            // Turno
+                            $this->fpdf->Cell(20,$alto_cell[0],"Turno",1,0,'L');       
+                            $this->fpdf->Cell(30,$alto_cell[0],$nombre_turno,1,0,'C');       
+                            // Año Lectivo
+                            $this->fpdf->Cell(22,$alto_cell[0],mb_convert_encoding("Año Lectivo","ISO-8859-1","UTF-8"),1,0,'L');       
+                            $this->fpdf->Cell(10,$alto_cell[0],mb_convert_encoding($nombre_annlectivo,"ISO-8859-1","UTF-8"),1,1,'C');       
+                            // FOTO DEL ESTUDIANTE.
+                                if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
+                                    {
+                                        $img = 'c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
+                                        $this->fpdf->image($img,240,5,35,40);
+                                    }else if($codigo_genero == '01'){
+                                            $fotos = 'avatar_masculino.png';
+                                            $img = '/img/'.$fotos;
+                                            $this->fpdf->image(URL::to($img),240,5,35,40);
+                                        }
+                                        else{
+                                            $fotos = 'avatar_femenino.png';
+                                            $img = '/img/'.$fotos;
+                                            $this->fpdf->image(URL::to($img),240,5,35,40);
+                                        }
+                            //
+                        // VALIDAR VARIABGLES PARA MOSTRAR CABECERA Y CALIFICACIONES.
+                        if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
+                            $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 180;
+                        }else if($codigo_modalidad >= '06' && $codigo_modalidad <= '09' || $codigo_modalidad == '15'){   // EDUCACION MEDIA
+                            $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
+                        }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
+                            $valor_periodo = 4; $valor_actividades = 25; $ancho_area_asignatura = 240;
+                        }else if($codigo_modalidad == '21'){
+                            $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
+                        }
+                        else{
+                            $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 180;    // DEFAULT PUEDE SER PARVULARIA
+                        }
+
+
+                            $this->fpdf->SetX(30); 
+                            $this->fpdf->SetFont('Arial', 'B', '7');
+                            // fila de información
+                            $this->fpdf->Cell(30,$alto_cell[0],"A1->Actividad 1 (35%)",'LR',0,'L');       
+                            $this->fpdf->Cell(30,$alto_cell[0],"A2->Actividad 2 (35%)",'LR',0,'L');       
+                            $this->fpdf->Cell(35,$alto_cell[0],"PO->Prueba Objetiva (30%)",'LR',0,'L'); 
+                            $this->fpdf->Cell(35,$alto_cell[0],"PP->Promedio Periodo",'LR',0,'L');      
+                            $this->fpdf->Cell(30,$alto_cell[0],"PF->Promedio Final",'LR',1,'L');          
+                            // fila de información 
+                            $this->fpdf->SetX(30);       
+                            $mensaje_1 = mb_convert_encoding("NR1->Nota Recuperación 1",'ISO-8859-1','UTF-8');
+                            $mensaje_2 = mb_convert_encoding("NR1->Nota Recuperación 2",'ISO-8859-1','UTF-8');
+                            $this->fpdf->Cell(35,$alto_cell[0],$mensaje_1,'LR',0,'L');             
+                            $this->fpdf->Cell(35,$alto_cell[0],$mensaje_2,'LR',0,'L');                
+                            $this->fpdf->Cell(20,$alto_cell[0],("A->Aprobado"),'LR',0,'L');                
+                            $this->fpdf->Cell(20,$alto_cell[0],("R->Reprobado"),'LR',0,'L');                
+                            $this->fpdf->Cell(20,$alto_cell[0],("NF->Nota Final"),'LR',1,'L');                
+                        //  $this->fpdf->ln();
+                            // cabecera de la tabla de calificaicone4s por periodo
+                            $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"",'LRT',0,'L');
+                            for ($pp=0; $pp <= $valor_periodo; $pp++) { 
+                                if($valor_periodo == $pp){
+                                    $this->fpdf->Cell($ancho_cell[2],$alto_cell[0],$periodos_a[$pp],1,1,'C');
+                                }else{
+                                    $this->fpdf->Cell($ancho_cell[2],$alto_cell[0],$periodos_a[$pp],1,0,'C');
+                                }
+                            }
+                            // COMPONENTE DE ESTUDIO Y PRIMER FILA DE LAS ACTIVIDADES Y PROMEDIOS
+                            $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],"Componente del Plan de Estudio",'LRB',0,'C');             
+                            for ($pp=0; $pp <= $valor_periodo; $pp++) { 
+                                for ($ap=0; $ap < count($actividad_periodo) -1; $ap++) { 
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$actividad_periodo[$ap],1,0,'C');
+                                }
+                                if($valor_periodo == $pp){
+                                    // colocar celda PF
+                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$actividad_periodo[4].strval($valor_periodo+1),1,0,'C');
+                                }
+                            }
+                                // colocar celda NR1
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR1',1,0,'C');
+                                // colocar celda NR2
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NR2',1,0,'C');
+                                // colocar celda NF
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'NF',1,0,'C');
+                                // COLOCAR CELDA RESULTADO.
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$periodos_a[6],1,1,'C');
+                            ///////////////////////////////////////////////////////////////////////////////////////////////////
+                            /////VERIFICAR ENCABEZADO de AREA DE ASIGNATURAS///////////////////////////////////////////////////
+                            ///////////////////////////////////////////////////////////////////////////////////////////////////		
+                            /*	"01"	"Básica                                                                     " 0
+                                "02"	"Formativa                                                                  " 1
+                                "03"	"Técnica                                                                    " 2
+                                "04"	"Experiencia y Desarrollo Personal y Social                                 " 3
+                                "05"	"Experiencia y Desarrollo de la Expresión, Comunicación y Representación    " 4
+                                "06"	"Experiencia y Desarrollo de la Relación con el Entorno                     " 5
+                                "07"	"Competencias Ciudadanas                                                    " 6
+                                "08"	"Complementaria                                                             " 7
+                                "09"	"Alertas                                                                    " 8
+                            */                                                                 
+                            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                            // DAR FORMATO. -1 en la matriz
+                                //Colores, ancho de l�nea y fuente en negrita
+                                $this->fpdf->SetFillColor(212, 230, 252);
+                                $this->fpdf->SetTextColor(0,0,0);
+                                $this->fpdf->SetFont('Times','B',12);
+                                //print_r($catalogo_area_asignatura_codigo);
+                                //$encabezado_ = EncabezadoCatalogoAreaAsignatura($catalogo_area_asignatura_codigo, $codigo_area);
+                            //	print $descripcion_area;
+                                //exit;
+                            // LINEA DE DIVISIÓN - PARA EL ÁREA BÁSICA.
+                                if($catalogo_area_asignatura_codigo[0] == $codigo_area){
+                                    if($catalogo_area_basica == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[0],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_basica = false;
+                                    }
+                                }
+                                //$this->fpdf->Cell(203,6,strtoupper(mb_convert_encoding($encabezado_)),1,1,'L',true);
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
+                                if($catalogo_area_asignatura_codigo[1] == $codigo_area){
+                                    if($catalogo_area_formativa == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[1],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_formativa = false;
+                                    }
+                                }
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA TÉCNICA.
+                                if($catalogo_area_asignatura_codigo[2] == $codigo_area){
+                                    if($catalogo_area_tecnica == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[2],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_tecnica = false;
+                                    }
+                                }
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA COMPETENCIAS CIUDADANAS.
+                                if($catalogo_area_asignatura_codigo[6] == $codigo_area){
+                                    if($catalogo_area_cc == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[6],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_cc = false;
+                                    }
+                                }
+                                
+                                // LINEA DE DIVISIÓN - PARA EL ÁREA COMPLEMENTARIA.
+                                if($catalogo_area_asignatura_codigo[7] == $codigo_area){
+                                    if($catalogo_area_complementaria == true){
+                                        $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[7],"ISO-8859-1","UTF-8")),1,1,'L',true);
+                                        $catalogo_area_complementaria = false;
+                                    }
+                                }
+                                //Restauraci�n de colos y fuentes
+                                $this->fpdf->SetFillColor(212, 230, 252);
+                                $this->fpdf->SetTextColor(0);
+                                $this->fpdf->SetFont('Times','',10);	
+
+                    // --- DENTRO DEL BUCLE DE ESTUDIANTES ---
+                    // 1. Obtener las materias de este estudiante en particular
+                    $notas_estudiante = DB::table('nota as n')
+                        ->join('asignatura as a', 'a.codigo', '=', 'n.codigo_asignatura')
+                        ->select('n.*', 'a.nombre as nombre_asignatura', 'a.codigo_area')
+                        ->where('n.codigo_matricula', $id_matricula) // El NIE del estudiante actual
+                        ->where('n.codigo_alumno', $codigo_alumno_seguro) // Asegurarse de que sólo traemos las notas de este alumno
+                        ->orderBy('a.codigo_area', 'asc') // Ordenar por área
+                        ->get();
+
+                    // 2. Reiniciar flags de encabezados de área para cada estudiante
+                    $catalogo_area_basica = true; $catalogo_area_formativa = true; 
+                    $catalogo_area_tecnica = true; $catalogo_area_cc = true; 
+                    $catalogo_area_complementaria = true;
+
+                    // 3. Empieza el detalle de filas por asignatura
+                    foreach ($notas_estudiante as $response) {
+                        // Re-mapeo del array de notas tal cual lo tienes
+                        $nota_actividades_0 = array('',
+                            $response->nota_a1_1, $response->nota_a2_1, $response->nota_a3_1, $response->nota_r_1, $response->nota_p_p_1, 
+                            $response->nota_a1_2, $response->nota_a2_2, $response->nota_a3_2, $response->nota_r_2, $response->nota_p_p_2, 
+                            $response->nota_a1_3, $response->nota_a2_3, $response->nota_a3_3, $response->nota_r_3, $response->nota_p_p_3, 
+                            $response->nota_a1_4, $response->nota_a2_4, $response->nota_a3_4, $response->nota_r_4, $response->nota_p_p_4, 
+                            $response->nota_a1_5, $response->nota_a2_5, $response->nota_a3_5, $response->nota_r_5, $response->nota_p_p_5, 
+                            $response->recuperacion, $response->nota_recuperacion_2, $response->nota_final);
+
+                        $codigo_area = $response->codigo_area;
+                        $codigo_asignatura = $response->codigo_asignatura;
+                        $nombre_asignatura_db = $response->nombre_asignatura;
+
+                        // --- LÓGICA DE ÁREAS (CABECERAS DE SECCIÓN) ---
+                        $this->fpdf->SetFillColor(212, 230, 252);
+                        $this->fpdf->SetFont('Times','B',10);
+
+                        // Ejemplo para Área Básica (repite para Formativa, Técnica, etc.)
+                        if($catalogo_area_asignatura_codigo[0] == $codigo_area && $catalogo_area_basica){
+                            $this->fpdf->Cell($ancho_area_asignatura, 6, "AREA BÁSICA", 1, 1, 'L', true);
+                            $catalogo_area_basica = false;
+                        }
+                        // ... repetir bloques if para áreas 1, 2, 6, 7 según tu código ...
+
+                        // --- RENDERIZADO DE LA FILA DE CALIFICACIONES ---
+                        $this->fpdf->SetFont('Arial', '', '7');
+
+                        // Determinar anchos según Bachillerato Técnico (Modalidad 15)
+                        if($codigo_area == "03" && $codigo_modalidad == "15"){
+                            $NumeroAnchoColumna = 4; // Ajustar según tu array $ancho_cell
+                            $NombreStringAncho = 165;
+                        } else {
+                            $NumeroAnchoColumna = 0;
+                            $NombreStringAncho = 60;
+                        }
+
+                        // Nombre de la Asignatura
+                        $this->fpdf->Cell($ancho_cell[$NumeroAnchoColumna], $alto_cell[0], $codigo_asignatura . "-" . substr(mb_convert_encoding($nombre_asignatura_db, "ISO-8859-1", "UTF-8"), 0, $NombreStringAncho), 1, 0, 'L');
+
+                        // --- BUCLE DINÁMICO DE NOTAS ---
+                        // Aquí es donde aplicamos $valor_actividades que calculaste en la cabecera
+                        if(!($codigo_area == "03" && $codigo_modalidad == "15")){
+                            for ($na=1; $na <= $valor_actividades; $na++) { 
+                                // Resaltar promedios de periodo (PP)
+                                if($na % 5 == 0){
+                                    $this->fpdf->SetFillColor(218,215,215);
+                                    $this->fpdf->SetFont('Arial', 'B', '7');
+                                } else {
+                                    $this->fpdf->SetFillColor(255,255,255);
+                                    $this->fpdf->SetFont('Arial', '', '7');
+                                }
+
+                                $valor_nota = ($nota_actividades_0[$na] == 0) ? '' : $nota_actividades_0[$na];
+                                
+                                // Caso especial: Competencias Ciudadanas (Conceptos en vez de números)
+                                if($codigo_area == '07' && $na % 5 == 0 && $valor_nota != ''){
+                                    $result_concepto = resultado_concepto($codigo_modalidad, $valor_nota);
+                                    $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $result_concepto, 1, 0, 'C', true);
+                                } else {
+                                    $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $valor_nota, 1, 0, 'C', true);
+                                }
+                            }
+                        }
+
+                        // --- COLUMNAS FINALES (NF, NR1, NR2, RESULTADO) ---
+                        $this->fpdf->SetFont('Arial', 'B', '7');
+                        
+                        // Promedio Final
+                        $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[28] == 0 ? '' : $nota_actividades_0[28]), 1, 0, 'C');
+                        
+                        // Recuperaciones
+                        $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[26] == 0 ? '' : $nota_actividades_0[26]), 1, 0, 'C');
+                        $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[27] == 0 ? '' : $nota_actividades_0[27]), 1, 0, 'C');
+
+                        // Cálculo de Resultado Final (Aprobado/Reprobado)
+                        if($nota_actividades_0[28] > 0){
+                            $result = resultado_final($codigo_modalidad, $nota_actividades_0[26], $nota_actividades_0[27], $nota_actividades_0[28], $codigo_area);
+                            
+                            if($result[0] == "R") $this->fpdf->SetTextColor(255,0,0);
+                            
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], round($result[1], 0), 1, 0, 'C');
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $result[0], 1, 1, 'C');
+                            
+                            $this->fpdf->SetTextColor(0); // Reset color
+                        } else {
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 0, 'C');
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 1, 'C');
+                        }
+                    } // Fin bucle materias
+
+                    // --- SECCIÓN DE FIRMAS Y SELLOS (FINAL DE BOLETA) ---
+
+$y_pos = $this->fpdf->GetY() + 10; // Punto de partida para el bloque de firmas
+
+// Control de salto de página
+if ($y_pos > 170) { 
+    $this->fpdf->AddPage();
+    $y_pos = 30;
+}
+
+// --- 1. POSICIONAR FIRMAS Y SELLO PRIMERO (Para que queden arriba del texto) ---
+
+// Firma del Director (Izquierda)
+if(!empty($firma_director)){
+    $ruta_f_dir = public_path($firma_director); 
+    if(file_exists($ruta_f_dir)){
+        // Ancho 40, Alto proporcional (0). 
+        // La colocamos en X=25 para que quede centrada sobre su texto
+        $this->fpdf->image($ruta_f_dir, 25, $y_pos, 25, 0);
     }
+}
+
+// Sello de Dirección (Más a la derecha de la firma del director)
+if(!empty($sello_direccion)){
+    $ruta_s_dir = public_path($sello_direccion);
+    if(file_exists($ruta_s_dir)){
+        // Diámetro 3cm (30x30). X=70 para que no choque con la firma
+        $this->fpdf->image($ruta_s_dir, 75, $y_pos - 5, 30, 30);
+    }
+}
+
+// Firma del Docente (Derecha)
+if(!empty($firma_docente)){
+    $ruta_firma_docente = public_path('img/firmas/'.$codigo_institucion.'/'.$firma_docente);
+    if (file_exists($ruta_firma_docente)) {
+        // La colocamos alineada a la derecha (X=180 aprox)
+        $this->fpdf->image($ruta_firma_docente, 185, $y_pos, 40, 0);
+    }
+}
+
+// --- 2. POSICIONAR EL TEXTO ABAJO (Nombres y Cargos) ---
+
+// Bajamos el cursor para escribir debajo de donde se pusieron las firmas
+// Sumamos unos 15-20mm para dejar espacio a la imagen de la firma
+$this->fpdf->SetY($y_pos + 18); 
+
+// Nombres
+$this->fpdf->SetFont('Arial', 'B', 9);
+$this->fpdf->Cell(140, 5, $nombre_director, 0, 0, 'L');
+$this->fpdf->Cell(0, 5, mb_convert_encoding($nombre_personal, "ISO-8859-1", "UTF-8"), 0, 1, 'L');
+
+// Líneas de cargos
+$this->fpdf->SetFont('Arial', '', 8);
+$this->fpdf->Cell(140, 4, 'Director(a) Institucional', 0, 0, 'L');
+$this->fpdf->Cell(0, 4, 'Docente responsable', 0, 1, 'L');
+
+
+    } // fin del recorrido de los id matrcicula
 
     // 5. Salida del PDF
     $nombre_archivo = 'Boletas_Masivas_' . date('Ymd_His') . '.pdf';
@@ -1309,6 +1768,8 @@ public function boletaMasiva(Request $request)
     return response($this->fpdf->Output($modoSalida, $nombre_archivo))
             ->header('Content-Type', 'application/pdf');
 }
+
+
 }
 
 
