@@ -1320,7 +1320,7 @@ public function getAsignaturas(Request $request)
     $asignaturas = DB::table('carga_docente')
         ->distinct()
         ->join('asignatura', 'carga_docente.codigo_asignatura', '=', 'asignatura.codigo')
-        ->select('asignatura.codigo', 'asignatura.nombre')
+        ->select('asignatura.codigo', 'asignatura.nombre','asignatura.codigo_area')
         ->where('codigo_docente', '=', $codigo_personal)
         ->where('codigo_grado', '=', substr($v, 0, 2))
         ->where('codigo_seccion', '=', substr($v, 2, 2))
@@ -1339,7 +1339,27 @@ public function buscarEstudiantes(Request $request)
 {
     $periodo = $request->periodo;
     $codigo_ann = $request->codigo_ann_lectivo;
-    $codigo_asignatura = $request->codigo_asignatura;
+    //$codigo_asignatura = $request->codigo_asignatura;
+    //
+    // 1. Recibir y limpiar el código de asignatura y área (que vienen pegados)
+    $codigo_combinado = trim($request->codigo_asignatura);
+    $conteo = strlen($codigo_combinado);
+
+    $codigo_asignatura = "";
+    $codigo_area = "";
+
+    // 2. Aplicar la misma lógica que tenías en JS
+    if ($conteo == 4) {
+        $codigo_asignatura = substr($codigo_combinado, 0, 2);
+        $codigo_area = substr($codigo_combinado, 2, 2);
+    } elseif ($conteo == 6) {
+        $codigo_asignatura = substr($codigo_combinado, 0, 4);
+        $codigo_area = substr($codigo_combinado, 4, 2);
+    } else {
+        // Caso por defecto (largo 5 u otros)
+        $codigo_asignatura = substr($codigo_combinado, 0, 3);
+        $codigo_area = substr($codigo_combinado, 3, 2);
+    }
     
     // Capturamos los códigos individuales que envía el JS (usando substring en el JS)
     $grado     = $request->codigo_grado;
@@ -1407,8 +1427,28 @@ public function guardarTodas(Request $request)
     try {
         $notas = $request->notas;
         $periodo = $request->periodo;
-        $codigo_asig = $request->codigo_asignatura;
+       // $codigo_asig = $request->codigo_asignatura;
         $modalidad = $request->codigo_modalidad;
+
+
+// 1. Obtener y limpiar el código combinado (Asignatura + Área)
+    $codigo_combinado = trim($request->codigo_asignatura);
+    $conteo = strlen($codigo_combinado);
+
+    $codigo_asignatura = "";
+    $codigo_area = "";
+
+    // 2. Extraer según la longitud (Igual que en buscar y en JS)
+    if ($conteo == 4) {
+        $codigo_asignatura = substr($codigo_combinado, 0, 2);
+        $codigo_area = substr($codigo_combinado, 2, 2);
+    } elseif ($conteo == 6) {
+        $codigo_asignatura = substr($codigo_combinado, 0, 4);
+        $codigo_area = substr($codigo_combinado, 4, 2);
+    } else {
+        $codigo_asignatura = substr($codigo_combinado, 0, 3);
+        $codigo_area = substr($codigo_combinado, 3, 2);
+    }
 
         // 1. Obtener reglas académicas del catálogo
         $regla = DB::table('catalogo_periodos')
@@ -1454,13 +1494,13 @@ public function guardarTodas(Request $request)
             DB::table('nota')->updateOrInsert(
                 [
                     'codigo_matricula' => $n['codigo_matricula'], 
-                    'codigo_asignatura' => $codigo_asig
+                    'codigo_asignatura' => $codigo_asignatura
                 ],
                 $columnas
             );
 
             // 5. Recalcular Nota Final Global
-            $this->actualizarNotaFinalGlobal($n['codigo_matricula'], $codigo_asig, $divisor);
+            $this->actualizarNotaFinalGlobal($n['codigo_matricula'], $codigo_asignatura, $divisor);
         }
 
         return response()->json(['status' => 'success', 'message' => 'Notas guardadas y promedios actualizados.']);

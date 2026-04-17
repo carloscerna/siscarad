@@ -36,8 +36,12 @@ class PdfRPAController extends Controller
             $codigo_turno = substr($codigo_gradoseccionturnomodalidad,4,2);
             $codigo_seccion = substr($codigo_gradoseccionturnomodalidad,2,2);
             $codigo_grado = substr($codigo_gradoseccionturnomodalidad,0,2);
-
-          /*  print "Modalidad:" . $codigo_modalidad ."<br>";
+            $nombre_modalidad = "";
+            $nombre_turno = "";
+            $nombre_seccion = "";
+            $nombre_grado = "";
+/*
+            print "Modalidad:" . $codigo_modalidad ."<br>";
             print "Turno:" . $codigo_turno ."<br>";
             print "Sección:" . $codigo_seccion ."<br>";
             print "Grado:" . $codigo_grado ."<br>";
@@ -46,7 +50,7 @@ class PdfRPAController extends Controller
 */
             $codigo_annlectivo = $EstudianteMatricula[1];
             $codigo_institucion = $EstudianteMatricula[2];
-            $codigo_asignatura = $EstudianteMatricula[4];
+            $codigo_asignatura = $EstudianteMatricula[3];
             $codigo_area_asignatura = $EstudianteMatricula[4];
             $codigo_personal = $EstudianteMatricula[5];
             ////////////////////////////////////////////////////////////////////
@@ -622,34 +626,83 @@ if ($total_estudiantes > 0) {
     
     // Dejamos la última celda de 'Resultado' en blanco para la fila de promedios
     $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 1, 'C', true);
+
+
 }
 // --- FIN: CÓDIGO AÑADIDO ---
-        //
-        //  DATOS AL FINAL DE LAS CALIFICACIONES
-        //
-            $ultima_linea = $this->fpdf->GetY();
-            $this->fpdf->SetY($ultima_linea+40);
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_director,0,0,'L');
-            $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nombre_personal_,0,1,'L');
-            
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Director',0,0,'L');
-            $this->fpdf->Cell(120,$alto_cell[0],'',0,0,'L');
-            // FOTO DEL ESTUDIANTE.
-            if(!empty($firma_docente)){
-                if (file_exists('c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente))
-                {
-                    $img = 'c:/wamp64/www/registro_academico/img/firmas/'.$codigo_institucion.'/'.$firma_docente;	
-                    $this->fpdf->image($img,$this->fpdf->GetX()+10,$this->fpdf->GetY()-30,25,30);
-                }
-            }
-            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'Docente responsable',0,1,'L');
-        //  Información del docente responsable de la sección.
+// =========================================================
+// 1. VARIABLES DE CONTROL INDEPENDIENTES (PHP 8.x Ready)
+// =========================================================
 
-            
-        // agregar firma y sello
-            $this->fpdf->image(URL::to($firma_director),15,$ultima_linea+25,40,15);
-            $this->fpdf->image(URL::to($sello_direccion),40,$ultima_linea+20,25,25);
+// Posición Vertical Base (Donde comienzan las firmas)
+//$Y_firmas = (float) $this->fpdf->GetY() + 15; 
+$Y_firmas = 105; 
+
+// --- BLOQUE DIRECTOR ---
+$dir_X     = 225.0; // Mover horizontalmente el bloque del director
+$dir_Y     = $Y_firmas + 60; 
+$dir_ancho = 65.0;  // Ancho de la línea de firma
+
+// --- BLOQUE DOCENTE ---
+$doc_X     = 225.0; // Mover horizontalmente el bloque del docente
+$doc_Y     = $Y_firmas;
+$doc_ancho = 65.0;  // Ancho de la línea de firma
+
+// =========================================================
+// 2. RENDERIZADO DEL BLOQUE DIRECTOR
+// =========================================================
+$this->fpdf->SetY($dir_Y);
+$this->fpdf->SetX($dir_X);
+$this->fpdf->SetFont('Arial', 'B', 8);
+
+// Línea de firma
+$this->fpdf->Cell($dir_ancho, 5, 'f. __________________________', 0, 1, 'C');
+
+// Nombre y Cargo
+$this->fpdf->SetY($dir_Y + 5);
+$this->fpdf->SetX($dir_X);
+$this->fpdf->Cell($dir_ancho, 5, ((string)$nombre_director), 0, 1, 'C');
+$this->fpdf->SetX($dir_X);
+$this->fpdf->SetFont('Arial', '', 8);
+$this->fpdf->Cell($dir_ancho, 5, 'Director(a)', 0, 0, 'C');
+
+// Sello y Firma (Imágenes)
+if (!empty($firma_director)) {
+    // Se posiciona respecto a $dir_X
+    $this->fpdf->Image(URL::to($firma_director), $dir_X + 15, $dir_Y -20, 25, 0);
+}
+if (!empty($sello_direccion)) {
+    // El sello a la par de la firma
+    $this->fpdf->Image(URL::to($sello_direccion), $dir_X + 33, $dir_Y - 15, 20, 20);
+}
+
+// =========================================================
+// 3. RENDERIZADO DEL BLOQUE DOCENTE
+// =========================================================
+$this->fpdf->SetY($doc_Y);
+$this->fpdf->SetX($doc_X);
+$this->fpdf->SetFont('Arial', 'B', 8);
+
+// Línea de firma
+$this->fpdf->Cell($doc_ancho, 5, 'f. __________________________', 0, 0, 'C');
+
+// Nombre y Cargo
+$this->fpdf->SetY($doc_Y + 5);
+$this->fpdf->SetX($doc_X);
+$this->fpdf->Cell($doc_ancho, 5, ((string)$nombre_personal_), 0, 1, 'C');
+$this->fpdf->SetX($doc_X);
+$this->fpdf->SetFont('Arial', '', 8);
+$this->fpdf->Cell($doc_ancho, 5, 'Docente responsable', 0, 0, 'C');
+
+// Firma del Docente (Imagen)
+if (!empty($firma_docente)) {
+    $ruta_firma = public_path("img/firmas/{$codigo_institucion}/{$firma_docente}");
+    if (file_exists($ruta_firma)) {
+        // Se posiciona respecto a $doc_X
+        $this->fpdf->Image($ruta_firma, $doc_X + 15, $doc_Y - 12, 35, 15);
+    }
+}
+
         // Construir el nombre del archivo.
             $nombre_archivo = $nombre_modalidad.' '.$nombre_grado . ' ' . $nombre_seccion . ' ' . $nombre_turno . '.pdf';
         // Salida del pdf.

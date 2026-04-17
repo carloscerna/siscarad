@@ -283,7 +283,11 @@ $('#codigo_ann_lectivo, #codigo_seccion, #codigo_asignatura, #periodo').on('chan
                 $.get("{{ url('get-asignaturas') }}", { codigo_seccion: sec, codigo_ann: ann }, function(data) {
                     let h = '<option value="">Seleccione asignatura...</option>';
                     $.each(data, function(i, o) { 
-                        h += `<option value="${o.codigo}">${o.nombre}</option>`; 
+                        // Usamos .trim() para eliminar cualquier espacio invisible
+                        let codAsig = String(o.codigo).trim();
+                        let codArea = String(o.codigo_area || "00").trim();
+
+                        h += `<option value="${codAsig}${codArea}">${o.nombre}</option>`;
                     });
                     $('#codigo_asignatura').html(h);
                 });
