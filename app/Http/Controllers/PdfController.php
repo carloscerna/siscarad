@@ -10,11 +10,15 @@ use Illuminate\Support\Facades\URL;
 use App\Mail\BoletaEstudiantes;
 use Illuminate\Support\Facades\Auth;
 
-
+$nombre_personal = "";
 
 class PdfController extends Controller
 {
     protected $fpdf;
+
+// PHP 8.x permite tipar las propiedades. 
+    // Esto evita el error de "variable no definida" en el bloque de firmas.
+//    public string $nombre_personal = "";
 
     public function __construct()
     {
@@ -759,6 +763,7 @@ class PdfController extends Controller
                 ->get();
             }
 
+            
 //
 //  creación de la boleta segùn el dato de la matricula.
 //
@@ -1279,7 +1284,7 @@ public function boletaMasiva(Request $request)
     $arrayMatriculas = explode(',', $matriculasStr);
 
 // Obtener el nombre para ponerlo en la firma
-$nombre_personal = Auth::user()->name;
+    //$nombre_personal = Auth::user()->name;
 
    // 1. Recolectar parámetros de la URL
     $matriculasStr = $request->input('matriculas'); // Viene como "28304,28305"
@@ -1406,6 +1411,7 @@ $ancho_cell = [60, 10, 50]; // [Nombre Asig, Notas, Periodos]
             continue; // Si no hay notas para esta matrícula, saltar al siguiente
         }
 
+       
         // Extraer datos fijos de la cabecera del alumno
         $primerRegistro = $EstudianteBoleta->first();
         $nombre_completo = mb_convert_encoding(trim($primerRegistro->full_nombres_apellidos),'ISO-8859-1','UTF-8');
@@ -1420,7 +1426,36 @@ $ancho_cell = [60, 10, 50]; // [Nombre Asig, Notas, Periodos]
         $nombre_annlectivo = mb_convert_encoding(trim($primerRegistro->nombre_annlectivo),'ISO-8859-1','UTF-8');
         $nombre_foto = trim($primerRegistro->foto);
         $codigo_genero = trim($primerRegistro->codigo_genero);
+        $codigo_seccion = trim($primerRegistro->codigo_seccion);
+        $codigo_turno = trim($primerRegistro->codigo_turno);
         $codigo_alumno_seguro = trim($primerRegistro->codigo_alumno);
+
+
+// 1. Consultamos el encargado de la sección
+    $registroEncargado = DB::table('encargado_grado as eg')
+        ->join('personal as p', 'p.id_personal', '=', 'eg.codigo_docente')
+        ->select(
+            'p.id_personal',
+            'p.firma',
+            DB::raw("TRIM(CONCAT(BTRIM(p.nombres), ' ', BTRIM(p.apellidos))) as full_name")
+        )
+        ->where([
+            ['codigo_bachillerato', '=', $codigo_modalidad],
+            ['codigo_grado', '=', $codigo_grado],
+            ['codigo_ann_lectivo', '=', $codigo_annlectivo],
+            ['codigo_seccion', '=', $codigo_seccion],
+            ['codigo_turno', '=', $codigo_turno],
+            ['encargado', '=', 'true'],
+        ])
+        ->first(); // Obtenemos solo el primer resultado
+
+    // 2. Validamos si existe y preparamos el nombre para FPDF
+    if ($registroEncargado) {
+        $nombre_personal = mb_convert_encoding(trim($registroEncargado->full_name), "ISO-8859-1", "UTF-8");
+    } else {
+        $nombre_personal = "NOMBRE DEL DOCENTE NO ENCONTRADO";
+    }
+
 
         $alto_cell = array('5'); 
         $ancho_cell = array('60','6','30','30','180');
@@ -1707,7 +1742,7 @@ $ancho_cell = [60, 10, 50]; // [Nombre Asig, Notas, Periodos]
 $y_pos = $this->fpdf->GetY() + 10; // Punto de partida para el bloque de firmas
 
 // Control de salto de página
-if ($y_pos > 170) { 
+if ($y_pos < 110) { 
     $this->fpdf->AddPage();
     $y_pos = 30;
 }
