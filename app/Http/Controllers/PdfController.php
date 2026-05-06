@@ -1786,7 +1786,7 @@ $this->fpdf->SetY($y_pos + 18);
 // Nombres
 $this->fpdf->SetFont('Arial', 'B', 9);
 $this->fpdf->Cell(140, 5, $nombre_director, 0, 0, 'L');
-$this->fpdf->Cell(0, 5, mb_convert_encoding($nombre_personal, "ISO-8859-1", "UTF-8"), 0, 1, 'L');
+$this->fpdf->Cell(0, 5, $nombre_personal, 0, 1, 'L');
 
 // Líneas de cargos
 $this->fpdf->SetFont('Arial', '', 8);
