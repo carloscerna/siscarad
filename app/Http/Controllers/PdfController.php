@@ -716,7 +716,7 @@ class PdfController extends Controller
         //  Información del docente responsable de la sección.
 
         // agregar firma y sello
-            $this->fpdf->image(URL::to($firma_director),15,$ultima_linea+25,40,15);
+            $this->fpdf->image(URL::to($firma_director),20,$ultima_linea+15,0,25);
             $this->fpdf->image(URL::to($sello_direccion),40,$ultima_linea+20,25,25);
         // agregar pagina.
                 } // FIN de ESTUDIANTE NOMINA.S

@@ -239,7 +239,7 @@ class CalificacionesPorAsignaturaController extends Controller
         // Array
         $Periodo = array();
         // Variable fecha.
-            $hoy = Carbon::now();
+            $hoy = Carbon::now('-06:00');
             $date = $hoy->format('Y-m-d');
             $PeriodoCalendario = DB::table('periodo_calendario')
                 ->join('catalogo_periodo','catalogo_periodo.id_','=','periodo_calendario.codigo_periodo')
