@@ -12,6 +12,85 @@ use Illuminate\Support\Facades\Auth;
 
 $nombre_personal = "";
 
+/**
+ * Clase extendida para manejar el Pie de Página personalizado
+ */
+class PDF_ConFooter extends Fpdf {
+    public $promedios = ['p1' => '0.0', 'p2' => '0.0', 'p3' => '0.0', 'p4' => '0.0', 'final' => '0.0'];
+    public $num_periodos = 3;
+
+    function Footer() {
+        // Posición un poco más arriba para que luzca el diseño
+        $this->SetY(-28);
+        
+        // --- COLORES DE DISEÑO ---
+        $colorFondoGris = [248, 249, 250];
+        $colorFondoAzul = [0, 51, 102]; // Azul institucional
+        $colorTextoAzul = [0, 51, 102];
+        $colorBorde = [180, 180, 180];
+
+        // Calcular anchos
+        $columnas = $this->num_periodos + 1;
+        $ancho_pagina = 250; // Aproximado para Letter Paisaje
+        $ancho_celda = $ancho_pagina / $columnas;
+
+        $this->SetX(15);
+        $this->SetLineWidth(0.3); // Borde un poco más firme
+
+        // --- DIBUJAR PROMEDIOS PARCIALES ---
+        $this->SetFillColor($colorFondoGris[0], $colorFondoGris[1], $colorFondoGris[2]);
+        $this->SetTextColor($colorTextoAzul[0], $colorTextoAzul[1], $colorTextoAzul[2]);
+        $this->SetDrawColor($colorBorde[0], $colorBorde[1], $colorBorde[2]);
+        $this->SetFont('Arial', 'B', 9);
+
+        for ($i = 1; $i <= $this->num_periodos; $i++) {
+            $key = "p$i";
+            $valor = isset($this->promedios[$key]) ? $this->promedios[$key] : '0.0';
+            
+            // Título pequeño arriba del valor
+            $xActual = $this->GetX();
+            $yActual = $this->GetY();
+            
+            $this->Cell($ancho_celda, 10, "", 1, 0, 'C', true); // Celda de fondo
+            $this->SetXY($xActual, $yActual + 1);
+            $this->SetFont('Arial', '', 7);
+            $this->Cell($ancho_celda, 3, "PROMEDIO P$i", 0, 0, 'C');
+            $this->SetXY($xActual, $yActual + 4);
+            $this->SetFont('Arial', 'B', 11); // Valor más grande
+            $this->Cell($ancho_celda, 5, $valor, 0, 0, 'C');
+            
+            $this->SetXY($xActual + $ancho_celda, $yActual); // Mover a la siguiente posición
+        }
+
+        // --- DIBUJAR PROMEDIO FINAL (RESALTADO) ---
+        $valor_final = isset($this->promedios['final']) ? $this->promedios['final'] : '0.0';
+        
+        $this->SetFillColor($colorFondoAzul[0], $colorFondoAzul[1], $colorFondoAzul[2]);
+        $this->SetTextColor(255, 255, 255); // Texto blanco
+        $this->SetDrawColor(0, 30, 60);
+        
+        $xActual = $this->GetX();
+        $yActual = $this->GetY();
+        
+        $this->Cell($ancho_celda, 10, "", 1, 1, 'C', true); // Celda fondo azul
+        
+        $this->SetXY($xActual, $yActual + 1);
+        $this->SetFont('Arial', 'B', 7);
+        $this->Cell($ancho_celda, 3, "PROMEDIO FINAL GLOBAL", 0, 0, 'C');
+        $this->SetXY($xActual, $yActual + 4);
+        $this->SetFont('Arial', 'B', 12); // El más grande de todos
+        $this->Cell($ancho_celda, 5, $valor_final, 0, 0, 'C');
+
+        // --- PIE DE PÁGINA (DATOS TÉCNICOS) ---
+        $this->SetY(-12);
+        $this->SetFont('Arial', 'I', 7);
+        $this->SetTextColor(100, 100, 100);
+        date_default_timezone_set('America/El_Salvador');
+        $fecha = date('d/m/Y h:i:s A');
+        $this->Cell(0, 5, mb_convert_encoding("Generado el: $fecha | Sistema Académico | Página " . $this->PageNo() . "/{nb}", 'ISO-8859-1', 'UTF-8'), 0, 0, 'R');
+    }
+}
+
 class PdfController extends Controller
 {
     protected $fpdf;
@@ -20,13 +99,25 @@ class PdfController extends Controller
     // Esto evita el error de "variable no definida" en el bloque de firmas.
 //    public string $nombre_personal = "";
 
+ 
+
+
     public function __construct()
     {
         $this->fpdf = new Fpdf('L','mm','Letter');	// Formato Letter;
+            // Cambiar la instancia a la nueva clase con Footer
+// Se utiliza la nueva clase que contiene el pie de página
+        $this->fpdf = new PDF_ConFooter('L','mm','Letter');
+        // Alias para el total de páginas ({nb})
+        $this->fpdf->AliasNbPages();
     }
 
-    public function index($id, $accion = "ver") 
+    public function index($id, $accion = "ver", $codigo_matricula = null) 
     {
+        // 3. Generación del PDF
+        $this->fpdf->AddPage();
+        $this->fpdf->SetAutoPageBreak(true, 25); // Margen para el footer
+
         // Configurar PDF.
             $this->fpdf->SetFont('Arial', 'B', 9);
             //$this->fpdf->AddPage();
@@ -232,10 +323,36 @@ class PdfController extends Controller
                                 )
                         ->where([
                             ['codigo_matricula', '=', $codigo_matricula],
+                            ['n.orden', '<>', 0], // Esta es la línea que filtra los que no son cero
                             ])
                         ->orderBy('n.orden','asc')
                         ->get();
+// Obtener la modalidad del primer registro para definir los periodos
+    $codigo_modalidad = $EstudianteBoleta->first()->codigo_modalidad ?? '00';
 
+    // APLICAR TU LÓGICA DE PERIODOS
+    if($codigo_modalidad >= '03' && $codigo_modalidad <= '05' || $codigo_modalidad == '21' || $codigo_modalidad == '17' || $codigo_modalidad == '24'){
+        $valor_periodo = 3; // Basica suele ser 3 trimestres en muchos sistemas, ajusta según tu necesidad
+    } else if(($codigo_modalidad >= '06' && $codigo_modalidad <= '09') || $codigo_modalidad == '15'){
+        $valor_periodo = 4; // Media
+    } else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){
+        $valor_periodo = 4; // Nocturna
+    } else {
+        $valor_periodo = 3; // Parvularia / Otros
+    }
+
+    // Pasar el número de periodos al PDF para el Footer
+    $this->fpdf->num_periodos = $valor_periodo;
+
+    // CALCULAR PROMEDIOS
+    $conteo = $EstudianteBoleta->count();
+    if($conteo > 0) {
+        $this->fpdf->promedios['p1'] = number_format($EstudianteBoleta->avg('nota_p_p_1'), 1);
+        $this->fpdf->promedios['p2'] = number_format($EstudianteBoleta->avg('nota_p_p_2'), 1);
+        $this->fpdf->promedios['p3'] = number_format($EstudianteBoleta->avg('nota_p_p_3'), 1);
+        $this->fpdf->promedios['p4'] = number_format($EstudianteBoleta->avg('nota_p_p_4'), 1);
+        $this->fpdf->promedios['final'] = number_format($EstudianteBoleta->avg('nota_final'), 1);
+    }
 
         // variales de entorno para mostrar la información.
         $fila = 1; $fill = true;
@@ -272,8 +389,8 @@ class PdfController extends Controller
                     $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
                 }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
                     $valor_periodo = 4; $valor_actividades = 25; $ancho_area_asignatura = 240;
-                }else if($codigo_modalidad == '21' || $codigo_modalidad == '17'){
-                    $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
+                }else if($codigo_modalidad == '21' || $codigo_modalidad == '17' || $codigo_modalidad == '24'){
+                    $valor_periodo = 2; $valor_actividades = 20; $ancho_area_asignatura = 210;
                 }
                 else{
                     $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 186;    // DEFAULT PUEDE SER PARVULARIA
@@ -757,8 +874,9 @@ class PdfController extends Controller
                         DB::raw("TRIM(CONCAT(BTRIM(a.nombre_completo), CAST(' ' AS VARCHAR), BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno))) as full_nombres_apellidos")
                         )
                 ->where([
-                    ['codigo_matricula', '=', $codigo_matricula],
-                    ])
+                            ['codigo_matricula', '=', $codigo_matricula],
+                            ['n.orden', '<>', 0], // Esta es la línea que filtra los que no son cero
+                            ])
                 ->orderBy('n.orden','asc')
                 ->get();
             }
@@ -1093,7 +1211,7 @@ class PdfController extends Controller
                                 }*/
                                 // LINEA DE DIVISIÓN - PARA EL ÁREA FORMATIVA.
                                 if($catalogo_area_asignatura_codigo[1] == $codigo_area){
-                                    if($catalogo_area_formativa == true){
+                                        if($catalogo_area_formativa == true){
                                         $this->fpdf->Cell($ancho_area_asignatura,6,strtoupper(mb_convert_encoding($catalogo_area_asignatura_area[1],"ISO-8859-1","UTF-8")),1,1,'L',true);
                                         $catalogo_area_formativa = false;
                                     }
@@ -1403,7 +1521,10 @@ $ancho_cell = [60, 10, 50]; // [Nombre Asig, Notas, Periodos]
                      'n.nota_final', 'n.recuperacion', 'n.nota_recuperacion_2',
                      'asig.codigo_area', 'ann.nombre as nombre_annlectivo',
                      DB::raw("TRIM(CONCAT(BTRIM(a.nombre_completo), CAST(' ' AS VARCHAR), BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno))) as full_nombres_apellidos"))
-            ->where('am.id_alumno_matricula', '=', $id_matricula)
+                     ->where([
+                            ['am.id_alumno_matricula', '=', $id_matricula],
+                            ['n.orden', '<>', 0], // Esta es la línea que filtra los que no son cero
+                            ])
             ->orderBy('n.orden','asc')
             ->get();
 
@@ -1511,11 +1632,11 @@ $ancho_cell = [60, 10, 50]; // [Nombre Asig, Notas, Periodos]
                             $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
                         }else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){   // NOCTURNA
                             $valor_periodo = 4; $valor_actividades = 25; $ancho_area_asignatura = 240;
-                        }else if($codigo_modalidad == '21'){
+                        }else if($codigo_modalidad == '21' || $codigo_modalidad == '24'){   // PARVULARIA
                             $valor_periodo = 3; $valor_actividades = 20; $ancho_area_asignatura = 210;
                         }
                         else{
-                            $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 180;    // DEFAULT PUEDE SER PARVULARIA
+                            $valor_periodo = 3; $valor_actividades = 15; $ancho_area_asignatura = 180;    // DEFAULT PUEDE SER PARVULARIA
                         }
 
 
@@ -1737,12 +1858,25 @@ $ancho_cell = [60, 10, 50]; // [Nombre Asig, Notas, Periodos]
                         }
                     } // Fin bucle materias
 
+                    // --- CALCULAR PROMEDIOS PARA EL FOOTER ---
+        if ($notas_estudiante->count() > 0) {
+            // Pasamos la modalidad para que el Footer sepa cuántas celdas dibujar
+            $this->fpdf->num_periodos = $valor_periodo; 
+
+            // Calculamos promedios usando la colección de Laravel
+            $this->fpdf->promedios['p1'] = number_format($notas_estudiante->avg('nota_p_p_1'), 1);
+            $this->fpdf->promedios['p2'] = number_format($notas_estudiante->avg('nota_p_p_2'), 1);
+            $this->fpdf->promedios['p3'] = number_format($notas_estudiante->avg('nota_p_p_3'), 1);
+            $this->fpdf->promedios['p4'] = number_format($notas_estudiante->avg('nota_p_p_4'), 1);
+            $this->fpdf->promedios['p5'] = number_format($notas_estudiante->avg('nota_p_p_5'), 1);
+            $this->fpdf->promedios['final'] = number_format($notas_estudiante->avg('nota_final'), 1);
+        }
                     // --- SECCIÓN DE FIRMAS Y SELLOS (FINAL DE BOLETA) ---
 
 $y_pos = $this->fpdf->GetY() + 10; // Punto de partida para el bloque de firmas
 
 // Control de salto de página
-if ($y_pos < 110) { 
+if ($y_pos < 100) { 
     $this->fpdf->AddPage();
     $y_pos = 30;
 }
