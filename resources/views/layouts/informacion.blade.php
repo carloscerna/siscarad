@@ -13,23 +13,36 @@
                 @csrf
                 @method('PUT')
 
-                <div class="row mb-4 bg-light p-3 rounded border mx-0">
-                    <div class="col-12 text-center text-md-start">
-                        <label class="form-label fw-bold text-dark"><i class="fas fa-camera me-1"></i> Fotografía del Alumno</label>
-                        <div class="d-flex flex-column flex-md-row align-items-center gap-4 mt-2">
-                            <div class="border rounded bg-white d-flex align-items-center justify-content-center shadow-sm" style="width: 140px; height: 160px; overflow: hidden;">
-                                <img id="previewFoto" src="{{ $alumno->foto ? asset('storage/' . $alumno->foto) : asset('img/default-avatar.png') }}" alt="Foto Alumno" class="img-fluid h-100 w-100" style="object-fit: cover;">
-                            </div>
-                            <div class="ml-md-3 mt-3 mt-md-0">
-                                <input type="file" name="foto" id="inputFoto" accept="image/*" capture="user" class="form-control d-none">
-                                <button type="button" class="btn btn-outline-primary btn-sm mb-2 fw-semibold" onclick="document.getElementById('inputFoto').click();">
-                                    <i class="fas fa-mobile-alt me-1"></i> Activar Cámara / Subir Foto
-                                </button>
-                                <small class="text-muted d-block">Nota: Al pulsar desde un teléfono móvil se solicitará abrir la cámara automáticamente.</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+               <div class="row mb-4 bg-light p-3 rounded border mx-0">
+    <div class="col-12 text-center text-md-start">
+        <label class="form-label fw-bold text-dark"><i class="fas fa-camera me-1"></i> Fotografía del Alumno</label>
+        <div class="d-flex flex-column flex-md-row align-items-center gap-4 mt-2">
+            
+            <div class="border rounded bg-white d-flex align-items-center justify-content-center shadow-sm" style="width: 140px; height: 160px; overflow: hidden;">
+                @if(!empty($alumno->foto) && trim($alumno->foto) !== 'foto_no_disponible.jpg')
+                    <img id="previewFoto" src="{{ asset('fotos_origen/' . trim($alumno->foto)) }}" 
+                         alt="Foto Alumno" class="img-fluid h-100 w-100" style="object-fit: cover;"
+                         onerror="this.onerror=null; this.src='{{ asset('img_central/' . (trim($alumno->codigo_genero) == '02' ? 'avatar_femenino.png' : 'avatar_masculino.png')) }}';">
+                @else
+                    @if(trim($alumno->codigo_genero) == '02')
+                        <img id="previewFoto" src="{{ asset('img_central/avatar_femenino.png') }}" alt="Avatar Femenino" class="img-fluid h-100 w-100" style="object-fit: cover;">
+                    @else
+                        <img id="previewFoto" src="{{ asset('img_central/avatar_masculino.png') }}" alt="Avatar Masculino" class="img-fluid h-100 w-100" style="object-fit: cover;">
+                    @endif
+                @endif
+            </div>
+
+            <div class="ml-md-3 mt-3 mt-md-0">
+                <input type="file" name="foto" id="inputFoto" accept="image/*" capture="user" class="form-control d-none" onchange="mostrarPrevisualizacion(this)">
+                <button type="button" class="btn btn-outline-primary btn-sm mb-2 fw-semibold" onclick="document.getElementById('inputFoto').click();">
+                    <i class="fas fa-mobile-alt me-1"></i> Activar Cámara / Subir Foto
+                </button>
+                <small class="text-muted d-block">Nota: Al pulsar desde un teléfono móvil se solicitará abrir la cámara automáticamente.</small>
+            </div>
+
+        </div>
+    </div>
+</div>
 
                 <div class="row g-3 mb-4">
                     <div class="col-12 border-bottom pb-2 mb-2">
@@ -148,5 +161,18 @@
             }
         });
     });
+
+    function mostrarPrevisualizacion(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        
+        reader.onload = function(e) {
+            // Cambia el src del elemento img al de la foto recién tomada o seleccionada
+            document.getElementById('previewFoto').src = e.target.result;
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 </script>
 @endsection

@@ -39,32 +39,26 @@
         <i class="fas fa-building"></i><span>Tablero</span>
     </a>
     
-    <a href="#estudianteSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+    <a href="#estudianteDocenteSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
         <i class="fas fa-users"></i><span>Estudiante</span>
     </a>
-    <ul class="collapse list-unstyled" id="estudianteSubmenu">
+    
+    <ul class="collapse list-unstyled" id="estudianteDocenteSubmenu">
         <li>
-            <a href="calificacionporasignatura"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+            <a href="{{ url('calificacionporasignatura') }}"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Calificaciones</span>
             </a>
         </li>
         <li>
-            <a href="asistenciaDiaria"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+            <a href="{{ url('asistenciaDiaria') }}"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Asistencia Diaria</span>
             </a>
         </li>
-        
-<li>
-    <a href="{{ route('estudiante.informacion.index') }}"><i class="fa fa-arrow-right" aria-hidden="true"></i>
-        <span>Información</span>
-    </a>
-</li>
-
-        {{-- <li>
-              <a href="matricula"><i class="fa fa-arrow-right" aria-hidden="true"></i>
-                <span>Matricula</span>
-            </a>   
-        </li> --}}
+        <li>
+            <a href="{{ url('estudiante/informacion') }}"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+                <span>Información</span>
+            </a>
+        </li>
     </ul>
 </li>
 @endrole
