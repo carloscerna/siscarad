@@ -16,6 +16,7 @@ use App\Http\Controllers\PdfRLyPController;
 use App\Http\Controllers\asistenciaDiariaController;
 use App\Http\Controllers\PdfRPGEstudianteController;
 use App\Http\Controllers\PrematriculaController;
+use App\Http\Controllers\AlumnoInformacionController;
 
 // emailes
 use App\Mail\BoletaEstudiantes;
@@ -55,7 +56,23 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
+
+
+
 Route::group(['middleware'=> ['auth']], function(){
+
+// Ruta para mostrar la vista principal (podría ser un listado de alumnos para seleccionar uno)
+    Route::get('estudiante/informacion', [AlumnoInformacionController::class, 'index'])
+        ->name('estudiante.informacion.index');
+
+    // Ruta para mostrar el formulario de un alumno específico
+    Route::get('estudiante/informacion/{id_alumno}/editar', [AlumnoInformacionController::class, 'edit'])
+        ->name('estudiante.informacion.edit');
+
+    // Ruta para procesar la actualización de la foto, firma y datos del encargado
+    Route::put('estudiante/informacion/{id_alumno}', [AlumnoInformacionController::class, 'update'])
+        ->name('estudiante.informacion.update');
+
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('asignaturas', AsignaturaController::class);

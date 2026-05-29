@@ -115,7 +115,7 @@ class PdfController extends Controller
     public function index($id, $accion = "ver", $codigo_matricula = null) 
     {
         // 3. Generación del PDF
-        $this->fpdf->AddPage();
+        //$this->fpdf->AddPage();
         $this->fpdf->SetAutoPageBreak(true, 25); // Margen para el footer
 
         // Configurar PDF.
@@ -875,7 +875,7 @@ class PdfController extends Controller
                         )
                 ->where([
                             ['codigo_matricula', '=', $codigo_matricula],
-                            ['n.orden', '<>', 0], // Esta es la línea que filtra los que no son cero
+                            //['n.orden', '<>', 0], // Esta es la línea que filtra los que no son cero
                             ])
                 ->orderBy('n.orden','asc')
                 ->get();

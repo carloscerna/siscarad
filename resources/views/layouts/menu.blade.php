@@ -1,4 +1,3 @@
-<!-- Menu para el ADMINISTRADOR -->
 @role('Administrador')
 <li class="side-menus {{ Request::is('*') ? 'active' : '' }}">
     <a class="nav-link" href="{{ url('/home') }}">
@@ -11,10 +10,10 @@
         <i class="fas fa-user-lock"></i><span>Roles</span>
     </a>
 
-    <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+    <a href="#adminMantenimientoSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
         <i class="fas fa-tools"></i><span>Mantenimiento</span>
     </a>
-    <ul class="collapse list-unstyled" id="pageSubmenu">
+    <ul class="collapse list-unstyled" id="adminMantenimientoSubmenu">
         <li>
             <a href="asignaturas"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Asignatura</span>
@@ -34,16 +33,16 @@
 </li>
 @endrole
 
-<!-- Menu para el ADMINISTRADOR -->
 @role('Docente')
 <li class="side-menus {{ Request::is('*') ? 'active' : '' }}">
     <a class="nav-link" href="{{ url('/home') }}">
         <i class="fas fa-building"></i><span>Tablero</span>
     </a>
-    <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+    
+    <a href="#estudianteSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
         <i class="fas fa-users"></i><span>Estudiante</span>
     </a>
-    <ul class="collapse list-unstyled" id="pageSubmenu">
+    <ul class="collapse list-unstyled" id="estudianteSubmenu">
         <li>
             <a href="calificacionporasignatura"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Calificaciones</span>
@@ -54,6 +53,13 @@
                 <span>Asistencia Diaria</span>
             </a>
         </li>
+        
+<li>
+    <a href="{{ route('estudiante.informacion.index') }}"><i class="fa fa-arrow-right" aria-hidden="true"></i>
+        <span>Información</span>
+    </a>
+</li>
+
         {{-- <li>
               <a href="matricula"><i class="fa fa-arrow-right" aria-hidden="true"></i>
                 <span>Matricula</span>

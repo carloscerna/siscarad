@@ -9,11 +9,29 @@ use Illuminate\Support\Facades\URL;
 
 class PdfRPAController extends Controller
 {
-    protected $fpdf;
+   protected $fpdf;
 
     public function __construct()
     {
-        $this->fpdf = new Fpdf('L','mm','Letter');	// Formato Letter;
+        // Creamos una clase extendida al vuelo para poder usar el Footer dinámico
+        $this->fpdf = new class('L','mm','Letter') extends Fpdf {
+            // Añadimos una propiedad para mandarle la fecha/hora desde el index
+            public $pie_pagina_texto = '';
+
+            public function Footer() {
+                $this-> (-15); // Fijado a 1.5 cm del final
+                $this->SetFont('Arial', 'I', 7);
+                $this->SetTextColor(100, 100, 100); 
+
+                // Texto izquierdo: Fecha y Hora (Guardada previamente en la propiedad)
+                $this->Cell(140, 10, $this->pie_pagina_texto, 0, 0, 'L');
+                
+                // Texto derecho: Paginación automática ("Página X de Y")
+                // Nota: Reemplaza 'convertirTexto' si tienes la función global o usa utf8_decode
+                $texto_pagina = function_exists('convertirTexto') ? convertirTexto('Página ') : utf8_decode('Página ');
+                $this->Cell(100, 10, $texto_pagina . $this->PageNo() . ' de {nb}', 0, 0, 'R');
+            }
+        };
     }
 
     public function index($id) 
@@ -23,8 +41,8 @@ class PdfRPAController extends Controller
         // Configurar PDF.
             $this->fpdf->SetFont('Arial', 'B', 9);
             $this->fpdf->AddPage();
-            $this->fpdf->SetMargins(5, 5, 5);
-            $this->fpdf->SetAutoPageBreak(true,5);
+            $this->fpdf->SetMargins(5, 25, 5);
+            $this->fpdf->SetAutoPageBreak(true,10);
             $this->fpdf->SetX(30);
         // Variables
         // NIE - ID - CODIGO MATRICULOA - (CODIGO GRADO - SECCION - TURNO -MODALIDAD) - ANNLECTIVO
@@ -171,7 +189,7 @@ class PdfRPAController extends Controller
             ->limit(1)
             ->get();
             // extgraer datos para el encabezado
-            $alto_cell = array('5'); $ancho_cell = array('60','6','30','30','15');
+            $alto_cell = array('5.5'); $ancho_cell = array('60','6','30','30','15');
             foreach($EstudianteInformacionInstitucion as $response_i){  //Llenar el arreglo con datos
                 $nombre_institucion = convertirTexto(trim($response_i->nombre_institucion));
                 $nombre_director = convertirTexto(trim($response_i->full_name));
@@ -180,7 +198,7 @@ class PdfRPAController extends Controller
                 $firma_director = "/img/".convertirTexto(trim($response_i->logo_dos));
                 $sello_direccion = "/img/".convertirTexto(trim($response_i->logo_tres));
                 // LOGO DE LA INSTITUCIÓN
-                    $this->fpdf->image(URL::to($logo_uno),10,5,15,20);
+                    $this->fpdf->image(URL::to($logo_uno),10,15,0,20);
                     $this->fpdf->Cell(40, $alto_cell[0],"CENTRO ESCOLAR:",1,0,'L');       
                     $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,1,1,'L');       
             } // FIN DEL FOREACH para los datos de la insitucion.
@@ -630,64 +648,42 @@ if ($total_estudiantes > 0) {
 
 }
 // --- FIN: CÓDIGO AÑADIDO ---
+// --- FIN: CÓDIGO AÑADIDO ---
+
 // =========================================================
-// 1. VARIABLES DE CONTROL INDEPENDIENTES (PHP 8.x Ready)
+// 1. VARIABLES DE CONTROL INDEPENDIENTES (Dinamismo y Paralelo)
 // =========================================================
 
-// Posición Vertical Base (Donde comienzan las firmas)
-//$Y_firmas = (float) $this->fpdf->GetY() + 15; 
-$Y_firmas = 105; 
+// Capturamos la posición Y actual de forma dinámica y dejamos un margen de 15mm
+$Y_firmas = (float) $this->fpdf->GetY() + 15; 
 
-// --- BLOQUE DIRECTOR ---
-$dir_X     = 225.0; // Mover horizontalmente el bloque del director
-$dir_Y     = $Y_firmas + 60; 
-$dir_ancho = 65.0;  // Ancho de la línea de firma
+// Control de desbordamiento: Si las firmas no caben en esta página, añadimos una nueva
+if ($Y_firmas > 170) { 
+    $this->fpdf->AddPage();
+    $Y_firmas = 30; // Reiniciamos Y en la nueva página
+}
 
-// --- BLOQUE DOCENTE ---
-$doc_X     = 225.0; // Mover horizontalmente el bloque del docente
+// --- BLOQUE DOCENTE (Lado Izquierdo - Alineado con la tabla) ---
+$doc_X     = 30.0; 
 $doc_Y     = $Y_firmas;
-$doc_ancho = 65.0;  // Ancho de la línea de firma
+$doc_ancho = 65.0;  
+
+// --- BLOQUE DIRECTOR (Lado Derecho) ---
+$dir_X     = 180.0; 
+$dir_Y     = $Y_firmas; // Misma altura Y para que queden alineados horizontalmente
+$dir_ancho = 65.0;  
 
 // =========================================================
-// 2. RENDERIZADO DEL BLOQUE DIRECTOR
-// =========================================================
-$this->fpdf->SetY($dir_Y);
-$this->fpdf->SetX($dir_X);
-$this->fpdf->SetFont('Arial', 'B', 8);
-
-// Línea de firma
-$this->fpdf->Cell($dir_ancho, 5, 'f. __________________________', 0, 1, 'C');
-
-// Nombre y Cargo
-$this->fpdf->SetY($dir_Y + 5);
-$this->fpdf->SetX($dir_X);
-$this->fpdf->Cell($dir_ancho, 5, ((string)$nombre_director), 0, 1, 'C');
-$this->fpdf->SetX($dir_X);
-$this->fpdf->SetFont('Arial', '', 8);
-$this->fpdf->Cell($dir_ancho, 5, 'Director(a)', 0, 0, 'C');
-
-// Sello y Firma (Imágenes)
-if (!empty($firma_director)) {
-    // Se posiciona respecto a $dir_X
-    $this->fpdf->Image(URL::to($firma_director), $dir_X + 15, $dir_Y -20, 25, 0);
-}
-if (!empty($sello_direccion)) {
-    // El sello a la par de la firma
-    $this->fpdf->Image(URL::to($sello_direccion), $dir_X + 33, $dir_Y - 15, 20, 20);
-}
-
-// =========================================================
-// 3. RENDERIZADO DEL BLOQUE DOCENTE
+// 2. RENDERIZADO DEL BLOQUE DOCENTE (Izquierda)
 // =========================================================
 $this->fpdf->SetY($doc_Y);
 $this->fpdf->SetX($doc_X);
 $this->fpdf->SetFont('Arial', 'B', 8);
 
 // Línea de firma
-$this->fpdf->Cell($doc_ancho, 5, 'f. __________________________', 0, 0, 'C');
+$this->fpdf->Cell($doc_ancho, 5, 'f. __________________________', 0, 1, 'C');
 
 // Nombre y Cargo
-$this->fpdf->SetY($doc_Y + 5);
 $this->fpdf->SetX($doc_X);
 $this->fpdf->Cell($doc_ancho, 5, ((string)$nombre_personal_), 0, 1, 'C');
 $this->fpdf->SetX($doc_X);
@@ -698,16 +694,59 @@ $this->fpdf->Cell($doc_ancho, 5, 'Docente responsable', 0, 0, 'C');
 if (!empty($firma_docente)) {
     $ruta_firma = public_path("img/firmas/{$codigo_institucion}/{$firma_docente}");
     if (file_exists($ruta_firma)) {
-        // Se posiciona respecto a $doc_X
         $this->fpdf->Image($ruta_firma, $doc_X + 15, $doc_Y - 12, 35, 15);
     }
 }
 
-        // Construir el nombre del archivo.
+// =========================================================
+// 3. RENDERIZADO DEL BLOQUE DIRECTOR (Derecha)
+// =========================================================
+$this->fpdf->SetY($dir_Y);
+$this->fpdf->SetX($dir_X);
+$this->fpdf->SetFont('Arial', 'B', 8);
+
+// Línea de firma
+$this->fpdf->Cell($dir_ancho, 5, 'f. __________________________', 0, 1, 'C');
+
+// Nombre y Cargo
+$this->fpdf->SetX($dir_X);
+$this->fpdf->Cell($dir_ancho, 5, ((string)$nombre_director), 0, 1, 'C');
+$this->fpdf->SetX($dir_X);
+$this->fpdf->SetFont('Arial', '', 8);
+$this->fpdf->Cell($dir_ancho, 5, 'Director(a)', 0, 0, 'C');
+
+// Sello y Firma (Imágenes)
+if (!empty($firma_director)) {
+    $this->fpdf->Image(URL::to($firma_director), $dir_X + 15, $dir_Y - 12, 25, 0);
+}
+if (!empty($sello_direccion)) {
+    $this->fpdf->Image(URL::to($sello_direccion), $dir_X + 42, $dir_Y - 10, 20, 20);
+}
+
+// =========================================================
+            // 4. CONFIGURACIÓN DEL PIE DE PÁGINA (Para todas las hojas)
+            // =========================================================
+            // Definimos el alias para el total de páginas
+            $this->fpdf->AliasNbPages(); 
+
+            // Calculamos la hora de El Salvador
+            $fecha_hora_sv = \Carbon\Carbon::now('-06:00'); 
+            $fecha_formato = $fecha_hora_sv->format('d/m/Y');
+            $hora_formato  = $fecha_hora_sv->format('h:i:s A'); 
+
+            // Pasamos el texto a la propiedad del PDF para que el método Footer() lo imprima en cada hoja
+            $this->fpdf->pie_pagina_texto = "Fecha de impresion: $fecha_formato - Hora: $hora_formato";
+
+
+            // =========================================================
+            // 5. SALIDA DEL ARCHIVO
+            // =========================================================
+            // Construir el nombre del archivo.
             $nombre_archivo = $nombre_modalidad.' '.$nombre_grado . ' ' . $nombre_seccion . ' ' . $nombre_turno . '.pdf';
-        // Salida del pdf.
-            $modo = 'I'; // Envia al navegador (I), Descarga el archivo (D), Guardar el fichero en un local(F).
-            $this->fpdf->Output($nombre_archivo,$modo);
-                exit;
+            
+            // Salida del pdf.
+            $modo = 'I'; 
+            $this->fpdf->Output($nombre_archivo, $modo);
+            exit;
     }    //
 }
