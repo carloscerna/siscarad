@@ -86,35 +86,35 @@ class AlumnoInformacionController extends Controller
 
     return view('layouts.index_informacion', compact('alumnos', 'buscar'));
 }
-
-  /**
+/**
  * Muestra el formulario con TODA la información completa del estudiante
  */
 public function edit($id_alumno)
 {
-    // CORRECCIÓN DE AGUJA: Buscamos usando explícitamente la columna 'id_alumno' 
-    // para que Eloquent no intente adivinar la llave primaria.
+    // 1. Buscamos usando explícitamente la columna 'id_alumno' 
     $alumno = Alumno::where('id_alumno', $id_alumno)->first();
 
-    // Si no lo encuentra por el modelo, usamos Query Builder como plan de respaldo absoluto
+    // Si no lo encuentra por el modelo, usamos Query Builder como plan de respaldo
     if (!$alumno) {
         $alumnoData = DB::table('alumno')->where('id_alumno', $id_alumno)->first();
         
         if (!$alumnoData) {
             return redirect()->route('estudiante.informacion.index')
-                ->with('error', 'El estudiante con ID ' . $id_alumno . ' no existe en la base de datos.');
+                ->with('error', 'El estudiante con ID ' . $id_alumno . ' no existe.');
         }
-        
-        // Lo convertimos temporalmente en objeto estándar si falla el modelo
         $alumno = $alumnoData; 
     }
 
-// APLICAMOS TRIM AL CAMPO FOTO PARA ELIMINAR ESPACIOS EN BLANCO OCULTOS DE LA BD
+    // Aseguramos la limpieza de espacios en el campo foto y dirección del alumno
     if (isset($alumno->foto)) {
         $alumno->foto = trim($alumno->foto);
     }
+    if (isset($alumno->direccion_alumno)) {
+        // Mapeamos a la propiedad exacta que busca tu textarea: {{ $alumno->direccion_alumno }}
+        $alumno->direccion_alumno = trim($alumno->direccion_alumno);
+    }
 
-    // 2. Traemos de forma independiente los nombres de grado y sección para el encabezado (Año de 2 dígitos)
+    // 2. Traemos de forma independiente los nombres de grado y sección
     $matriculaActual = DB::table('alumno_matricula as mat')
         ->join('grado_ano as gr', 'gr.codigo', '=', 'mat.codigo_grado')
         ->join('seccion as sec', 'sec.codigo', '=', 'mat.codigo_seccion')
@@ -123,73 +123,98 @@ public function edit($id_alumno)
         ->select('gr.nombre as grado_nombre', 'sec.nombre as seccion_nombre')
         ->first();
 
-    // 3. Inyectamos los datos del encargado de la tabla alumno_encargado
-    $encargado = DB::table('alumno_encargado')
-        ->where('codigo_alumno', $id_alumno)
-        ->where('encargado', true)
-        ->first();
-
-    // Asignamos las propiedades dinámicas para que tu vista Blade las pinte idénticas
     $alumno->grado_nombre = $matriculaActual->grado_nombre ?? 'N/A';
     $alumno->seccion_nombre = $matriculaActual->seccion_nombre ?? 'N/A';
-    $alumno->nombre_encargado = $encargado->nombre_completo ?? '';
-    $alumno->firma_autorizacion = $encargado->firma_autorizacion ?? '';
+
+    // 3. Extraemos el encargado desde la base de datos
+    $encargadoData = DB::table('alumno_encargado')
+        ->where('codigo_alumno', $id_alumno)
+        ->where('encargado', true)
+        ->select('nombres', 'telefono', 'direccion', 'firma_autorizacion')
+        ->first();
+
+    // CREAMOS EL OBJETO INTERNO QUE TU BLADE BUSCA: $alumno->encargadoPrincipal
+    $alumno->encargadoPrincipal = (object)[
+        'nombres'            => isset($encargadoData->nombres) ? trim($encargadoData->nombres) : '',
+        'telefono'           => isset($encargadoData->telefono) ? trim($encargadoData->telefono) : '',
+        'direccion'          => isset($encargadoData->direccion) ? trim($encargadoData->direccion) : '',
+        'firma_autorizacion' => isset($encargadoData->firma_autorizacion) ? trim($encargadoData->firma_autorizacion) : ''
+    ];
 
     return view('layouts.informacion', compact('alumno'));
 }
-
-    /**
- * Procesa y guarda los datos de la captura (Fotografía física y Firma en Base64)
+   /**
+ * Procesa, comprime la fotografía y guarda la firma del encargado
  */
 public function update(Request $request, $id_alumno)
 {
-    // 1. CORRECCIÓN PARA PROCESAR EL ARCHIVO DE FOTO REAL DESDE EL INPUT MULTIPART
+    // 1. PROCESAMIENTO Y COMPRESIÓN DE LA FOTO (Bajar de MB a KB con excelente calidad)
     if ($request->hasFile('foto')) {
         $file = $request->file('foto');
-        
-        // Creamos el nombre del archivo respetando tu estructura (ID_alumno + timestamp para romper caché)
-        $nombreArchivo = 'foto_' . $id_alumno . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $extension = strtolower($file->getClientOriginalExtension());
+        $nombreArchivo = 'foto_' . $id_alumno . '_' . time() . '.jpg'; // Forzamos salida JPG para optimizar
+        $rutaDestino = public_path('fotos_origen/' . $nombreArchivo);
 
-        /* Mover el archivo directamente a tu puente virtual 'fotos_origen'.
-          Al moverlo aquí, Windows físicamente lo guardará de inmediato en:
-          C:\wamp64\www\registro_academico\img\fotos\10391\ sin que Laravel duplique espacio.
-        */
-        $file->move(public_path('fotos_origen'), $nombreArchivo);
-
-        // Actualizamos el nombre del archivo en la tabla 'alumno' en PostgreSQL
-        DB::table('alumno')->where('id_alumno', $id_alumno)->update([
-            'foto' => $nombreArchivo
-        ]);
-    }
-
-    // 2. PROCESAR LA FIRMA EN BASE64 (Se mantiene igual porque el canvas sigue mandando texto)
-    if ($request->filled('firma_base64')) {
-        $existeEncargado = DB::table('alumno_encargado')
-            ->where('codigo_alumno', $id_alumno)
-            ->where('encargado', true)
-            ->exists();
-
-        if ($existeEncargado) {
-            DB::table('alumno_encargado')
-                ->where('codigo_alumno', $id_alumno)
-                ->where('encargado', true)
-                ->update([
-                    'nombre_completo' => $request->input('nombre_encargado_input'),
-                    'firma_autorizacion' => $request->input('firma_base64'),
-                    'updated_at' => now()
-                ]);
+        // Creamos la imagen en memoria según el formato de origen
+        if ($extension === 'png') {
+            $imagenOriginal = imagecreatefrompng($file->getRealPath());
+        } elseif ($extension === 'gif') {
+            $imagenOriginal = imagecreatefromgif($file->getRealPath());
         } else {
-            DB::table('alumno_encargado')->insert([
-                'codigo_alumno' => $id_alumno,
-                'encargado' => true,
-                'nombre_completo' => $request->input('nombre_encargado_input') ?? 'Encargado',
-                'firma_autorizacion' => $request->input('firma_base64'),
-                'created_at' => now(),
-                'updated_at' => now()
+            $imagenOriginal = imagecreatefromjpeg($file->getRealPath());
+        }
+
+        if ($imagenOriginal) {
+            // Guardamos la imagen aplicando compresión (Calidad 75: balance perfecto peso/nitidez)
+            // Esto bajará el peso drásticamente de 2.8 MB a ~100-150 KB
+            imagejpeg($imagenOriginal, $rutaDestino, 75);
+            imagedestroy($imagenOriginal); // Liberamos memoria de WAMP
+
+            // Actualizamos el nombre en la tabla alumno
+            DB::table('alumno')->where('id_alumno', $id_alumno)->update([
+                'foto' => $nombreArchivo
             ]);
         }
     }
 
-    return redirect()->route('estudiante.informacion.index')->with('success', 'Información guardada con éxito.');
+    // 2. PROCESAMIENTO SEGURO DE LA FIRMA
+    if ($request->filled('firma_autorizacion_base64')) {
+        $firmaData = $request->input('firma_autorizacion_base64');
+
+        // Validación: Asegurarnos de que realmente viaja un trazo de imagen Base64 válido
+        if (strpos($firmaData, 'data:image/png;base64,') !== false) {
+            
+            // Verificamos si ya existe el registro del encargado para este alumno
+            $existeEncargado = DB::table('alumno_encargado')
+                ->where('codigo_alumno', $id_alumno)
+                ->where('encargado', true)
+                ->exists();
+
+            $nombreEncargado = $request->input('nombres_encargado') ?? 'Encargado';
+
+            if ($existeEncargado) {
+                DB::table('alumno_encargado')
+                    ->where('codigo_alumno', $id_alumno)
+                    ->where('encargado', true)
+                    ->update([
+                        'nombres' => $nombreEncargado,
+                        'firma_autorizacion' => $firmaData,
+                        'updated_at' => now()
+                    ]);
+            } else {
+                DB::table('alumno_encargado')->insert([
+                    'codigo_alumno' => $id_alumno,
+                    'encargado' => true,
+                    'nombres' => $nombreEncargado,
+                    'firma_autorizacion' => $firmaData,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+        }
+    }
+
+    return redirect()->route('estudiante.informacion.index')
+        ->with('success', 'Expediente actualizado: Foto optimizada y firma registrada con éxito.');
 }
 }
