@@ -87,11 +87,11 @@
                 @if(!empty($alumno->encargadoPrincipal->firma_autorizacion))
                     <img id="firmaGuardadaPreview" src="{{ $alumno->encargadoPrincipal->firma_autorizacion }}" class="position-absolute" style="max-height: 90%; max-width: 90%; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; opacity: 0.85;">
                 @endif
-                
-                <canvas id="canvasFirma" class="position-absolute" style="top: 0; left: 0; width: 100%; height: 100%; z-index: 2; background: transparent; touch-action: none;"></canvas>
+                <canvas id="canvasFirma" width="600" height="300" style="width: 100%; height: 250px; background-color: #fff; border: 1px solid #ced4da; border-radius: .25rem; cursor: crosshair;"></canvas>
+
             </div>
             
-            <input type="hidden" name="firma_autorizacion_base64" id="firma_autorizacion_base64" value="{{ old('firma_autorizacion_base64', $alumno->encargadoPrincipal->firma_autorizacion ?? '') }}">
+            <input type="hidden" name="firma_autorizacion_base64" id="firma_autorizacion_base64" value="{{ old('firma_autorizacion_base64', $alumno->encargadoPrincipal->firma_autorizacion ?? '') }}" autocomplete="off">
             
             <div class="d-flex justify-content-between align-items-center mt-2">
                 <span class="small text-secondary" id="estadoFirmaTexto">
@@ -101,7 +101,7 @@
                         <i class="fas fa-info-circle text-muted"></i> Sin firma registrada.
                     @endif
                 </span>
-                <button type="button" id="btnLimpiarFirma" class="btn btn-warning btn-sm fw-semibold" onclick="limpiarPizarraFirma()">
+                <button type="button" id="btnLimpiarFirma" class="btn btn-warning btn-sm fw-semibold">
                     <i class="fas fa-eraser"></i> Limpiar Pizarra
                 </button>
             </div>
@@ -122,81 +122,125 @@
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // --- 1. Previsualización de Foto ---
-        const inputFoto = document.getElementById('inputFoto');
-        const previewFoto = document.getElementById('previewFoto');
+    (function() {
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            // Elementos del DOM
+            const canvasElement = document.getElementById('canvasFirma');
+            const hiddenInputFirma = document.getElementById('firma_autorizacion_base64');
+            const imgViejaPreview = document.getElementById('firmaGuardadaPreview'); // <-- Atrapamos la imagen fantasma
+            
+            if (!canvasElement) return;
 
-        inputFoto.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) { previewFoto.src = e.target.result; }
-                reader.readAsDataURL(file);
+            const ctxCanvas = canvasElement.getContext('2d');
+            let isDrawing = false;
+            let isCanvasEmpty = true; 
+
+            // Si hay una firma en el input oculto al cargar, asumimos que no está vacío
+            if (hiddenInputFirma && hiddenInputFirma.value.trim() !== '') {
+                isCanvasEmpty = false;
+            }
+
+            // Configuración del pincel
+            ctxCanvas.strokeStyle = "#000080"; 
+            ctxCanvas.lineWidth = 3; 
+            ctxCanvas.lineJoin = "round";
+            ctxCanvas.lineCap = "round";
+
+            // Traducir coordenadas
+            function getCoordinates(e) {
+                const rect = canvasElement.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                return {
+                    x: (clientX - rect.left) * (canvasElement.width / rect.width),
+                    y: (clientY - rect.top) * (canvasElement.height / rect.height)
+                };
+            }
+
+            function startDrawing(e) {
+                isDrawing = true;
+                isCanvasEmpty = false;
+                
+                // Si el usuario empieza a dibujar con el dedo/mouse, ocultamos la firma vieja automáticamente
+                if (imgViejaPreview) {
+                    imgViejaPreview.style.display = 'none';
+                }
+
+                const pos = getCoordinates(e);
+                ctxCanvas.beginPath();
+                ctxCanvas.moveTo(pos.x, pos.y);
+                if (e.touches) e.preventDefault();
+            }
+
+            function draw(e) {
+                if (!isDrawing) return;
+                const pos = getCoordinates(e);
+                ctxCanvas.lineTo(pos.x, pos.y);
+                ctxCanvas.stroke();
+                if (e.touches) e.preventDefault();
+            }
+
+            function stopDrawing() {
+                isDrawing = false;
+                ctxCanvas.closePath();
+            }
+
+            // Eventos para pintar
+            canvasElement.addEventListener('mousedown', startDrawing);
+            canvasElement.addEventListener('mousemove', draw);
+            window.addEventListener('mouseup', stopDrawing);
+
+            canvasElement.addEventListener('touchstart', startDrawing, { passive: false });
+            canvasElement.addEventListener('touchmove', draw, { passive: false });
+            canvasElement.addEventListener('touchend', stopDrawing);
+
+            // === ACCIÓN DEL BOTÓN LIMPIAR (Aquí es donde ocurre la magia) ===
+            const btnClear = document.getElementById('btnLimpiarFirma');
+            if (btnClear) {
+                btnClear.addEventListener('click', function() {
+                    // 1. Borramos el lienzo de dibujo
+                    ctxCanvas.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                    
+                    // 2. Vaciamos por completo el input que va hacia Laravel
+                    if (hiddenInputFirma) {
+                        hiddenInputFirma.value = '';
+                    }
+                    
+                    // 3. FULMINAMOS la imagen vieja que se quedaba flotando abajo
+                    if (imgViejaPreview) {
+                        imgViejaPreview.style.display = 'none'; // Desaparece físicamente
+                    }
+                    
+                    isCanvasEmpty = true; 
+
+                    const txtStatus = document.getElementById('estadoFirmaTexto');
+                    if (txtStatus) {
+                        txtStatus.innerHTML = '<i class="fas fa-info-circle text-warning"></i> Pizarra limpia. Ingrese la nueva firma.';
+                    }
+                    console.log("Pizarra, input e imagen de fondo reseteados por completo.");
+                });
+            }
+
+            // Captura al enviar el formulario
+            const formContainer = document.getElementById('formInformacion');
+            if (formContainer) {
+                formContainer.addEventListener('submit', function(e) {
+                    // Si la pizarra NO está vacía, guardamos lo que se pintó en el input
+                    if (!isCanvasEmpty) {
+                        hiddenInputFirma.value = canvasElement.toDataURL('image/png');
+                    } else {
+                        // Si está vacía y en la base de datos no había nada, exige la firma
+                        @if(empty($alumno->encargadoPrincipal->firma_autorizacion))
+                            e.preventDefault();
+                            alert('Por favor, solicite al responsable que estampe su firma de autorización antes de guardar.');
+                        @endif
+                    }
+                });
             }
         });
-
-        // --- 2. Configuración de SignaturePad (Firma) ---
-        const canvas = document.getElementById('canvasFirma');
-        const signaturePad = new SignaturePad(canvas, {
-            backgroundColor: 'rgb(255, 255, 255)',
-            penColor: 'rgb(0, 0, 128)' 
-        });
-
-        function redimensionarCanvas() {
-            const ratio = Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width = canvas.offsetWidth * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            canvas.getContext("2d").scale(ratio, ratio);
-            signaturePad.clear(); 
-        }
-
-        window.onresize = redimensionarCanvas;
-        redimensionarCanvas();
-
-        document.getElementById('btnLimpiarFirma').addEventListener('click', function() {
-            signaturePad.clear();
-        });
-
-        // --- 3. Validación al enviar el Formulario ---
-        document.getElementById('formInformacion').addEventListener('submit', function(e) {
-            if (!signaturePad.isEmpty()) {
-                document.getElementById('firma_autorizacion_base64').value = signaturePad.toDataURL();
-            } else {
-                @if(empty($alumno->encargadoPrincipal->firma_autorizacion))
-                    e.preventDefault();
-                    alert('Por favor, solicite al responsable que estampe su firma de autorización antes de guardar.');
-                @endif
-            }
-        });
-    });
-
-    function mostrarPrevisualizacion(input) {
-    if (input.files && input.files[0]) {
-        var reader = new FileReader();
-        
-        reader.onload = function(e) {
-            // Cambia el src del elemento img al de la foto recién tomada o seleccionada
-            document.getElementById('previewFoto').src = e.target.result;
-        }
-        
-        reader.readAsDataURL(input.files[0]);
-    }
-
-    function limpiarFirma() {
-    // Limpia el canvas
-    const context = canvasFirma.getContext('2d');
-    context.clearRect(0, 0, canvasFirma.width, canvasFirma.height);
-    
-    // Resetea el input oculto
-    document.getElementById('firma_base64_input').value = '';
-    
-    // Oculta la vista previa de la firma vieja si existe
-    const imgPreview = document.getElementById('firmaGuardadaPreview');
-    if (imgPreview) {
-        imgPreview.style.display = 'none';
-    }
-}
-}
+    })();
 </script>
+
 @endsection

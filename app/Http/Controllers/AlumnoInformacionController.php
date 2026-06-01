@@ -146,75 +146,93 @@ public function edit($id_alumno)
    /**
  * Procesa, comprime la fotografía y guarda la firma del encargado
  */
+/**
+ * Procesa y guarda las modificaciones del expediente (Foto, Encargado, Direcciones y Firma)
+ */
 public function update(Request $request, $id_alumno)
 {
-    // 1. PROCESAMIENTO Y COMPRESIÓN DE LA FOTO (Bajar de MB a KB con excelente calidad)
+    // Aseguramos que Laravel use explicitamente la zona horaria de El Salvador para esta petición
+    date_default_timezone_set('America/El_Salvador');
+    $fechaActual = now(); 
+
+    // 1. ACTUALIZAR DIRECCIÓN DE HABITACIÓN DEL ALUMNO (Tabla: alumno)
+    $direccionAlumno = trim($request->input('direccion_alumno'));
+    
+    $datosAlumno = [
+        'direccion_alumno' => $direccionAlumno,
+        // Si tu tabla alumno tiene tracking de actualización, descomenta la siguiente línea:
+        // 'updated_at' => $fechaActual
+    ];
+
+    // PROCESAMIENTO Y COMPRESIÓN DE LA FOTO (Se mantiene optimizado)
     if ($request->hasFile('foto')) {
         $file = $request->file('foto');
         $extension = strtolower($file->getClientOriginalExtension());
-        $nombreArchivo = 'foto_' . $id_alumno . '_' . time() . '.jpg'; // Forzamos salida JPG para optimizar
+        $nombreArchivo = 'foto_' . $id_alumno . '_' . time() . '.jpg'; 
         $rutaDestino = public_path('fotos_origen/' . $nombreArchivo);
 
-        // Creamos la imagen en memoria según el formato de origen
-        if ($extension === 'png') {
-            $imagenOriginal = imagecreatefrompng($file->getRealPath());
-        } elseif ($extension === 'gif') {
-            $imagenOriginal = imagecreatefromgif($file->getRealPath());
-        } else {
-            $imagenOriginal = imagecreatefromjpeg($file->getRealPath());
-        }
+        if ($extension === 'png') { $imagenOriginal = imagecreatefrompng($file->getRealPath()); }
+        elseif ($extension === 'gif') { $imagenOriginal = imagecreatefromgif($file->getRealPath()); }
+        else { $imagenOriginal = imagecreatefromjpeg($file->getRealPath()); }
 
         if ($imagenOriginal) {
-            // Guardamos la imagen aplicando compresión (Calidad 75: balance perfecto peso/nitidez)
-            // Esto bajará el peso drásticamente de 2.8 MB a ~100-150 KB
             imagejpeg($imagenOriginal, $rutaDestino, 75);
-            imagedestroy($imagenOriginal); // Liberamos memoria de WAMP
-
-            // Actualizamos el nombre en la tabla alumno
-            DB::table('alumno')->where('id_alumno', $id_alumno)->update([
-                'foto' => $nombreArchivo
-            ]);
+            imagedestroy($imagenOriginal);
+            $datosAlumno['foto'] = $nombreArchivo;
         }
     }
 
-    // 2. PROCESAMIENTO SEGURO DE LA FIRMA
-    if ($request->filled('firma_autorizacion_base64')) {
-        $firmaData = $request->input('firma_autorizacion_base64');
+    // Aplicamos los cambios en la tabla alumno
+    DB::table('alumno')->where('id_alumno', $id_alumno)->update($datosAlumno);
 
-        // Validación: Asegurarnos de que realmente viaja un trazo de imagen Base64 válido
-        if (strpos($firmaData, 'data:image/png;base64,') !== false) {
-            
-            // Verificamos si ya existe el registro del encargado para este alumno
-            $existeEncargado = DB::table('alumno_encargado')
+
+    // 2. ACTUALIZAR O INSERTAR DATOS DEL ENCARGADO (Tabla: alumno_encargado)
+    if ($request->filled('nombres_encargado')) {
+        
+        $nombreEncargado = trim($request->input('nombres_encargado'));
+        $telefono        = trim($request->input('telefono_encargado'));
+        $direccion       = trim($request->input('direccion_encargado'));
+        $firmaData       = $request->input('firma_autorizacion_base64'); // Captura el string largo
+
+        $existeEncargado = DB::table('alumno_encargado')
+            ->where('codigo_alumno', $id_alumno)
+            ->where('encargado', true)
+            ->exists();
+
+        // Mapeo exacto de columnas según tu base de datos PostgreSQL
+        $datosEncargado = [
+            'nombres'      => $nombreEncargado,
+            'telefono'     => $telefono,
+            'direccion'    => $direccion,
+            'updated_at'   => $fechaActual // Hora de El Salvador
+        ];
+
+        // Solo sobreescribimos el campo de la firma si el usuario redibujó algo nuevo en el Canvas
+        if (!empty($firmaData) && strpos($firmaData, 'data:image/png;base64,') !== false) {
+            $datosEncargado['firma_autorizacion'] = $firmaData;
+        }
+
+        if ($existeEncargado) {
+            // ACTUALIZACIÓN DE DATOS
+            DB::table('alumno_encargado')
                 ->where('codigo_alumno', $id_alumno)
                 ->where('encargado', true)
-                ->exists();
-
-            $nombreEncargado = $request->input('nombres_encargado') ?? 'Encargado';
-
-            if ($existeEncargado) {
-                DB::table('alumno_encargado')
-                    ->where('codigo_alumno', $id_alumno)
-                    ->where('encargado', true)
-                    ->update([
-                        'nombres' => $nombreEncargado,
-                        'firma_autorizacion' => $firmaData,
-                        'updated_at' => now()
-                    ]);
-            } else {
-                DB::table('alumno_encargado')->insert([
-                    'codigo_alumno' => $id_alumno,
-                    'encargado' => true,
-                    'nombres' => $nombreEncargado,
-                    'firma_autorizacion' => $firmaData,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+                ->update($datosEncargado);
+        } else {
+            // INSERCIÓN INICIAL (Si el alumno no tenía encargado registrado)
+            $datosEncargado['codigo_alumno'] = $id_alumno;
+            $datosEncargado['encargado']      = true;
+            $datosEncargado['created_at']     = $fechaActual;
+            
+            if (!isset($datosEncargado['firma_autorizacion'])) {
+                $datosEncargado['firma_autorizacion'] = $firmaData ?: null;
             }
+
+            DB::table('alumno_encargado')->insert($datosEncargado);
         }
     }
 
     return redirect()->route('estudiante.informacion.index')
-        ->with('success', 'Expediente actualizado: Foto optimizada y firma registrada con éxito.');
+        ->with('success', 'Expediente actualizado con éxito. Datos y firmas sincronizados.');
 }
 }
