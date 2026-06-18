@@ -2,12 +2,14 @@
 <html>
 <head>
     <meta charset="UTF-8">
+
+
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <title>@yield('title') | {{ config('app.name') }}</title>
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
     <link rel="icon" href="{{ asset('img/admin.ico') }}">
-    <!-- Bootstrap 4.1.1 -->
-    <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css"/>
+    <!-- Bootstrap 4.1.1  -->
+    
     <!-- Ionicons -->
     <link href="//fonts.googleapis.com/css?family=Lato&display=swap" rel="stylesheet">
     <link href="{{ asset('assets/css/@fortawesome/fontawesome-free/css/all.css') }}" rel="stylesheet" type="text/css">
@@ -20,6 +22,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Styles PLANTILLA PRINCIPAL.-->
+
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('css/toastr.css') }}" rel="stylesheet">
     @yield('page_css')
@@ -52,6 +55,10 @@
             @yield('content')
         </div>
         <footer class="main-footer p-1 bg-dark text-white text-right">
+            <button class="menu-toggle d-md-none">
+            <i class="fas fa-bars"></i>
+            </button>
+
             @include('layouts.footer')
         </footer>
     </div>
@@ -122,10 +129,21 @@
     }, 10 * 60 * 1000); 
 </script>
 
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const toggle = document.querySelector(".menu-toggle");
+    const sidebar = document.querySelector("#sidebar-wrapper");
+
+    toggle.addEventListener("click", function() {
+      sidebar.classList.toggle("active");
+    });
+  });
+</script>
+
+
 </body>
 <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
 <script src="{{ asset('assets/js/popper.min.js') }}"></script>
-<script src="{{ asset('assets/js/bootstrap.min.js') }}"></script>
 
 <script src="{{ asset('assets/js/sweetalert.min.js') }}"></script>
 <script src="{{ asset('assets/js/iziToast.min.js') }}"></script>
@@ -133,7 +151,8 @@
 <script src="{{ asset('assets/js/jquery.nicescroll.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" integrity="sha512-VEd+nq25CkR676O+pLBnDW09R7VQX9Mdiij052gVCp5yVH3jGtH70Ho/UUv4mJDsEdTvqRCFZg0NKGiojGnUCw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- Scripts PLANTILLA PRINCIPAL-->
-    <script src="{{ asset('js/app.js') }}" defer></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
 
 {{-- Elimina las líneas repetidas y deja solo estas para DataTables --}}
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>

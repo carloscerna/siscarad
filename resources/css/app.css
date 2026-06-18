@@ -1,0 +1,80 @@
+body {
+    background-color: #f3763c;
+}
+/* Sidebar fijo */
+#sidebar-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 250px;
+  z-index: 1000;
+  background: linear-gradient(to bottom, #5F98D6 0%, #1B2B3D 100%) !important;
+  overflow-y: auto;
+}
+
+/* Contenido principal con fondo uniforme */
+.main-content {
+  margin-left: 250px;              /* deja espacio al sidebar */
+  background-color: #f4f6f9 !important; /* gris claro uniforme */
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* Estilos de enlaces */
+.sidebar-menu .nav-link {
+  color: #eee;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease-in-out;
+  display: block;
+}
+
+.sidebar-menu .nav-link:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+.sidebar-menu .nav-link.active {
+  background-color: #0d6efd;
+  color: #fff !important;
+  font-weight: bold;
+}
+
+/* Separadores de secciones */
+.sidebar-menu p.fw-bold {
+  margin-top: 15px;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Responsive: en móviles el sidebar se oculta */
+@media (max-width: 768px) {
+  #sidebar-wrapper {
+    left: -250px;
+    transition: left 0.3s ease;
+  }
+  #sidebar-wrapper.active {
+    left: 0;
+  }
+  .main-content {
+    margin-left: 0;
+  }
+  .menu-toggle {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1101;
+    background-color: #0d6efd;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+  }
+}
+
+
+

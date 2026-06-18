@@ -17,6 +17,8 @@ use App\Http\Controllers\asistenciaDiariaController;
 use App\Http\Controllers\PdfRPGEstudianteController;
 use App\Http\Controllers\PrematriculaController;
 use App\Http\Controllers\AlumnoInformacionController;
+use App\Http\Controllers\AlumnoBitacoraController;
+
 
 // emailes
 use App\Mail\BoletaEstudiantes;
@@ -142,9 +144,26 @@ Route::get('/boleta/pdf/{id}/{accion}', [App\Http\Controllers\PdfController::cla
       //Route::get('/boleta', function(){
         //  return new BoletaEstudiantes("yonYOn");
       //});
+// Rutas para el rol Docente //
+// 1. Pantalla principal del docente: seleccionar grado/sección y buscar alumnos
+    Route::get('/bitacora/crear', [AlumnoBitacoraController::class, 'indexDocente'])->name('bitacora.index_docente');
+    
+    // 2. Ruta AJAX para cargar los alumnos de la sección seleccionada
+    Route::get('/bitacora/alumnos/{id_carga_docente}', [AlumnoBitacoraController::class, 'getAlumnosPorCarga']);
+    
+    // 3. Formulario para ver el historial y agregar una anotación al alumno seleccionado
+    Route::get('/bitacora/estudiante/{codigo_alumno}/{id_carga_docente}', [AlumnoBitacoraController::class, 'create'])->name('bitacora.create');
+    
+    // 4. Guardar la anotación (AJAX)
+    Route::post('/bitacora/guardar', [AlumnoBitacoraController::class, 'store'])->name('bitacora.store');
+
 
 Route::get('/refresh-csrf', function() {
     return response()->json(['token' => csrf_token()]);
+
+
+
+
 });
 
 // Ruta para obtener los alumnos y sus notas (Matriz)

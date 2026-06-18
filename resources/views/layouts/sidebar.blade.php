@@ -9,7 +9,7 @@
             <img class="navbar-brand-full" src="{{ asset('img/logo_cerz.png') }}" width="45px" alt=""/>
         </a>
     </div>
-    <ul class="sidebar-menu">
+    <ul class="sidebar-menu mt-4 bg-dark text-white">
         @include('layouts.menu')
     </ul>
 </aside>

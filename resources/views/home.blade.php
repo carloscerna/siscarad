@@ -20,6 +20,11 @@ use Illuminate\Support\Facades;
     <div class="section-header mb-1">
         <h4 class="page__heading">{{$nombre_docente}}</h4>
     </div>
+
+
+
+
+
     <div class="section-body">
         <div class="row">
             <div class="col col-lg-12 col-xl-12">
