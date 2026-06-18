@@ -1,6 +1,8 @@
-@extends('layouts.app') {{-- O tu layout base --}}
+@extends('layouts.app')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
 <div class="container-fluid py-4">
     <div class="card shadow-sm border-0">
         <div class="card-header bg-primary text-white py-3">
@@ -10,11 +12,15 @@
             <div class="row mb-4">
                 <div class="col-md-6">
                     <label class="form-label fw-bold text-secondary">Seleccione una Sección de su Carga Académica:</label>
-                    <select class="form-select form-select-lg" id="selectCargaDocente">
-                        <option value="">-- Seleccione Grado y Sección --</option>
+                    <select class="form-select form-control" id="selectCargaDocente">
+                        <option value="">-- Seleccione una opción --</option>
                         @foreach($cargas as $carga)
                             <option value="{{ $carga->id_carga_docente }}">
-                                Grado: {{ $carga->codigo_grado }} | Sección: {{ $carga->codigo_seccion }} | Turno: {{ $carga->codigo_turno }}
+                                {{ $carga->nombre_bachillerato }} - 
+                                {{ $carga->nombre_grado }} - 
+                                Sección "{{ $carga->nombre_seccion }}" - 
+                                Turno {{ $carga->nombre_turno }} - 
+                                20{{ trim($carga->codigo_ann_lectivo) }}
                             </option>
                         @endforeach
                     </select>
@@ -25,9 +31,10 @@
                 <table class="table table-hover table-bordered align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 15%">Código/NIE</th>
-                            <th>Nombre Completo del Estudiante</th>
-                            <th style="width: 20%" class="text-center">Acciones</th>
+                            <th style="width: 8%">ID</th>
+                            <th style="width: 12%">NIE</th>
+                            <th>Nombre Completo del Estudiante (Apellidos, Nombres)</th>
+                            <th style="width: 15%" class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tablaAlumnosBody">
@@ -38,9 +45,10 @@
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-$(document).ready(function() {
+document.addEventListener("DOMContentLoaded", function() {
+    // Actualizar la consulta AJAX en el controlador para que jale también el NIE
     $('#selectCargaDocente').on('change', function() {
         const idCarga = $(this).val();
         const contenedor = $('#contenedorTablaAlumnos');
@@ -51,29 +59,32 @@ $(document).ready(function() {
             return;
         }
 
-        tbody.html('<tr><td colspan="3" class="text-center">Cargando estudiantes...</td></tr>');
+        tbody.html('<tr><td colspan="4" class="text-center"><i class="fas fa-spinner fa-spin me-2"></i> Buscando estudiantes matriculados...</td></tr>');
         contenedor.removeClass('d-none');
 
-        // Petición AJAX para traer los alumnos de la sección
         $.ajax({
-            url: `/bitacora/alumnos/${idCarga}`,
+            url: "{{ url('bitacora/alumnos') }}/" + idCarga,
             type: 'GET',
             dataType: 'json',
             success: function(data) {
                 tbody.html('');
                 if (data.length === 0) {
-                    tbody.html('<tr><td colspan="3" class="text-center text-muted">No hay estudiantes matriculados en esta sección.</td></tr>');
+                    tbody.html('<tr><td colspan="4" class="text-center text-muted">No se encontraron estudiantes matriculados.</td></tr>');
                     return;
                 }
 
                 data.forEach(alumno => {
+                    // Si el NIE viene vacío o nulo ponemos un guión
+                    const nieValue = alumno.codigo_nie ? alumno.codigo_nie.trim() : '-';
+                    
                     tbody.append(`
                         <tr>
-                            <td><strong>${alumno.codigo_alumno}</strong></td>
-                            <td class="text-uppercase">${alumno.nombre_completo}</td>
+                            <td><span class="text-secondary small">${alumno.id_alumno}</span></td>
+                            <td><strong>${nieValue}</strong></td>
+                            <td class="text-uppercase">${alumno.nombre_completo_formateado}</td>
                             <td class="text-center">
-                                <a href="/bitacora/estudiante/${alumno.codigo_alumno}/${idCarga}" class="btn btn-sm btn-dark px-3">
-                                    <i class="fas fa-book-open me-1"></i> Bitácora
+                                <a href="{{ url('bitacora/estudiante') }}/${alumno.id_alumno}/${idCarga}" class="btn btn-sm btn-dark btn-block shadow-sm">
+                                    <i class="fas fa-book-open me-1"></i> Abrir Bitácora
                                 </a>
                             </td>
                         </tr>
@@ -81,7 +92,13 @@ $(document).ready(function() {
                 });
             },
             error: function() {
-                tbody.html('<tr><td colspan="3" class="text-center text-danger">Error al cargar el listado.</td></tr>');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'Hubo un problema al traer la nómina de estudiantes.',
+                    confirmButtonColor: '#3085d6'
+                });
+                tbody.html('<tr><td colspan="4" class="text-center text-danger">Fallo al cargar datos.</td></tr>');
             }
         });
     });
