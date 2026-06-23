@@ -40,8 +40,10 @@
     <a class="nav-link {{ Request::is('estudiante/informacion*') ? 'active' : '' }}" href="{{ url('estudiante/informacion') }}">
         <i class="fas fa-arrow-right"></i><span> Información</span>
     </a>
-    <a class="nav-link {{ Request::is('bitacora*') ? 'active' : '' }}" href="{{ url('bitacora/crear') }}">
-        <i class="fas fa-arrow-right"></i><span> Bitácora / Reportes</span>
+<li class="side-menus {{ Request::is('bitacora/docente*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('bitacora.index_docente') }}">
+        <i class="fas fa-book"></i> <span>Bitácora de Alumnos</span>
     </a>
+</li>
 </li>
 @endrole

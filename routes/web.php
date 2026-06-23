@@ -145,18 +145,18 @@ Route::get('/boleta/pdf/{id}/{accion}', [App\Http\Controllers\PdfController::cla
         //  return new BoletaEstudiantes("yonYOn");
       //});
 // Rutas para el rol Docente //
-// 1. Pantalla principal del docente: seleccionar grado/sección y buscar alumnos
-    Route::get('/bitacora/crear', [AlumnoBitacoraController::class, 'indexDocente'])->name('bitacora.index_docente');
-    
-    // 2. Ruta AJAX para cargar los alumnos de la sección seleccionada
-    Route::get('/bitacora/alumnos/{id_carga_docente}', [AlumnoBitacoraController::class, 'getAlumnosPorCarga']);
-    
-    // 3. Formulario para ver el historial y agregar una anotación al alumno seleccionado
-    Route::get('/bitacora/estudiante/{codigo_alumno}/{id_carga_docente}', [AlumnoBitacoraController::class, 'create'])->name('bitacora.create');
+// 1. Ruta para el índice (Unificada a index_docente)
+Route::get('/bitacora/docente', [AlumnoBitacoraController::class, 'index_docente'])->name('bitacora.index_docente');
+
+// 2. RUTA FALTANTE CRÍTICA: Carga los alumnos por AJAX según la carga seleccionada
+Route::get('/bitacora/alumnos/{id_carga_docente}', [AlumnoBitacoraController::class, 'getAlumnosPorCarga']);
+
+// 3. Ruta para abrir la bitácora individual de un estudiante
+Route::get('/bitacora/estudiante/{id_alumno}/{id_carga_docente}', [AlumnoBitacoraController::class, 'create'])->name('bitacora.create');
     
     // 4. Guardar la anotación (AJAX)
     Route::post('/bitacora/guardar', [AlumnoBitacoraController::class, 'store'])->name('bitacora.store');
-
+    Route::post('/bitacora/actualizar', [AlumnoBitacoraController::class, 'update'])->name('bitacora.update');
 
 Route::get('/refresh-csrf', function() {
     return response()->json(['token' => csrf_token()]);
