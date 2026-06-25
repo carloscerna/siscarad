@@ -37,6 +37,26 @@ use App\Mail\OrderShipped;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
+use App\Http\Controllers\AlumnosDemeritosController;
+
+Route::middleware(['auth'])->group(function () {
+    // Pantalla del formulario de captura masiva
+    Route::get('/consolidado-conducta', [AlumnosDemeritosController::class, 'index'])->name('consolidado.index');
+    
+    // AJAX: Carga la matrícula y totales existentes de la sección y mes seleccionados
+    Route::get('/consolidado-conducta/cargar/{id_encargado_grado}/{mes}', [AlumnosDemeritosController::class, 'cargarDatosMes']);
+    
+    // AJAX: Guarda o actualiza los datos recolectados (Mecanismo Upsert)
+    Route::post('/consolidado-conducta/guardar', [AlumnosDemeritosController::class, 'guardarMasivo']);
+    
+    // AJAX: Resetea o elimina las estadísticas del mes seleccionado
+    Route::delete('/consolidado-conducta/eliminar/{id_encargado_grado}/{mes}', [AlumnosDemeritosController::class, 'eliminarMes']);
+
+Route::get('/consolidado-conducta/verificar-meses/{id_encargado_grado}', [AlumnosDemeritosController::class, 'verificarMesesSeccion']);
+
+});
+
 Route::get('/', function () {
     //return view('welcome');
     return redirect()->route('login');

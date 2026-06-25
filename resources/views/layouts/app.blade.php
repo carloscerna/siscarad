@@ -151,7 +151,7 @@
 <script src="{{ asset('assets/js/jquery.nicescroll.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" integrity="sha512-VEd+nq25CkR676O+pLBnDW09R7VQX9Mdiij052gVCp5yVH3jGtH70Ho/UUv4mJDsEdTvqRCFZg0NKGiojGnUCw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- Scripts PLANTILLA PRINCIPAL-->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
 
 
 {{-- Elimina las líneas repetidas y deja solo estas para DataTables --}}
@@ -159,7 +159,7 @@
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
 {{-- Añade el complemento Responsive para que funcione en celulares --}}
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 
 

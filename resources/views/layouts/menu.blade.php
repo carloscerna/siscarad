@@ -45,5 +45,11 @@
         <i class="fas fa-book"></i> <span>Bitácora de Alumnos</span>
     </a>
 </li>
+
+<li class="side-menus {{ Request::is('consolidado-conducta*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('consolidado.index') }}">
+        <i class="fas fa-chart-bar text-warning"></i> <span>Consolidado Deméritos</span>
+    </a>
+</li>
 </li>
 @endrole

@@ -7,7 +7,7 @@
 
     @if(\Illuminate\Support\Facades\Auth::user())
         <li class="dropdown">
-            <a href="#" data-toggle="dropdown"
+            <a href="#" data-bs-toggle="dropdown"
                class="nav-link dropdown-toggle nav-link-lg nav-link-user">
                 <img alt="image" src="{{ asset('img/logo.png') }}"
                      class="rounded-circle mr-1 thumbnail-rounded user-thumbnail" width="12px" height="12px">
@@ -20,7 +20,7 @@
                     Bienvenido(a), {{\Illuminate\Support\Facades\Auth::user()->name}}</div>
                 <a class="dropdown-item has-icon edit-profile" href="#" data-id="{{ \Auth::id() }}">
                     <i class="fa fa-user"></i>Edit Profile</a>
-                <a class="dropdown-item has-icon" data-toggle="modal" data-target="#changePasswordModal" href="#" data-id="{{ \Auth::id() }}"><i
+                <a class="dropdown-item has-icon" data-bs-toggle="modal" data-target="#changePasswordModal" href="#" data-id="{{ \Auth::id() }}"><i
                             class="fa fa-lock"> </i>Cambiar Constraseña</a>
                 <a href="{{ url('logout') }}" class="dropdown-item has-icon text-danger"
                    onclick="event.preventDefault(); localStorage.clear();  document.getElementById('logout-form').submit();">
@@ -32,8 +32,8 @@
             </div>
         </li>
     @else
-        <li class="dropdown"><a href="#" data-toggle="dropdown"
-                                class="nav-link dropdown-toggle nav-link-lg nav-link-user">
+        <li class="dropdown"><a href="#" data-bs-toggle="dropdown"
+                                class="nav-link dropdown-bs-toggle nav-link-lg nav-link-user">
                 {{--                <img alt="image" src="#" class="rounded-circle mr-1">--}}
                 <div class="d-sm-none d-lg-inline-block">{{ __('messages.common.hello') }}</div>
             </a>
