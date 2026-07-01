@@ -1,6 +1,6 @@
 <form class="form-inline mr-auto mb-0" action="#">
     <ul class="navbar-nav mr-0">
-        <li><a href="#" data-toggle="sidebar" class="nav-link nav-link-lg"><i class="fas fa-bars"></i></a></li>
+        <li><a href="#" data-bs-ytoggle="sidebar" class="nav-link nav-link-lg"><i class="fas fa-bars"></i></a></li>
     </ul>
 </form>
 <ul class="navbar-nav navbar-right">

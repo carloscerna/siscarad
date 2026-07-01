@@ -19,7 +19,7 @@ class PdfRPAController extends Controller
             public $pie_pagina_texto = '';
 
             public function Footer() {
-                $this-> (-15); // Fijado a 1.5 cm del final
+                $this->SetY(-15); // Fijado a 1.5 cm del final
                 $this->SetFont('Arial', 'I', 7);
                 $this->SetTextColor(100, 100, 100); 
 
