@@ -216,40 +216,36 @@ $codigo_seccion = '02';
 $codigo_turno = '04';
 $codigo_annlectivo = '26';
 $codigo_asignatura = '1092';
+$id_matricula = '28096'; // Reemplaza con el ID de matrícula que deseas consultar
 
-    $EstudianteBoleta = DB::table('alumno as a')
-                ->join('alumno_matricula AS am','a.id_alumno','=','am.codigo_alumno')
-                ->join('nota AS n','am.id_alumno_matricula','=','n.codigo_matricula')
-                ->join('bachillerato_ciclo AS bach', 'bach.codigo','=','am.codigo_bach_o_ciclo')
-                ->join('grado_ano AS gr', 'gr.codigo','=','am.codigo_grado')
-                ->join('seccion AS sec', 'sec.codigo','=','am.codigo_seccion')
-                ->join('turno AS tur', 'tur.codigo','=','am.codigo_turno')
-                ->join('asignatura AS asig','asig.codigo','=','n.codigo_asignatura')
-                ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno', 'a.foto', 'a.codigo_genero',
-                        'am.id_alumno_matricula as codigo_matricula','am.codigo_bach_o_ciclo as codigo_modalidad','am.codigo_grado','am.codigo_seccion','am.codigo_turno','am.codigo_ann_lectivo',
-                        'n.id_notas','n.codigo_asignatura',
-                        'bach.nombre AS nombre_modalidad', 'gr.nombre as nombre_grado', 'sec.nombre as nombre_seccion','tur.nombre as nombre_turno',
-                        'n.nota_a1_1', 'n.nota_a2_1', 'n.nota_a3_1', 'nota_r_1', 'n.nota_p_p_1', 
-                        'n.nota_a1_2', 'n.nota_a2_2', 'n.nota_a3_2', 'nota_r_2', 'n.nota_p_p_2',
-                        'n.nota_a1_3', 'n.nota_a2_3', 'n.nota_a3_3', 'nota_r_3', 'n.nota_p_p_3', 
-                        'n.nota_a1_4', 'n.nota_a2_4', 'n.nota_a3_4', 'nota_r_4', 'n.nota_p_p_4',
-                        'n.nota_a1_5', 'n.nota_a2_5', 'n.nota_a3_5', 'nota_r_5', 'n.nota_p_p_5', 
-                        'n.nota_final', 'n.recuperacion', 'n.nota_recuperacion_2',
-                        'asig.codigo_area','asig.codigo as codigo_asignatura','asig.nombre as nombre_asignatura',
-                    DB::raw("TRIM(CONCAT(BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno), CAST(' ' AS VARCHAR), BTRIM(a.nombre_completo))) as full_name"),
-                    DB::raw("TRIM(CONCAT(BTRIM(a.nombre_completo), CAST(' ' AS VARCHAR), BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno))) as full_nombres_apellidos")
-                    )
-                        ->where([
-                            ['am.codigo_bach_o_ciclo', '=', $codigo_modalidad],
-                            ['codigo_grado', '=', $codigo_grado],
-                            ['codigo_seccion', '=', $codigo_seccion],
-                            ['codigo_turno', '=', $codigo_turno],
-                            ['codigo_ann_lectivo', '=', $codigo_annlectivo],
-                            ['codigo_asignatura', '=', $codigo_asignatura],
-                            ['am.retirado', '=', 'f'],
+$EstudianteBoleta = DB::table('alumno as a')
+            ->join('alumno_matricula AS am','a.id_alumno','=','am.codigo_alumno')
+            ->join('nota AS n','am.id_alumno_matricula','=','n.codigo_matricula')
+            ->join('bachillerato_ciclo AS bach', 'bach.codigo','=','am.codigo_bach_o_ciclo')
+            ->join('grado_ano AS gr', 'gr.codigo','=','am.codigo_grado')
+            ->join('seccion AS sec', 'sec.codigo','=','am.codigo_seccion')
+            ->join('turno AS tur', 'tur.codigo','=','am.codigo_turno')
+            ->join('asignatura AS asig','asig.codigo','=','n.codigo_asignatura')
+            ->join('ann_lectivo AS ann','ann.codigo','=','am.codigo_ann_lectivo')
+            ->select('a.id_alumno as codigo_alumno','a.codigo_nie','a.nombre_completo',"a.apellido_paterno",'a.apellido_materno', 'a.foto', 'a.codigo_genero', 'a.direccion_email as correo_estudiante',
+                     'am.id_alumno_matricula as codigo_matricula','n.id_notas','n.codigo_asignatura',
+                     'bach.nombre AS nombre_modalidad', 'gr.nombre as nombre_grado', 'sec.nombre as nombre_seccion','tur.nombre as nombre_turno',
+                     'bach.codigo as codigo_modalidad', 'gr.codigo as codigo_grado', 'sec.codigo as codigo_seccion','tur.codigo as codigo_turno',
+                     'asig.codigo_area',
+                     'n.nota_a1_1', 'n.nota_a2_1', 'n.nota_a3_1', 'nota_r_1', 'n.nota_p_p_1', 
+                     'n.nota_a1_2', 'n.nota_a2_2', 'n.nota_a3_2', 'nota_r_2', 'n.nota_p_p_2',
+                     'n.nota_a1_3', 'n.nota_a2_3', 'n.nota_a3_3', 'nota_r_3', 'n.nota_p_p_3', 
+                     'n.nota_a1_4', 'n.nota_a2_4', 'n.nota_a3_4', 'nota_r_4', 'n.nota_p_p_4',
+                     'n.nota_a1_5', 'n.nota_a2_5', 'n.nota_a3_5', 'nota_r_5', 'n.nota_p_p_5', 
+                     'n.nota_final', 'n.recuperacion', 'n.nota_recuperacion_2',
+                     'asig.codigo_area', 'ann.nombre as nombre_annlectivo',
+                     DB::raw("TRIM(CONCAT(BTRIM(a.nombre_completo), CAST(' ' AS VARCHAR), BTRIM(a.apellido_paterno), CAST(' ' AS VARCHAR), BTRIM(a.apellido_materno))) as full_nombres_apellidos"))
+                     ->where([
+                            ['am.id_alumno_matricula', '=', $id_matricula],
+                            ['n.orden', '<>', 0], // Esta es la línea que filtra los que no son cero
                             ])
-                        ->orderBy('full_name','asc')
-                        ->get();
+            ->orderBy('n.orden','asc')
+            ->get();
 
 
     dd($EstudianteBoleta);
