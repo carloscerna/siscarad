@@ -717,7 +717,7 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                     $y_pos = $this->fpdf->GetY() + 2; // Punto de partida para el bloque de firmas
 
                     // Control de salto de página
-                    if ($y_pos < 100) { 
+                    if ($y_pos > 150) { 
                         $this->fpdf->AddPage();
                         $y_pos = 20;
                     }

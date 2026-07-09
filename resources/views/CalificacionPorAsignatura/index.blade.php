@@ -66,7 +66,7 @@ use Illuminate\Support\Facades\Auth;
                         </div>
 
                         {{-- Filtro: Periodo --}}
-                        <div class="col-md-3">
+                        <div class="col-md-3" id="contenedor-filtro-periodo">
                             <div class="form-group">
                                 <label for="periodo">Periodo</label>
                                 <select id="periodo" name="periodo" class="form-control" required>
@@ -139,6 +139,14 @@ use Illuminate\Support\Facades\Auth;
             </div>
 
         </div>
+    </div>
+</div>
+
+<div id="pantalla-bloqueo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.55); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white;">
+    <div class="text-center p-4" style="background: #ffffff; color: #333333; border-radius: 8px; box-shadow: 0px 4px 15px rgba(0,0,0,0.3); min-width: 280px;">
+        <i class="fas fa-spinner fa-spin fa-3x mb-3 text-info"></i>
+        <h5 class="font-weight-bold mb-1">Guardando Calificaciones</h5>
+        <p class="text-muted mb-0 font-size-sm">Procesando registros en el servidor, por favor no cierre la página...</p>
     </div>
 </div>
 @endsection
@@ -247,8 +255,8 @@ function actualizarContador() {
     $('#textoSeleccionados').text(`(${seleccionados} seleccionados)`);
 }
 
-// Escuchamos el cambio en cualquiera de los selects de filtro
-$('#codigo_ann_lectivo, #codigo_seccion, #codigo_asignatura, #periodo').on('change', function() {
+    // Escuchamos el cambio en cualquiera de los selects de filtro
+    $('#codigo_ann_lectivo, #codigo_seccion, #codigo_asignatura, #periodo').on('change', function() {
     // 1. Ocultamos el contenedor de la tabla con un efecto suave
     $('#contenedorNotas').hide();
     
@@ -259,6 +267,41 @@ $('#codigo_ann_lectivo, #codigo_seccion, #codigo_asignatura, #periodo').on('chan
     // $('#cuerpoTablaEstudiantes').html('<tr><td colspan="7" class="text-center text-muted">Realice una nueva búsqueda</td></tr>');
 });
         
+//
+// CAMBIOS EN LOS DIFERENTES CONTROLES.
+//
+// Función reutilizable para evaluar si es Modular
+    function evaluarSiEsModular() {
+        let codigoAsignaturaCompleto = $('#codigo_asignatura').val() || '';
+        let fullCodigoSeccion = $('#codigo_seccion').val() || '';
+
+        // 1. Extraemos el codigo_cc (Últimos 2 caracteres de la asignatura)
+        // Si el largo es 8, saca las posiciones 6 y 7. Si es otro largo, siempre los últimos 2.
+        let codigo_cc = codigoAsignaturaCompleto.slice(-2); 
+
+        // 2. Extraemos la modalidad (Posiciones 6 y 7 de la sección completa)
+        let codigo_modalidad = fullCodigoSeccion.substring(6, 8); 
+
+        // Condición: Si el concepto es '04' y la modalidad es '15'
+        if (codigo_cc === '04' && codigo_modalidad === '15') {
+            // Ocultamos el contenedor del periodo y forzamos valor '1' para evitar campos vacíos
+            $('#contenedor-filtro-periodo').fadeOut(250);
+            $('#periodo').val('1');
+            return true;
+        } else {
+            // Si no se cumple, se muestra el periodo normalmente
+            $('#contenedor-filtro-periodo').fadeIn(250);
+            $('#periodo').prop('disabled', false); // <--- ESTO CORRIGE EL BLOQUEO
+            return false;
+        }
+    }
+
+    // Escuchamos el cambio en ambos selectores para reaccionar de inmediato
+    $('#codigo_asignatura, #codigo_seccion').on('change', function() {
+        evaluarSiEsModular();
+    });
+
+
             // Al cambiar AÑO -> Cargar SECCIONES
             $('#codigo_ann_lectivo').on('change', function() {
                 let ann = $(this).val();
@@ -286,13 +329,16 @@ $('#codigo_ann_lectivo, #codigo_seccion, #codigo_asignatura, #periodo').on('chan
                         // Usamos .trim() para eliminar cualquier espacio invisible
                         let codAsig = String(o.codigo).trim();
                         let codArea = String(o.codigo_area || "00").trim();
+                        let codCC = String(o.codigo_cc || "00").trim();
 
-                        h += `<option value="${codAsig}${codArea}">${o.nombre}</option>`;
+                        h += `<option value="${codAsig}${codArea}${codCC}">${o.nombre}</option>`;
                     });
                     $('#codigo_asignatura').html(h);
                 });
             });
     });
+
+// BUSCAR ESTUDIANTES, SI ES MODULAR O NO.
 function buscarEstudiantes() {
     let fullCodigo = $('#codigo_seccion').val(); 
     
@@ -302,26 +348,21 @@ function buscarEstudiantes() {
     }
 
     // --- 1. EFECTO VISUAL DE CARGA ---
-    // Guardamos el botón en una variable
-    let btnBuscar = $('#btnCargarListado'); // Asegúrate de que tu botón tenga este id="btnCargarListado"
-    // 2. ¡MUY IMPORTANTE! Limpiar la tabla antes de la petición o al recibir respuesta
+    let btnBuscar = $('#btnCargarListado'); 
     $('#tabla_estudiantes tbody').empty();
 
-    // Lo deshabilitamos y le cambiamos el texto por un spinner
     btnBuscar.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Cargando...');
     
-    // Limpiamos la tabla y ponemos un mensaje de espera
-    $('#cuerpoTablaEstudiantes').html('<tr><td colspan="7" class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Obteniendo listado de estudiantes, por favor espere...</td></tr>');
+    $('#cuerpoTablaEstudiantes').html('<tr><td colspan="9" class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Obteniendo listado de estudiantes, por favor espere...</td></tr>');
     $('#contenedorNotas').fadeIn();
-    // ---------------------------------
 
     let params = {
         codigo_asignatura: $('#codigo_asignatura').val(),
         periodo: $('#periodo').val(),
-        codigo_grado:     fullCodigo.substring(0,2),
-        codigo_seccion:   fullCodigo.substring(2,4),
-        codigo_turno:     fullCodigo.substring(4,6),
-        codigo_modalidad: fullCodigo.substring(6,8),
+        codigo_grado:      fullCodigo.substring(0,2),
+        codigo_seccion:    fullCodigo.substring(2,4),
+        codigo_turno:      fullCodigo.substring(4,6),
+        codigo_modalidad:  fullCodigo.substring(6,8),
         codigo_ann_lectivo: fullCodigo.substring(8,10)
     };
 
@@ -332,64 +373,156 @@ function buscarEstudiantes() {
             return;
         }
 
+        // =========================================================================
+        // NUEVO: CONTROL VISUAL DE ENCABEZADOS SEGÚN EL TIPO DE ASIGNATURA
+        // =========================================================================
+        let thHeaders = $('#tabla_estudiantes thead th'); // Capturamos las cabeceras de tu tabla
+        
+        if (res.es_modular) {
+            // Deshabilitamos el periodo porque es único anual
+            $('#periodo').prop('disabled', true);
+
+            // Mutamos los encabezados de las columnas (th)
+            thHeaders.eq(3).text('Calificación Módulo (1.0 - 5.0)').css({'background-color': '#d1ecf1', 'color': '#0c5460'});
+            thHeaders.eq(4).text('N/A').css({'background-color': '#f8f9fa', 'color': '#6c757d'});
+            thHeaders.eq(5).text('N/A').css({'background-color': '#f8f9fa', 'color': '#6c757d'});
+            thHeaders.eq(6).text('N/A').css({'background-color': '#f8f9fa', 'color': '#6c757d'});
+            thHeaders.eq(7).text('Nota Única Anual');
+        } else {
+            // Restauramos a modo tradicional si cambia a otra materia básica
+            $('#periodo').prop('disabled', false);
+
+            thHeaders.eq(3).text('Actividad 1 (35%)').css({'background-color': '', 'color': ''});
+            thHeaders.eq(4).text('Actividad 2 (35%)').css({'background-color': '', 'color': ''});
+            thHeaders.eq(5).text('Prueba Obj. (30%)').css({'background-color': '', 'color': ''});
+            thHeaders.eq(6).text('Nota Recuperación').css({'background-color': '', 'color': ''});
+            thHeaders.eq(7).text('Nota Período');
+        }
+        // =========================================================================
+
         let filas = '';
         $.each(res.estudiantes, function(i, e) {
             let promedioActual = parseFloat(e.nota_p) || 0;
             let minima = (params.codigo_modalidad >= '17' && params.codigo_modalidad <= '19') ? 5.0 : 6.0;
             let claseRoja = (promedioActual < minima) ? 'nota-reprobada' : '';
 
-// CONSTRUCCIÓN DE LAS URLS INDIVIDUALES
-    // El formato final será: /boleta/pdf/ID/ver
-    let urlVer = `${urlBaseBoleta}/${e.codigo_matricula}/ver`;
-    let urlDescargar = `${urlBaseBoleta}/${e.codigo_matricula}/descargar`;
+            // El formato final será: /boleta/pdf/ID/ver
+            let urlVer = `${urlBaseBoleta}/${e.codigo_matricula}/ver`;
+            let urlDescargar = `${urlBaseBoleta}/${e.codigo_matricula}/descargar`;
 
-    // En la sección de scripts, cerca de urlBaseBoleta
-    const urlBaseAsignatura = "{{ url('/pdfRPA') }}";
-    const codigo_institucion = "{{ Auth::user()->codigo_institucion }}"; // Asegúrate de tener el código de institución
+            const urlBaseAsignatura = "{{ url('/pdfRPA') }}";
+            const codigo_institucion = "{{ Auth::user()->codigo_institucion }}"; 
 
-            filas += `
-                <tr class="fila-estudiante" data-alumno="${e.codigo_alumno}" data-matricula="${e.codigo_matricula}">
-                    <td class="text-center align-middle">
-                        <input type="checkbox" class="check-estudiante" value="${e.codigo_matricula}">
-                    </td>
-                    <td class="text-center align-middle">${e.codigo_nie}</td>
-                    <td class="align-middle">${e.nombre_completo}</td>
-                    <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-a1" value="${e.nota_a1 || ''}"></td>
-                    <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-a2" value="${e.nota_a2 || ''}"></td>
-                    <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-a3" value="${e.nota_a3 || ''}"></td>
-                    <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-r" value="${e.nota_r || ''}"></td>
-                    <td class="text-center align-middle font-weight-bold bg-light">
-                        <span class="label-promedio ${claseRoja}">${promedioActual.toFixed(1)}</span>
-                    </td>
-                </tr>`;
+            // =========================================================================
+            // NUEVO: RENDERIZADO CONDICIONAL DE FILAS (MODULAR VS NORMAL)
+            // =========================================================================
+            if (res.es_modular) {
+                // Modo Modular: Un único campo activo (Mapeado con el valor de nota_final que viene en e.nota_p)
+                let notaModular = e.nota_p ? parseFloat(e.nota_p).toFixed(1) : '';
+
+                filas += `
+                    <tr class="fila-estudiante" data-alumno="${e.codigo_alumno}" data-matricula="${e.codigo_matricula}">
+                        <td class="text-center align-middle">
+                            <input type="checkbox" class="check-estudiante" value="${e.codigo_matricula}">
+                        </td>
+                        <td class="text-center align-middle">${e.codigo_nie}</td>
+                        <td class="align-middle">${e.nombre_completo}</td>
+                        
+
+                        <td>
+                            <input type="number" step="0.1" min="1.0" max="5.0" 
+                                class="form-control text-center nota-input input-modular" 
+                                style="font-weight: bold; border: 2px solid #17a2b8; background-color: #f7feff;"
+                                value="${notaModular}"
+                                onkeypress="return sliderSoloNumeros(event)"
+                                oninput="validarRangoTeclado(this)">  
+                                onblur="validarVacioAlSalir(this)">  </td>
+                        </td>
+                        
+                        <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
+                        <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
+                        <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
+                        
+                        <td class="text-center align-middle font-weight-bold bg-light">
+                            <span class="label-promedio">${notaModular || '0.0'}</span>
+                        </td>
+                    </tr>`;
+            } else {
+                // Modo Tradicional (Básicas y Técnicas normales que ya tenías)
+                filas += `
+                    <tr class="fila-estudiante" data-alumno="${e.codigo_alumno}" data-matricula="${e.codigo_matricula}">
+                        <td class="text-center align-middle">
+                            <input type="checkbox" class="check-estudiante" value="${e.codigo_matricula}">
+                        </td>
+                        <td class="text-center align-middle">${e.codigo_nie}</td>
+                        <td class="align-middle">${e.nombre_completo}</td>
+                        <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-a1" value="${e.nota_a1 || ''}"></td>
+                        <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-a2" value="${e.nota_a2 || ''}"></td>
+                        <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-a3" value="${e.nota_a3 || ''}"></td>
+                        <td><input type="number" step="0.1" min="0" max="10" class="form-control text-center nota-input input-r" value="${e.nota_r || ''}"></td>
+                        <td class="text-center align-middle font-weight-bold bg-light">
+                            <span class="label-promedio ${claseRoja}">${promedioActual.toFixed(1)}</span>
+                        </td>
+                    </tr>`;
+            }
+            // =========================================================================
         });
 
-        $('#cuerpoTablaEstudiantes').html(filas || '<tr><td colspan="7" class="text-center">No hay registros</td></tr>');
+        $('#cuerpoTablaEstudiantes').html(filas || '<tr><td colspan="8" class="text-center">No hay registros</td></tr>');
         
     }).fail(function() {
         Swal.fire('Error', 'No se pudo realizar la búsqueda.', 'error');
     }).always(function() {
-        // --- 2. RESTAURAR EL BOTÓN AL FINALIZAR ---
-        // El bloque .always() se ejecuta SIEMPRE (si sale bien o si sale mal la petición)
         btnBuscar.prop('disabled', false).html('<i class="fas fa-users"></i> Cargar Listado');
     });
 }
+ 
+
+// GUARDAR TODAS LAS NOTAS.
 
    function guardarTodasLasNotas() {
     let notasData = [];
     let fullCodigo = $('#codigo_seccion').val();
     
+    // 1. EFECTO DEL BOTÓN (Se mantiene intacto tu efecto actual)
     $('#btnGuardarNotas').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
+
+    // 2. NUEVO: ATENUAR LA PANTALLA COMPLETA
+    // Usamos flex porque el HTML de arriba usa flexbox para centrar el cuadro blanco
+    $('#pantalla-bloqueo').css('display', 'flex').hide().fadeIn(200);
 
     $('.fila-estudiante').each(function() {
         let fila = $(this);
-        notasData.push({
-            codigo_matricula: fila.data('matricula'),
-            nota_a1: fila.find('.input-a1').val() || 0,
-            nota_a2: fila.find('.input-a2').val() || 0,
-            nota_a3: fila.find('.input-a3').val() || 0,
-            nota_r:  fila.find('.input-r').val() || 0
-        });
+        
+        // =========================================================================
+        // CAPTURA INTELIGENTE SEGÚN EL MODO (MODULAR O NORMAL)
+        // =========================================================================
+        let inputMod = fila.find('.input-modular');
+        
+        if (inputMod.length > 0) {
+            let valorNota = inputMod.val();
+                
+                // Si la casilla está vacía (length == 0), le asignamos 1.0 de forma automática
+                if (!valorNota || valorNota.trim() === '') {
+                    valorNota = "1.0";
+                    inputMod.val("1.0"); // Lo pintamos en la tabla para que el docente lo vea
+                }
+
+                notasData.push({
+                    codigo_matricula: fila.data('matricula'),
+                    nota_modular: valorNota  // Ahora viaja seguro como 1.0 mínimo
+                });
+        } else {
+            // Modo tradicional: Se envían las actividades normales
+            notasData.push({
+                codigo_matricula: fila.data('matricula'),
+                nota_a1: fila.find('.input-a1').val() || 0,
+                nota_a2: fila.find('.input-a2').val() || 0,
+                nota_a3: fila.find('.input-a3').val() || 0,
+                nota_r:  fila.find('.input-r').val() || 0
+            });
+        }
+        // =========================================================================
     });
 
     let payload = {
@@ -403,17 +536,22 @@ function buscarEstudiantes() {
     $.ajax({
         type: "POST",
         url: "{{ url('calificaciones/guardar-todas') }}",
-        data: payload, // Quitamos JSON.stringify para enviar como datos de formulario tradicional
+        data: payload, 
         dataType: 'json',
         success: function(res) {
             Swal.fire('¡Éxito!', res.message, 'success');
+            // Opcional: Recargar el listado para reflejar los promedios en la etiqueta gris
+            buscarEstudiantes();
         },
         error: function(jqXHR, textStatus, errorThrown) {
-            // ESTO ES LO IMPORTANTE: Imprimirá el error real en la consola F12
             console.error("Error del servidor:", jqXHR.responseText);
             Swal.fire('Error', 'No se pudieron guardar las notas. Revisa la consola (F12) para más detalles.', 'error');
         },
         complete: function() {
+           // 3. NUEVO: QUITAR EL ATENUADOR DE PANTALLA SUAVEMENTE
+            $('#pantalla-bloqueo').fadeOut(200);
+
+            // RESTAURAR EL BOTÓN (Se mantiene tu flujo original en el complete)
             $('#btnGuardarNotas').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Todo el Periodo');
         }
     });
@@ -582,6 +720,70 @@ function ReportePorAsignatura() {
     var url = urlBaseAsignatura + "/" + datos_estudiantes;
     window.open(url, '_blank');
 }
+
+
+function validarRangoTeclado(input) {
+    // Si está vacío porque el docente está borrando para corregir, lo dejamos pasar provisionalmente
+    if (input.value === '') return;
+
+    let valor = parseFloat(input.value);
+
+    // 1. Si supera el límite máximo (5.0), lo corregimos automáticamente a 5.0
+    if (valor > 5.0) {
+        input.value = "5.0";
+        alertarBordeRojo(input);
+        return;
+    }
+
+    // 2. CORREGIDO: Si es menor a 1.0 (ya sea 0, un decimal como 0.5 o cualquier número NEGATIVO)
+    if (valor < 1.0) {
+        input.value = "1.0";
+        alertarBordeRojo(input);
+        return;
+    }
+}
+
+// Función auxiliar para el efecto visual del parpadeo
+function alertarBordeRojo(input) {
+    $(input).css('border-color', '#dc3545');
+    setTimeout(() => { 
+        $(input).css('border-color', '#17a2b8'); 
+    }, 500);
+}
+
+
+function sliderSoloNumeros(e) {
+    var key = e.keyCode || e.which;
+    var teclado = String.fromCharCode(key);
+    
+    // Permitir números del 0 al 9 y el punto decimal (.)
+    var permitidos = "0123456789.";
+    
+    // Permitir teclas de control especiales (Retroceso, Tabulador, Flechas si es necesario)
+    var especiales = [8, 9, 37, 39, 46]; // 8: Backspace, 9: Tab
+    
+    var tecla_especial = false;
+    for (var i in especiales) {
+        if (key == especiales[i]) {
+            tecla_especial = true;
+            break;
+        }
+    }
+    
+    // Si no está en los permitidos ni es especial, bloquea la pulsación (evita letras y el signo menos)
+    if (permitidos.indexOf(teclado) == -1 && !tecla_especial) {
+        return false;
+    }
+}
+
+function validarVacioAlSalir(input) {
+    // Si el docente cambió de celda y dejó el espacio totalmente en blanco
+    if (input.value === '' || parseFloat(input.value) < 1.0) {
+        input.value = "1.0"; // Forzamos el mínimo requerido por el script de PostgreSQL
+        alertarBordeRojo(input);
+    }
+}
+
 
 </script>
 @endsection
