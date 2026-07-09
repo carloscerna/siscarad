@@ -55,10 +55,6 @@
             @yield('content')
         </div>
         <footer class="main-footer p-1 bg-dark text-white text-right">
-            <button class="menu-toggle d-md-none">
-            <i class="fas fa-bars"></i>
-            </button>
-
             @include('layouts.footer')
         </footer>
     </div>

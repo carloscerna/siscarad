@@ -77,4 +77,24 @@ body {
 }
 
 
+/* Sidebar oculto en móviles */
+.main-sidebar {
+    position: fixed;
+    left: -250px;
+    top: 0;
+    height: 100%;
+    width: 250px;
+    transition: left 0.3s ease;
+    z-index: 999;
+}
+
+/* Sidebar visible cuando está activo */
+.main-sidebar.active {
+    left: 0;
+}
+
+/* Ajuste del contenido cuando sidebar está activo */
+.main-content.active {
+    margin-left: 250px;
+}
 
