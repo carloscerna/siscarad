@@ -104,7 +104,7 @@ class PdfController extends Controller
     {
         $this->fpdf = new Fpdf('L','mm','Letter');	// Formato Letter;
             // Cambiar la instancia a la nueva clase con Footer
-// Se utiliza la nueva clase que contiene el pie de página
+        // Se utiliza la nueva clase que contiene el pie de página
         $this->fpdf = new PDF_ConFooter('L','mm','Letter');
         // Alias para el total de páginas ({nb})
         $this->fpdf->AliasNbPages();
@@ -206,7 +206,7 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
         // 2. Configurar el PDF (Letter Horizontal) tal como lo tienes
         $this->fpdf->SetFont('Arial', 'B', 9);
         $this->fpdf->SetMargins(15, 5, 5);
-        $this->fpdf->SetAutoPageBreak(true, 5);
+        $this->fpdf->SetAutoPageBreak(false, 5);
 
         // --------------------------------------------------------
         // 3. OBTENER INFORMACIÓN INSTITUCIONAL (SÓLO UNA VEZ)
@@ -604,6 +604,8 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                             $this->fpdf->SetFont('Times','B',8);
 
                            
+
+
                             // =========================================================================
                             // NUEVA LÓGICA DE ÁREAS CON ARRAY (100% EFECTIVA EN BUCLES)
                             // =========================================================================
@@ -673,30 +675,46 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                                 }
                             }
 
-                            // --- COLUMNAS FINALES (NF, NR1, NR2, RESULTADO) ---
-                            $this->fpdf->SetFont('Arial', 'B', '7');
-                            
-                            // Promedio Final
-                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[28] == 0 ? '' : $nota_actividades_0[28]), 1, 0, 'C');
-                            
-                            // Recuperaciones
-                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[26] == 0 ? '' : $nota_actividades_0[26]), 1, 0, 'C');
-                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[27] == 0 ? '' : $nota_actividades_0[27]), 1, 0, 'C');
+// =========================================================================
+// ¡CÁLCULO DINÁMICO FIJO SEGÚN EL TOTAL DE PERIODOS DE LA MODALIDAD!
+// =========================================================================
+$suma_notas_parciales = 0;
 
-                            // Cálculo de Resultado Final (Aprobado/Reprobado)
+for ($p_i = 1; $p_i <= $cantidad_periodos; $p_i++) {
+    $propiedad_nota = "nota_p_p_" . $p_i;
+    // Suma el valor real (si está vacío sumará 0.0)
+    $suma_notas_parciales += (float)$response->$propiedad_nota;
+}
+
+// Forzamos la división SIEMPRE entre el total de periodos de la modalidad (ej. 4)
+$nota_final_calculada = ($cantidad_periodos > 0) ? round(($suma_notas_parciales / $cantidad_periodos), 1) : 0.0;
+
+// REASIGNACIÓN CRÍTICA: Sobrescribimos la posición 28 del array con nuestro cálculo manual exacto
+$nota_actividades_0[28] = $nota_final_calculada;
+// =========================================================================
+ // Columnas Finales de la Fila (PF, NR1, NR2, Promedio Redondeado y Resultado)
+                            $this->fpdf->SetFont('Arial', 'B', '7');
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[28] == 0 ? '' : $nota_actividades_0[28]), 1, 0, 'C'); // PF
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[26] == 0 ? '' : $nota_actividades_0[26]), 1, 0, 'C'); // NR1
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[27] == 0 ? '' : $nota_actividades_0[27]), 1, 0, 'C'); // NR2
+
+                            
                             if($nota_actividades_0[28] > 0){
+                                // Pasamos el $nota_final_calculada ($nota_actividades_0[28]) directamente para evaluar el resultado
                                 $result = resultado_final($codigo_modalidad, $nota_actividades_0[26], $nota_actividades_0[27], $nota_actividades_0[28], $codigo_area);
                                 
                                 if($result[0] == "R") $this->fpdf->SetTextColor(255,0,0);
                                 
-                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], round($result[1], 0), 1, 0, 'C');
+                                // CAMBIO AQUÍ: Forzamos a que pinte el valor calculado matemáticamente ($nota_actividades_0[28]) en lugar de $result[1]
+                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($nota_actividades_0[28], 1), 1, 0, 'C');
                                 $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $result[0], 1, 1, 'C');
-                                
-                                $this->fpdf->SetTextColor(0); // Reset color
+                                $this->fpdf->SetTextColor(0); 
                             } else {
                                 $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 0, 'C');
                                 $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 1, 'C');
                             }
+
+
                         } // Fin bucle materias
 
                         // --- CALCULAR PROMEDIOS PARA EL FOOTER ---
@@ -717,10 +735,10 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                     $y_pos = $this->fpdf->GetY() + 2; // Punto de partida para el bloque de firmas
 
                     // Control de salto de página
-                    if ($y_pos > 150) { 
+               /*     if ($y_pos > 100) { 
                         $this->fpdf->AddPage();
-                        $y_pos = 20;
-                    }
+                        $y_pos = 0;
+                    }*/
 
                     // --- 1. POSICIONAR FIRMAS Y SELLO PRIMERO (Para que queden arriba del texto) ---
 
