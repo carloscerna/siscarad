@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use App\Mail\BoletaEstudiantes;
 use Illuminate\Support\Facades\Auth;
+use App\Mail\BoletaNotasMail; // Tu clase Mailable
+
 
 $nombre_personal = "";
 
@@ -109,6 +111,45 @@ class PdfController extends Controller
         // Alias para el total de páginas ({nb})
         $this->fpdf->AliasNbPages();
     }
+
+
+public function generarBoleta($parametros)
+    {
+        // Separamos los datos del estudiante y la acción final
+        // Suponiendo que los datos vienen separados por un guion "-"
+        $partes = explode('-', $parametros);
+        
+        // El último elemento del array será nuestra acción (NO, SI, CORREO)
+        $accion = end($partes); 
+        
+        // Aquí extraes tus variables (NIE, id_alumno, etc.) usando los índices del array $partes
+        $nie = $partes[0];
+        $id_alumno = $partes[1];
+
+        // 1. Lógica común: Buscar datos del alumno en la base de datos y generar el PDF en memoria
+        $pdf = PDF::loadView('pdf.boleta', compact('nie', 'id_alumno'));
+
+        // 2. Evaluamos qué hacer según el botón presionado
+        if ($accion == 'CORREO') {
+            // Buscamos el correo del estudiante o encargado (ejemplo ficticio)
+            $correoDestino = "estudiante@correo.com"; 
+
+            // Enviamos el correo adjuntando el PDF generado en memoria
+            Mail::to($correoDestino)->send(new BoletaNotasMail($pdf->output(), $nie));
+
+            // Retornamos una respuesta al usuario en lugar de abrir el PDF
+            return back()->with('status', '¡La boleta ha sido enviada con éxito por correo!');
+        }
+
+        if ($accion == 'SI') {
+            // Descarga el PDF
+            return $pdf->download('boleta_'.$nie.'.pdf');
+        }
+
+        // Por defecto (Acción "NO"): Muestra el PDF en el navegador
+        return $pdf->stream('boleta_'.$nie.'.pdf');
+    }
+
 
 public function index($id, $accion = "ver", $codigo_matricula = null) 
 {

@@ -411,11 +411,12 @@ use Illuminate\Support\Facades;
                         $('#contenido').empty();
                         // MEJORA: Eliminado el $('#contenido').append(data) que generaba el error.
 
-                        $.each( data, function( key, value ) {
+                       $.each( data, function( key, value ) {
                             linea++;
                             let fila_color = (linea % 2 === 0) ? '<tr style="background:#A5FFA5; color:black;">' : '<tr style="background:#FFFFFF; color:black;">';
                             
-                            let datos_estudiantes = value.codigo_nie.trim() + "-" + value.codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() + "-" + codigo_institucion.trim() + "-" + codigo_personal;
+                            // Mapeo utilizando 'id_alumno' explícitamente conforme al esquema de la base de datos
+                            let datos_estudiantes = value.codigo_nie.trim() + "-" + value.id_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() + "-" + codigo_institucion.trim() + "-" + codigo_personal;
 
                             let url = '{{ url("/pdf", "id") }}'.replace('id', datos_estudiantes);
 
@@ -424,8 +425,15 @@ use Illuminate\Support\Facades;
                             '<td><img src="' + value.foto + '" width="60" height="70" class="img-thumbnail"></td>' +
                             '<td>' + value.codigo_nie + '</td>' +
                             '<td>' + value.apellidos_nombres_estudiantes + '</td>' +
-                            '<td><a class="btn btn-info mr-1" target="_blank" href="'+url+'-NO"><i class="fas fa-file"></i></a>'+
-                                '<a class="btn btn-secondary" target="_blank" href="'+url+'-SI"><i class="fas fa-download"></i></a>'+
+                            '<td>' +
+                                // Botón 1: Visualizar Boleta Individual
+                                '<a class="btn btn-info mr-1" target="_blank" href="'+url+'-NO" title="Ver Boleta"><i class="fas fa-file"></i></a>'+
+                                
+                                // Botón 2: Descargar Boleta Individual
+                                '<a class="btn btn-secondary mr-1" target="_blank" href="'+url+'-SI" title="Descargar Boleta"><i class="fas fa-download"></i></a>'+
+                                
+                                // Botón de Correo (Modificado con el sufijo -CORREO)
+                                '<a class="btn btn-warning mr-1" href="'+url+'-CORREO" title="Enviar por Correo"><i class="fas fa-envelope"></i></a>'+
                             '</td></tr>';
                         });
 

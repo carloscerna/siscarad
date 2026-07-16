@@ -25,7 +25,11 @@ use App\Mail\BoletaEstudiantes;
 use App\Mail\CorreoConAdjunto;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderShipped;
+use App\Http\Controllers\TableroController;
 
+// Ruta para enviar la boleta individualmente pasando el ID del alumno
+Route::post('/tablero/enviar-boleta/{id}', [TableroController::class, 'enviarBoletaIndividual'])
+     ->name('tablero.enviar_boleta');
 /*
 
 |--------------------------------------------------------------------------
