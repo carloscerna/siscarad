@@ -16,6 +16,66 @@
         max-height: 400px;
     }
 </style>
+
+<style>
+  /* =========================================================
+   ESTILOS PERSONALIZADOS PARA EL MENÚ LATERAL (HOVER Y SOMBRA)
+   ========================================================= */
+
+/* 1. Asegurar espacio relativo para que la sombra sea visible */
+#sidebar-wrapper .sidebar-menu li.side-menus {
+    margin-bottom: 4px;
+}
+
+/* 2. Enlaces del menú en estado normal */
+#sidebar-wrapper .sidebar-menu .nav-link {
+    color: #cbd5e1 !important; /* Texto claro muy legible */
+    border-radius: 6px !important;
+    margin: 2px 10px !important;
+    padding: 10px 15px !important;
+    transition: all 0.25s ease-in-out !important; /* Transición suave para el efecto */
+}
+
+/* 3. EFECTO HOVER: Pasar el cursor sobre el ítem */
+#sidebar-wrapper .sidebar-menu .nav-link:hover {
+    background-color: #3b82f6 !important; /* Fondo azul brillante */
+    color: #ffffff !important;            /* Texto blanco puro */
+    transform: translateX(4px);            /* Desplazamiento sutil a la derecha */
+    
+    /* SOMBRA PRONUNCIADA Y VISIBLE */
+    box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* 4. Cambiar el color del icono en Hover */
+#sidebar-wrapper .sidebar-menu .nav-link:hover i {
+    color: #ffffff !important;
+    transform: scale(1.1); /* Ligero aumento de tamaño del icono */
+    transition: transform 0.2s ease;
+}
+
+/* 5. ÍTEM ACTIVO (Página en la que estás actualmente) */
+#sidebar-wrapper .sidebar-menu .nav-link.active {
+    background-color: #1d4ed8 !important; /* Azul más intenso */
+    color: #ffffff !important;
+    font-weight: bold;
+    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+#sidebar-wrapper .sidebar-menu .nav-link.active i {
+    color: #ffffff !important;
+}
+
+/* 6. Estilo para los títulos de categoría (Mantenimiento, Estudiante) */
+#sidebar-wrapper .sidebar-menu p.fw-bold {
+    color: #94a3b8 !important;
+    padding-left: 20px;
+    margin-top: 15px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+</style>
+
 @endsection
 
 @section('content')

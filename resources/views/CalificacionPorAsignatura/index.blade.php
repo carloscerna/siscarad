@@ -435,8 +435,8 @@ function buscarEstudiantes() {
                                 style="font-weight: bold; border: 2px solid #17a2b8; background-color: #f7feff;"
                                 value="${notaModular}"
                                 onkeypress="return sliderSoloNumeros(event)"
-                                oninput="validarRangoTeclado(this)">  
-                                onblur="validarVacioAlSalir(this)">  </td>
+                                oninput="validarRangoTeclado(this)"   
+                                onblur="validarVacioAlSalir(this)">  
                         </td>
                         
                         <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>

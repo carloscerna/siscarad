@@ -383,6 +383,7 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
         // OPTIMIZADO: CALCULAR PROMEDIOS GENERALES SÓLO CON ÁREAS BÁSICAS ("01") Y TÉCNICAS ("03")
         // =========================================================================
         // Realizamos un join con asignatura para conocer el código de área antes de promediar
+
         $CalcularPromediosBoleta = DB::table('nota as n')
             ->join('asignatura as a', 'a.codigo', '=', 'n.codigo_asignatura')
             ->select('n.nota_p_p_1', 'n.nota_p_p_2', 'n.nota_p_p_3', 'n.nota_p_p_4', 'n.nota_p_p_5', 'n.nota_final')
@@ -391,6 +392,7 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
             ->whereIn('a.codigo_area', ['01', '03']) // <--- ¡AQUÍ ESTÁ EL FILTRO EXCLUSIVO!
             ->get();
 
+    
         // Inicializamos el contenedor de promedios en limpio para este estudiante
         $this->fpdf->promedios = ['p1'=>'0.0', 'p2'=>'0.0', 'p3'=>'0.0', 'p4'=>'0.0', 'p5'=>'0.0', 'final'=>'0.0'];
 
@@ -606,7 +608,7 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                         // 1. Obtener las materias de este estudiante en particular
                         $notas_estudiante = DB::table('nota as n')
                             ->join('asignatura as a', 'a.codigo', '=', 'n.codigo_asignatura')
-                            ->select('n.*', 'a.nombre as nombre_asignatura', 'a.codigo_area')
+                            ->select('n.*', 'a.nombre as nombre_asignatura', 'a.codigo_area', 'a.codigo_cc as codigo_cc')
                             ->where('n.codigo_matricula', $id_matricula) // El NIE del estudiante actual
                             ->where('n.codigo_alumno', $codigo_alumno_seguro) // Asegurarse de que sólo traemos las notas de este alumno
                             ->orderBy('a.codigo_area', 'asc') // Ordenar por área
@@ -639,6 +641,8 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                             $codigo_area = trim($response->codigo_area);
                             $codigo_asignatura = $response->codigo_asignatura;
                             $nombre_asignatura_db = $response->nombre_asignatura;
+                            $codigo_cc = trim($response->codigo_cc ?? '');
+
 
                             // --- LÓGICA DE ÁREAS (CABECERAS DE SECCIÓN) ---
                             $this->fpdf->SetFillColor(212, 230, 252);
@@ -693,7 +697,7 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
 
                             // --- BUCLE DINÁMICO DE NOTAS ---
                             // Aquí es donde aplicamos $valor_actividades que calculaste en la cabecera
-                            if(!($codigo_area == "03" && $codigo_modalidad == "15")){
+                            if(!($codigo_area == "03" && $codigo_modalidad == "15" && $codigo_cc == "04")){
                                 for ($na=1; $na <= $valor_actividades; $na++) { 
                                     // Resaltar promedios de periodo (PP)
                                     if($na % 5 == 0){
@@ -713,27 +717,37 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                                     } else {
                                         $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $valor_nota, 1, 0, 'C', true);
                                     }
+                                } // for
+                                // =========================================================================
+                                // ¡CÁLCULO DINÁMICO FIJO SEGÚN EL TOTAL DE PERIODOS DE LA MODALIDAD!
+                                // =========================================================================
+                                $suma_notas_parciales = 0;
+
+                                for ($p_i = 1; $p_i <= $cantidad_periodos; $p_i++) {
+                                    $propiedad_nota = "nota_p_p_" . $p_i;
+                                    // Suma el valor real (si está vacío sumará 0.0)
+                                    $suma_notas_parciales += (float)$response->$propiedad_nota;
                                 }
-                            }
 
-// =========================================================================
-// ¡CÁLCULO DINÁMICO FIJO SEGÚN EL TOTAL DE PERIODOS DE LA MODALIDAD!
-// =========================================================================
-$suma_notas_parciales = 0;
+                                // Forzamos la división SIEMPRE entre el total de periodos de la modalidad (ej. 4)
+                                $nota_final_calculada = ($cantidad_periodos > 0) ? round(($suma_notas_parciales / $cantidad_periodos), 1) : 0.0;
 
-for ($p_i = 1; $p_i <= $cantidad_periodos; $p_i++) {
-    $propiedad_nota = "nota_p_p_" . $p_i;
-    // Suma el valor real (si está vacío sumará 0.0)
-    $suma_notas_parciales += (float)$response->$propiedad_nota;
-}
+                                // REASIGNACIÓN CRÍTICA: Sobrescribimos la posición 28 del array con nuestro cálculo manual exacto
+                                $nota_actividades_0[28] = $nota_final_calculada;
+                                // =========================================================================
+                                // Columnas Finales de la Fila (PF, NR1, NR2, Promedio Redondeado y Resultado)
+                            }    else {
+                                        // =========================================================================
+                                        // CONDICIÓN ESPECIAL: ASIGNATURA MODULAR (Área 03, Mod 15, CC 04)
+                                        // =========================================================================
+                                        // 1. NO entra al ciclo 'for', por lo que FPDF no dibuja las celdas parciales.
+                                        // 2. Extraemos la nota_final directamente desde la base de datos sin promediar nada.
+                                        $nota_actividades_0[28] = (float)$response->nota_final;
+                                    }
 
-// Forzamos la división SIEMPRE entre el total de periodos de la modalidad (ej. 4)
-$nota_final_calculada = ($cantidad_periodos > 0) ? round(($suma_notas_parciales / $cantidad_periodos), 1) : 0.0;
+                            
 
-// REASIGNACIÓN CRÍTICA: Sobrescribimos la posición 28 del array con nuestro cálculo manual exacto
-$nota_actividades_0[28] = $nota_final_calculada;
-// =========================================================================
- // Columnas Finales de la Fila (PF, NR1, NR2, Promedio Redondeado y Resultado)
+                                
                             $this->fpdf->SetFont('Arial', 'B', '7');
                             $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[28] == 0 ? '' : $nota_actividades_0[28]), 1, 0, 'C'); // PF
                             $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[26] == 0 ? '' : $nota_actividades_0[26]), 1, 0, 'C'); // NR1
