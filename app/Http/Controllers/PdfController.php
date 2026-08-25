@@ -500,7 +500,8 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                                 // FOTO DEL ESTUDIANTE.
                                     if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
                                         {
-                                            $img = 'c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
+                                            //$img = 'c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
+                                            $img = '/siscarad/public/fotos_origen/'.$nombre_foto;	
                                             $this->fpdf->image($img,240,5,35,40);
                                         }else if($codigo_genero == '01'){
                                                 $fotos = 'avatar_masculino.png';

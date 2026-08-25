@@ -214,7 +214,8 @@ class HomeController extends Controller
                         if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
                         {
                             //$img = 'c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
-                            $img = '/siscarad/public/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
+                            //$img = '/siscarad/public/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
+                            $img = '/siscarad/public/fotos_origen/'.$nombre_foto;	
                             //$this->fpdf->image($img,180,5,25,30);
                         }else if($codigo_genero == '01'){
                                 $fotos = 'avatar_masculino.png';
