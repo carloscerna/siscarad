@@ -497,6 +497,37 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                                 // Año Lectivo
                                 $this->fpdf->Cell(22,$alto_cell[0],mb_convert_encoding("Año Lectivo","ISO-8859-1","UTF-8"),1,0,'L');       
                                 $this->fpdf->Cell(10,$alto_cell[0],mb_convert_encoding($nombre_annlectivo,"ISO-8859-1","UTF-8"),1,1,'C');       
+                               
+                               // FOTO DEL ESTUDIANTE (Rutas dinámicas mediante public_path)
+$foto_encontrada = false;
+
+if (!empty($nombre_foto)) {
+    // 1. Probar ruta de la aplicación actual (ej: public/fotos_origen/...)
+    $ruta_foto_local = public_path('fotos_origen/' . $nombre_foto);
+    
+    // 2. Probar ruta por institución (ej: public/img/fotos/{codigo_institucion}/...)
+    $ruta_foto_inst = public_path('img/fotos/' . $codigo_institucion . '/' . $nombre_foto);
+
+    if (file_exists($ruta_foto_local)) {
+        $this->fpdf->image($ruta_foto_local, 240, 5, 35, 40);
+        $foto_encontrada = true;
+    } elseif (file_exists($ruta_foto_inst)) {
+        $this->fpdf->image($ruta_foto_inst, 240, 5, 35, 40);
+        $foto_encontrada = true;
+    }
+}
+
+// 3. Avatar por defecto si no existe la foto del alumno
+if (!$foto_encontrada) {
+    $avatar = ($codigo_genero == '01') ? 'avatar_masculino.png' : 'avatar_femenino.png';
+    $ruta_avatar = public_path('img/' . $avatar);
+    
+    if (file_exists($ruta_avatar)) {
+        $this->fpdf->image($ruta_avatar, 240, 5, 35, 40);
+    }
+}
+ /*                              
+                               
                                 // FOTO DEL ESTUDIANTE.
                                     if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
                                         {
@@ -513,6 +544,7 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                                                 $img = '/img/'.$fotos;
                                                 $this->fpdf->image(URL::to($img),240,5,35,40);
                                             }
+                                                */
                                 //
                             // VALIDAR VARIABGLES PARA MOSTRAR CABECERA Y CALIFICACIONES.
                             if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
