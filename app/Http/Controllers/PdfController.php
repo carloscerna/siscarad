@@ -31,7 +31,7 @@ class PDF_ConFooter extends Fpdf {
         $colorFondoAzul = [0, 51, 102]; // Azul institucional
         $colorTextoAzul = [0, 51, 102];
         $colorBorde = [180, 180, 180];
-
+/*
         // Calcular anchos basándose dinámicamente en el número de periodos + 1 (la celda Final)
         $columnas = $this->num_periodos + 1;
         $ancho_pagina = 250; // Aproximado para Letter Paisaje
@@ -84,7 +84,7 @@ class PDF_ConFooter extends Fpdf {
         $this->SetXY($xActual, $yActual + 4);
         $this->SetFont('Arial', 'B', 12); // El más grande de todos
         $this->Cell($ancho_celda, 5, $valor_final, 0, 0, 'C');
-
+*/
         // --- PIE DE PÁGINA (DATOS TÉCNICOS) ---
         $this->SetY(-5);
         $this->SetFont('Arial', 'I', 7);
@@ -379,42 +379,71 @@ public function index($id, $accion = "ver", $codigo_matricula = null)
                 continue; // Si no hay notas para esta matrícula, saltar al siguiente
             }
             
-        // =========================================================================
-        // OPTIMIZADO: CALCULAR PROMEDIOS GENERALES SÓLO CON ÁREAS BÁSICAS ("01") Y TÉCNICAS ("03")
-        // =========================================================================
-        // Realizamos un join con asignatura para conocer el código de área antes de promediar
+      // =========================================================================
+// CÁLCULO EXACTO: SUMA DE ASIGNATURAS / NÚMERO TOTAL DE ASIGNATURAS
+// =========================================================================
+$CalcularPromediosBoleta = DB::table('nota as n')
+    ->join('asignatura as a', 'a.codigo', '=', 'n.codigo_asignatura')
+    ->select('n.nota_p_p_1', 'n.nota_p_p_2', 'n.nota_p_p_3', 'n.nota_p_p_4', 'n.nota_p_p_5', 'n.nota_final')
+    ->where('n.codigo_matricula', $id_matricula)
+    ->where('n.orden', '<>', 0)
+    ->whereIn('a.codigo_area', ['01', '03'])
+    ->get();
 
-        $CalcularPromediosBoleta = DB::table('nota as n')
-            ->join('asignatura as a', 'a.codigo', '=', 'n.codigo_asignatura')
-            ->select('n.nota_p_p_1', 'n.nota_p_p_2', 'n.nota_p_p_3', 'n.nota_p_p_4', 'n.nota_p_p_5', 'n.nota_final')
-            ->where('n.codigo_matricula', $id_matricula)
-            ->where('n.orden', '<>', 0)
-            ->whereIn('a.codigo_area', ['01', '03']) // <--- ¡AQUÍ ESTÁ EL FILTRO EXCLUSIVO!
-            ->get();
+// Inicializamos contenedor
+$this->fpdf->promedios = ['p1'=>'0.0', 'p2'=>'0.0', 'p3'=>'0.0', 'p4'=>'0.0', 'p5'=>'0.0', 'final'=>'0.0'];
 
+$total_asignaturas = $CalcularPromediosBoleta->count();
+
+if ($total_asignaturas > 0) {
+    $promedios_periodos_activos = [];
+
+    // Periodo 1
+    if ($cantidad_periodos >= 1) {
+        $suma_p1 = $CalcularPromediosBoleta->sum(function($item) { return (float)$item->nota_p_p_1; });
+        $prom_p1 = $suma_p1 / $total_asignaturas;
+        $this->fpdf->promedios['p1'] = number_format($prom_p1, 1);
+        $promedios_periodos_activos[] = $prom_p1;
+    }
     
-        // Inicializamos el contenedor de promedios en limpio para este estudiante
-        $this->fpdf->promedios = ['p1'=>'0.0', 'p2'=>'0.0', 'p3'=>'0.0', 'p4'=>'0.0', 'p5'=>'0.0', 'final'=>'0.0'];
+    // Periodo 2
+    if ($cantidad_periodos >= 2) {
+        $suma_p2 = $CalcularPromediosBoleta->sum(function($item) { return (float)$item->nota_p_p_2; });
+        $prom_p2 = $suma_p2 / $total_asignaturas;
+        $this->fpdf->promedios['p2'] = number_format($prom_p2, 1);
+        $promedios_periodos_activos[] = $prom_p2;
+    }
+    
+    // Periodo 3
+    if ($cantidad_periodos >= 3) {
+        $suma_p3 = $CalcularPromediosBoleta->sum(function($item) { return (float)$item->nota_p_p_3; });
+        $prom_p3 = $suma_p3 / $total_asignaturas;
+        $this->fpdf->promedios['p3'] = number_format($prom_p3, 1);
+        $promedios_periodos_activos[] = $prom_p3;
+    }
+    
+    // Periodo 4
+    if ($cantidad_periodos >= 4) {
+        $suma_p4 = $CalcularPromediosBoleta->sum(function($item) { return (float)$item->nota_p_p_4; });
+        $prom_p4 = $suma_p4 / $total_asignaturas;
+        $this->fpdf->promedios['p4'] = number_format($prom_p4, 1);
+        $promedios_periodos_activos[] = $prom_p4;
+    }
+    
+    // Periodo 5
+    if ($cantidad_periodos >= 5) {
+        $suma_p5 = $CalcularPromediosBoleta->sum(function($item) { return (float)$item->nota_p_p_5; });
+        $prom_p5 = $suma_p5 / $total_asignaturas;
+        $this->fpdf->promedios['p5'] = number_format($prom_p5, 1);
+        $promedios_periodos_activos[] = $prom_p5;
+    }
 
-        if ($CalcularPromediosBoleta->count() > 0) {
-            // Promediamos los valores mayores a cero de las columnas correspondientes
-            if ($cantidad_periodos >= 1) {
-                $this->fpdf->promedios['p1'] = number_format($CalcularPromediosBoleta->where('nota_p_p_1', '>', 0)->avg('nota_p_p_1') ?? 0, 1);
-            }
-            if ($cantidad_periodos >= 2) {
-                $this->fpdf->promedios['p2'] = number_format($CalcularPromediosBoleta->where('nota_p_p_2', '>', 0)->avg('nota_p_p_2') ?? 0, 1);
-            }
-            if ($cantidad_periodos >= 3) {
-                $this->fpdf->promedios['p3'] = number_format($CalcularPromediosBoleta->where('nota_p_p_3', '>', 0)->avg('nota_p_p_3') ?? 0, 1);
-            }
-            if ($cantidad_periodos >= 4) {
-                $this->fpdf->promedios['p4'] = number_format($CalcularPromediosBoleta->where('nota_p_p_4', '>', 0)->avg('nota_p_p_4') ?? 0, 1);
-            }
-            if ($cantidad_periodos >= 5) {
-                $this->fpdf->promedios['p5'] = number_format($CalcularPromediosBoleta->where('nota_p_p_5', '>', 0)->avg('nota_p_p_5') ?? 0, 1);
-            }
-            $this->fpdf->promedios['final'] = number_format($CalcularPromediosBoleta->where('nota_final', '>', 0)->avg('nota_final') ?? 0, 1);
-        }
+    // Promedio Final del Footer: Promedio de los periodos evaluados hasta el momento
+    if (count($promedios_periodos_activos) > 0) {
+        $promedio_global = array_sum($promedios_periodos_activos) / count($promedios_periodos_activos);
+        $this->fpdf->promedios['final'] = number_format($promedio_global, 1);
+    }
+}
         // =========================================================================
 
         // Agregar una hoja nueva para cada alumno (Ahora el Footer() se lanzará con $num_periodos y promedios reales)
@@ -526,26 +555,7 @@ if (!$foto_encontrada) {
         $this->fpdf->image($ruta_avatar, 240, 5, 35, 40);
     }
 }
- /*                              
-                               
-                                // FOTO DEL ESTUDIANTE.
-                                    if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
-                                        {
-                                            //$img = 'c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto;	
-                                            $img = '/siscarad/public/fotos_origen/'.$nombre_foto;	
-                                            $this->fpdf->image($img,240,5,35,40);
-                                        }else if($codigo_genero == '01'){
-                                                $fotos = 'avatar_masculino.png';
-                                                $img = '/img/'.$fotos;
-                                                $this->fpdf->image(URL::to($img),240,5,35,40);
-                                            }
-                                            else{
-                                                $fotos = 'avatar_femenino.png';
-                                                $img = '/img/'.$fotos;
-                                                $this->fpdf->image(URL::to($img),240,5,35,40);
-                                            }
-                                                */
-                                //
+
                             // VALIDAR VARIABGLES PARA MOSTRAR CABECERA Y CALIFICACIONES.
                             if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ // EDUCACI{ON BASICA}
                                 $valor_periodo = 2; $valor_actividades = 15; $ancho_area_asignatura = 180;
