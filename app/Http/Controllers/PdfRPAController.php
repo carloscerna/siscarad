@@ -153,6 +153,8 @@ class PdfRPAController extends Controller
             ->orderBy('p.id_personal','asc')
             ->get();
 
+
+            
             foreach($EncargadoGrado as $response_eg){  //Llenar el arreglo con datos
                 $codigo_personal_ = convertirTexto(trim($response_eg->id_personal));
                 $nombre_personal_ = convertirTexto(trim($response_eg->full_name));
@@ -203,6 +205,8 @@ class PdfRPAController extends Controller
                     $this->fpdf->Cell(135, $alto_cell[0],$codigo_institucion . " - " .$nombre_institucion,1,1,'L');       
             } // FIN DEL FOREACH para los datos de la insitucion.
              //
+
+
             $EstudianteBoleta = DB::table('alumno as a')
                 ->join('alumno_matricula AS am','a.id_alumno','=','am.codigo_alumno')
                 ->join('nota AS n','am.id_alumno_matricula','=','n.codigo_matricula')
@@ -236,7 +240,16 @@ class PdfRPAController extends Controller
                             ])
                         ->orderBy('full_name','asc')
                         ->get();
+/*
+                        print "Codigo Modalidad:  " . $codigo_modalidad;
+                        print "Codigo Grado:  " . $codigo_grado;
+                        print "Codigo seccion:  " . $codigo_seccion;
+                        print "Codigo Turno: " . $codigo_turno;
+                        print "Codigo Año Lectivo: " . $codigo_annlectivo;
+                        print "Codigo Asignatura: " . $codigo_asignatura;
 
+                                     var_dump($EstudianteBoleta);
+            exit;*/
             // --- INICIO: CÓDIGO AÑADIDO ---
             // Arreglo para almacenar la suma de cada columna de notas.
             // Lo inicializamos con 30 posiciones en cero, que es más que suficiente 

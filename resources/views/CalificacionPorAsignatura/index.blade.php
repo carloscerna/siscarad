@@ -690,7 +690,7 @@ function ReportePorAsignatura() {
     // 2. Lógica de substrings (tu lógica original)
     var codigo_asignatura = "";
     var codigo_area = "";
-    var conteo = codigo_asignatura_area.length;
+    var conteo = codigo_asignatura_area.length; // tamaño del codigo asignatura
 
     if(conteo == 4){
         codigo_asignatura = codigo_asignatura_area.substring(0,2);
@@ -698,7 +698,10 @@ function ReportePorAsignatura() {
     } else if(conteo == 6){
         codigo_asignatura = codigo_asignatura_area.substring(0,4);
         codigo_area = codigo_asignatura_area.substring(4,6);
-    } else {
+    } else if(conteo == 8){
+        codigo_asignatura = codigo_asignatura_area.substring(0,4);
+        codigo_area = codigo_asignatura_area.substring(4,6);
+    } else { // default 7 en conteo. 3 de la asignatura y 2 del codigo area.
         codigo_asignatura = codigo_asignatura_area.substring(0,3);
         codigo_area = codigo_asignatura_area.substring(3,5);
     }

@@ -65,7 +65,7 @@
 <script>
     let timer;
     // 5 minutos de espera antes del aviso
-    const inactivityTime = 5 * 60 * 1000; 
+    const inactivityTime = 15 * 60 * 1000; 
 
     function resetTimer() {
         clearTimeout(timer);
