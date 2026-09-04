@@ -41,6 +41,19 @@ Route::post('/tablero/enviar-boleta/{id}', [TableroController::class, 'enviarBol
 | contains the "web" middleware group. Now create something great!
 |
 */
+use App\Http\Controllers\FichaEstudianteController;
+
+Route::middleware(['auth'])->group(function () {
+    // 1. Vista principal de nómina de alumnos asignados al docente
+    Route::get('ficha-estudiante', [FichaEstudianteController::class, 'index'])->name('ficha.index');
+
+    // 2. Vista del formulario para actualizar el Literal B
+    Route::get('ficha-estudiante/{id}/editar', [FichaEstudianteController::class, 'edit'])->name('ficha.edit');
+
+    // 3. Guardar cambios del Literal B vía AJAX
+    Route::put('ficha-estudiante/{id}/guardar-literal-b', [FichaEstudianteController::class, 'updateLiteralB'])->name('ficha.update_literal_b');
+});
+
 
 use App\Http\Controllers\AlumnosDemeritosController;
 
