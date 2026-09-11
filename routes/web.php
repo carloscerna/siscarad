@@ -42,16 +42,31 @@ Route::post('/tablero/enviar-boleta/{id}', [TableroController::class, 'enviarBol
 |
 */
 use App\Http\Controllers\FichaEstudianteController;
+    Route::middleware(['auth'])->group(function () {
+        // 1. Vista principal de nómina de alumnos asignados al docente
+        Route::get('ficha-estudiante', [FichaEstudianteController::class, 'index'])->name('ficha.index');
 
-Route::middleware(['auth'])->group(function () {
-    // 1. Vista principal de nómina de alumnos asignados al docente
-    Route::get('ficha-estudiante', [FichaEstudianteController::class, 'index'])->name('ficha.index');
+        // 2. Vista del formulario para actualizar el Literal B
+        Route::get('ficha-estudiante/{id}/editar', [FichaEstudianteController::class, 'edit'])->name('ficha.edit');
 
-    // 2. Vista del formulario para actualizar el Literal B
-    Route::get('ficha-estudiante/{id}/editar', [FichaEstudianteController::class, 'edit'])->name('ficha.edit');
+        // 3. Guardar cambios del Literal B vía AJAX
+        Route::post('ficha-estudiante/{id}/guardar-literal-b', [FichaEstudianteController::class, 'guardarLiteralB'])->name('ficha.guardar-literal-b');
+        Route::match(['post', 'put'], '/ficha-estudiante/{id}/guardar-literal-b', [FichaEstudianteController::class, 'guardarLiteralB'])
+        ->name('ficha.guardar-literal-b');
 
-    // 3. Guardar cambios del Literal B vía AJAX
-    Route::put('ficha-estudiante/{id}/guardar-literal-b', [FichaEstudianteController::class, 'updateLiteralB'])->name('ficha.update_literal_b');
+    // Rutas para la carga dinámica de la división territorial
+    Route::get('/obtener-municipios/{codigo_dep}', [FichaEstudianteController::class, 'getMunicipios'])->name('ficha.municipios');
+    Route::get('/obtener-distritos/{codigo_dep}/{codigo_mun}', [FichaEstudianteController::class, 'getDistritos'])->name('ficha.distritos');
+    Route::get('/obtener-cantones/{codigo_dep}/{codigo_mun}/{codigo_dist}', [FichaEstudianteController::class, 'getCantones'])->name('ficha.cantones');
+
+    // Ruta para guardar la residencia (Literal C)
+    Route::match(['post', 'put'], '/ficha-estudiante/{id}/guardar-literal-c', [FichaEstudianteController::class, 'guardarLiteralC'])->name('ficha.guardar-literal-c');
+
+
+// Ruta para guardar Servicios Básicos (Literal D)
+    Route::match(['post', 'put'], '/ficha-estudiante/{id}/guardar-literal-d', [FichaEstudianteController::class, 'guardarLiteralD'])->name('ficha.guardar-literal-d');
+// Ruta para guardar Servicios de Comunicación (Literal E)
+    Route::match(['post', 'put'], '/ficha-estudiante/{id}/guardar-literal-e', [FichaEstudianteController::class, 'guardarLiteralE'])->name('ficha.guardar-literal-e');
 });
 
 
@@ -71,6 +86,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/consolidado-conducta/eliminar/{id_encargado_grado}/{mes}', [AlumnosDemeritosController::class, 'eliminarMes']);
 
 Route::get('/consolidado-conducta/verificar-meses/{id_encargado_grado}', [AlumnosDemeritosController::class, 'verificarMesesSeccion']);
+
+
+
+
 
 });
 
