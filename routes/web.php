@@ -67,7 +67,15 @@ use App\Http\Controllers\FichaEstudianteController;
     Route::match(['post', 'put'], '/ficha-estudiante/{id}/guardar-literal-d', [FichaEstudianteController::class, 'guardarLiteralD'])->name('ficha.guardar-literal-d');
 // Ruta para guardar Servicios de Comunicación (Literal E)
     Route::match(['post', 'put'], '/ficha-estudiante/{id}/guardar-literal-e', [FichaEstudianteController::class, 'guardarLiteralE'])->name('ficha.guardar-literal-e');
-});
+// Ruta para guardar Servicio Social (Literal F)
+    Route::match(['post', 'put'], '/ficha-estudiante/{id}/guardar-literal-f', [FichaEstudianteController::class, 'guardarLiteralF'])->name('ficha.guardar-literal-f');
+// Rutas para el Literal G (Datos del Responsable)
+    Route::match(['post', 'put'], '/ficha-estudiante/{id}/guardar-responsable', [FichaEstudianteController::class, 'guardarResponsable'])->name('ficha.guardar-responsable');
+    Route::post('/ficha-estudiante/{id}/crear-responsable', [FichaEstudianteController::class, 'crearResponsable'])->name('ficha.crear-responsable');
+// Ruta para la generación del reporte PDF de la Ficha del Estudiante
+    Route::get('/ficha-estudiante/{id}/pdf', [FichaEstudianteController::class, 'generarPdf'])->name('ficha.pdf');
+
+    });
 
 
 use App\Http\Controllers\AlumnosDemeritosController;

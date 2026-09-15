@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Codedge\Fpdf\Fpdf\Fpdf;
 use Exception;
 
 class FichaEstudianteController extends Controller
@@ -88,6 +89,46 @@ class FichaEstudianteController extends Controller
  */
 public function edit($id)
 {
+// 1. Obtener información de la institución con su ubicación geográfica descriptiva
+    $institucion = DB::table('informacion_institucion as inst')
+        ->leftJoin('catalogo_departamentos as dep', DB::raw('TRIM(inst.codigo_departamento)'), '=', DB::raw('TRIM(dep.codigo)'))
+        ->leftJoin('catalogo_municipios as mun', function($join) {
+            $join->on(DB::raw('TRIM(inst.codigo_departamento)'), '=', DB::raw('TRIM(mun.codigo_departamento)'))
+                 ->on(DB::raw('TRIM(inst.codigo_municipio)'), '=', DB::raw('TRIM(mun.codigo)'));
+        })
+        ->leftJoin('catalogo_distritos as dist', function($join) {
+            $join->on(DB::raw('TRIM(inst.codigo_departamento)'), '=', DB::raw('TRIM(dist.codigo_departamento)'))
+                 ->on(DB::raw('TRIM(inst.codigo_municipio)'), '=', DB::raw('TRIM(dist.codigo_municipio)'))
+                 ->on(DB::raw('TRIM(inst.codigo_distrito)'), '=', DB::raw('TRIM(dist.codigo)'));
+        })
+        ->select(
+            'inst.*',
+            'dep.descripcion as departamento_nombre',
+            'mun.descripcion as municipio_nombre',
+            'dist.descripcion as distrito_nombre'
+        )
+        ->first();
+
+    // 2. Obtener el año lectivo actual en 2 dígitos (ejemplo: '26')
+    $annLectivoActual = date('y');
+
+    // 3. Obtener la matrícula del estudiante para el año lectivo actual con sus descripciones
+    $matricula = DB::table('alumno_matricula as mat')
+        ->leftJoin('grado_ano as gra', DB::raw('TRIM(mat.codigo_grado)'), '=', DB::raw('TRIM(gra.codigo)'))
+        ->leftJoin('seccion as sec', DB::raw('TRIM(mat.codigo_seccion)'), '=', DB::raw('TRIM(sec.codigo)'))
+        ->leftJoin('turno as tur', DB::raw('TRIM(mat.codigo_turno)'), '=', DB::raw('TRIM(tur.codigo)'))
+        ->where('mat.codigo_alumno', $id)
+        ->where(DB::raw('TRIM(mat.codigo_ann_lectivo)'), $annLectivoActual)
+        ->select(
+            'mat.*',
+            'gra.nombre as grado_nombre',
+            'sec.nombre as seccion_nombre',
+            'tur.nombre as turno_nombre'
+        )
+        ->first();
+
+
+
     $alumno = DB::table('alumno as al')
         ->leftJoin('alumno_matricula as mat', function($join) {
             $join->on('mat.codigo_alumno', '=', 'al.id_alumno')
@@ -159,8 +200,21 @@ public function edit($id)
     $modalidadesClase  = DB::table('catalogo_clase_bajo_modalidad')->orderBy('codigo', 'asc')->get();
     $canalesAtencion   = DB::table('catalogo_clases_canales_atencion')->orderBy('codigo', 'asc')->get();
 
+// Catálogos para Literal G
+    $parentescos = DB::table('catalogo_familiar')->orderBy('codigo', 'asc')->get();
+    $gradosEscolaridad = DB::table('catalogo_ultimo_grado_aprobado')->orderBy('codigo', 'asc')->get();
+
+    // Obtener los familiares/encargados registrados para el estudiante
+    $encargados = DB::table('alumno_encargado')
+        ->where('codigo_alumno', $id)
+        ->orderBy('encargado', 'desc') // Muestra primero al responsable principal (true)
+        ->get();
+
     // RETURN VIEW
     return view('estudiantes.edit_literal_b', compact(
+        'alumno',
+        'institucion',
+        'matricula',
         'alumno',
         'nacionalidades',
         'etnias',
@@ -179,7 +233,10 @@ public function edit($id)
         'abastecimientosAgua',
         'companiasInternet',
         'modalidadesClase',
-        'canalesAtencion'
+        'canalesAtencion',
+        'parentescos',
+        'gradosEscolaridad',
+        'encargados'
     ));
 }
 
@@ -248,6 +305,130 @@ public function guardarLiteralE(Request $request, $id)
         return response()->json([
             'status'  => 'success',
             'message' => '¡Los datos de servicios de comunicación (Literal E) se guardaron correctamente!'
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'errors' => ['Error al guardar en la base de datos: ' . $e->getMessage()]
+        ], 500);
+    }
+}
+
+
+/**
+ * Guarda o actualiza un registro específico en alumno_encargado.
+ */
+public function guardarResponsable(Request $request, $id_alumno)
+{
+    try {
+        $id_encargado = $request->input('id_alumno_encargado');
+        $esEncargado   = $request->has('encargado') ? true : false;
+
+        // Si este registro se marca como encargado principal, desmarcamos los demás del estudiante
+        if ($esEncargado) {
+            DB::table('alumno_encargado')
+                ->where('codigo_alumno', $id_alumno)
+                ->update(['encargado' => false]);
+        }
+
+        // Actualizamos los campos del encargado especifico
+        DB::table('alumno_encargado')
+            ->where('id_alumno_encargado', $id_encargado)
+            ->where('codigo_alumno', $id_alumno)
+            ->update([
+                'dui'                             => $request->input('dui'),
+                'pasaporte_otro'                  => $request->input('pasaporte_otro'),
+                'codigo_familiar'                 => $request->input('codigo_familiar'),
+                'nombres'                         => $request->input('nombres'),
+                'telefono'                        => $request->input('telefono'),
+                'telefono_alternativo'            => $request->input('telefono_alternativo'),
+                'correo_electronico'              => $request->input('correo_electronico'),
+                'codigo_ultimo_grado_aprobado'    => $request->input('codigo_ultimo_grado_aprobado'),
+                'encargado'                       => $esEncargado
+            ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => '¡Los datos del responsable se actualizaron correctamente!'
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'errors' => ['Error al actualizar el responsable: ' . $e->getMessage()]
+        ], 500);
+    }
+}
+
+/**
+ * Crea un nuevo registro de encargado si faltan registros (máximo 3).
+ */
+public function crearResponsable(Request $request, $id_alumno)
+{
+    try {
+        $conteoActual = DB::table('alumno_encargado')->where('codigo_alumno', $id_alumno)->count();
+
+        if ($conteoActual >= 3) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => ['El estudiante ya cuenta con el número máximo de 3 responsables registrados.']
+            ], 422);
+        }
+
+        $esPrimero = ($conteoActual == 0);
+
+        DB::table('alumno_encargado')->insert([
+            'codigo_alumno'                => $id_alumno,
+            'dui'                          => $request->input('dui'),
+            'pasaporte_otro'             => $request->input('pasaporte_otro'),
+            'codigo_familiar'            => $request->input('codigo_familiar'),
+            'nombres'                    => $request->input('nombres'),
+            'telefono'                   => $request->input('telefono'),
+            'telefono_alternativo'       => $request->input('telefono_alternativo'),
+            'correo_electronico'         => $request->input('correo_electronico'),
+            'codigo_ultimo_grado_aprobado' => $request->input('codigo_ultimo_grado_aprobado'),
+            'encargado'                  => $esPrimero ? true : ($request->has('encargado') ? true : false)
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => '¡Nuevo responsable agregado exitosamente!'
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'errors' => ['Error al crear el registro: ' . $e->getMessage()]
+        ], 500);
+    }
+}
+
+
+
+/**
+ * Guarda la información del Literal F (Servicio Social).
+ *
+ * @param  \Illuminate\Http\Request  $request
+ * @param  int  $id  ID del alumno
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function guardarLiteralF(Request $request, $id)
+{
+    try {
+        // Actualización de campos en la tabla 'alumno'
+        DB::table('alumno')
+            ->where('id_alumno', $id)
+            ->update([
+                'servicio_social_realizado'        => $request->input('servicio_social_realizado'),
+                'servicio_social_fecha_finalizado' => $request->input('servicio_social_fecha_finalizado') ?: null,
+                'servicio_social_horas'            => $request->input('servicio_social_horas') ?: null,
+                'servicio_social_descripcion'      => $request->input('servicio_social_descripcion'),
+            ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => '¡Los datos de Servicio Social (Literal F) se guardaron correctamente!'
         ], 200);
 
     } catch (\Exception $e) {
@@ -394,4 +575,291 @@ public function guardarLiteralC(Request $request, $id)
             ], 500);
         }
     }
+
+/**
+     * Dibuja una casilla de selección circular (Radio button)
+     */
+    private function drawRadio($pdf, $x, $y, $checked, $label)
+    {
+        $pdf->SetLineWidth(0.2);
+        // Dibuja un círculo pequeño para el radio button
+        $pdf->Ellipse($x + 1.5, $y + 1.5, 1.2, 1.2);
+        if ($checked) {
+            $pdf->SetFillColor(0, 0, 0);
+            $pdf->Ellipse($x + 1.5, $y + 1.5, 0.7, 0.7, 'F');
+        }
+        $pdf->SetXY($x + 3.5, $y - 0.5);
+        $pdf->SetFont('Arial', '', 5.5);
+        $pdf->Cell(0, 4, utf8_decode($label), 0, 0, 'L');
+    }
+
+    /**
+     * Dibuja una casilla de selección cuadrada (Checkbox)
+     */
+    private function drawCheckbox($pdf, $x, $y, $checked, $label)
+    {
+        $pdf->SetLineWidth(0.2);
+        $pdf->Rect($x, $y, 2.5, 2.5);
+        if ($checked) {
+            $pdf->SetFont('Arial', 'B', 6);
+            $pdf->SetXY($x, $y - 0.4);
+            $pdf->Cell(2.5, 2.5, 'X', 0, 0, 'C');
+        }
+        $pdf->SetXY($x + 3.5, $y - 0.5);
+        $pdf->SetFont('Arial', '', 5.5);
+        $pdf->Cell(0, 4, utf8_decode($label), 0, 0, 'L');
+    }
+
+    /**
+     * Dibuja una caja de entrada de texto etiquetada
+     */
+    private function drawInputBox($pdf, $x, $y, $w, $h, $label, $value, $sublabel = '')
+    {
+        if (!empty($label)) {
+            $pdf->SetFont('Arial', 'B', 6);
+            $pdf->SetXY($x, $y);
+            $pdf->Cell($w, 3, utf8_decode($label), 0, 0, 'L');
+        }
+        
+        $boxY = !empty($label) ? $y + 3 : $y;
+        $pdf->Rect($x, $boxY, $w, $h);
+        
+        if (!empty($sublabel)) {
+            $pdf->SetFont('Arial', '', 5);
+            $pdf->SetXY($x + 1, $boxY - 2.5);
+            $pdf->Cell($w, 2, utf8_decode($sublabel), 0, 0, 'L');
+        }
+
+        if (!empty($value)) {
+            $pdf->SetFont('Arial', '', 6.5);
+            $pdf->SetXY($x + 1, $boxY);
+            $pdf->Cell($w - 2, $h, utf8_decode($value), 0, 0, 'L');
+        }
+    }
+
+    public function generarPdf($id)
+    {
+        // 1. OBTENCIÓN Y PREPARACIÓN DE DATOS
+        $alumno = DB::table('alumno')->where('id_alumno', $id)->first();
+        $institucion = DB::table('informacion_institucion')->first();
+        $annLectivoActual = date('y');
+
+        // Consulta de Matrícula (Grado, Sección y Jornada/Turno)
+        $matricula = DB::table('alumno_matricula as mat')
+            ->leftJoin('grado_ano as gra', DB::raw('TRIM(mat.codigo_grado)'), '=', DB::raw('TRIM(gra.codigo)'))
+            ->leftJoin('seccion as sec', DB::raw('TRIM(mat.codigo_seccion)'), '=', DB::raw('TRIM(sec.codigo)'))
+            ->leftJoin('turno as tur', DB::raw('TRIM(mat.codigo_turno)'), '=', DB::raw('TRIM(tur.codigo)'))
+            ->where('mat.codigo_alumno', $id)
+            ->select('gra.nombre as grado_nombre', 'sec.nombre as seccion_nombre', 'tur.nombre as turno_nombre')
+            ->first();
+
+        // Procesamiento de Fecha de Nacimiento
+        $diaNac = ''; $mesNac = ''; $anioNac = '';
+        if (!empty($alumno->fecha_nacimiento)) {
+            $fechaComp = strtotime($alumno->fecha_nacimiento);
+            $diaNac = date('d', $fechaComp);
+            $mesNac = date('m', $fechaComp);
+            $anioNac = date('Y', $fechaComp);
+        }
+
+        // Normalización de Nacionalidad
+        $nacionalidad = mb_strtoupper($alumno->nacionalidad ?? 'SALVADOREÑA', 'UTF-8');
+
+        // 2. CONSTRUCCIÓN DEL PDF EN FPDF
+        $pdf = new Fpdf('P', 'mm', 'Letter');
+        $pdf->SetMargins(8, 6, 8);
+        $pdf->AddPage();
+
+        // Encabezado
+        $pdf->SetFont('Arial', 'B', 7.5);
+        $pdf->Cell(0, 3, utf8_decode('MINISTERIO DE EDUCACIÓN'), 0, 1, 'C');
+        $pdf->Cell(0, 3, utf8_decode('CIENCIA Y TECNOLOGÍA'), 0, 1, 'C');
+        $pdf->Ln(1);
+        $pdf->SetFont('Arial', 'B', 7);
+        $pdf->Cell(0, 3, utf8_decode('DIRECCIÓN DE PLANIFICACIÓN'), 0, 1, 'C');
+        $pdf->Cell(0, 3, utf8_decode('FICHA DEL ESTUDIANTE – MATRÍCULA 2024'), 0, 1, 'C');
+        $pdf->Ln(2);
+
+        // Bloque Infraestructura / Ubicación
+        $y = $pdf->GetY();
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(8, $y);
+        $pdf->Cell(32, 4, utf8_decode("CÓDIGO\nINFRAESTRUCTURA"), 0, 0, 'L');
+        $pdf->Rect(35, $y, 25, 4.5);
+        $pdf->SetFont('Arial', '', 6.5);
+        $pdf->SetXY(35, $y);
+        $pdf->Cell(25, 4.5, utf8_decode($institucion->codigo_institucion ?? '10391'), 0, 0, 'C');
+
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(63, $y + 0.5);
+        $pdf->Cell(28, 4, utf8_decode("CENTRO EDUCATIVO"), 0, 0, 'L');
+        $pdf->Rect(90, $y, 110, 4.5);
+        $pdf->SetFont('Arial', '', 6.5);
+        $pdf->SetXY(91, $y);
+        $pdf->Cell(108, 4.5, utf8_decode($institucion->nombre_institucion ?? 'COMPLEJO EDUCATIVO COLONIA RIO ZARCO'), 0, 0, 'L');
+
+        // Grado, Sección y Jornada (Llenado automático)
+        $y += 5.5;
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(8, $y); $pdf->Cell(15, 4, utf8_decode("GRADO"), 0, 0, 'L');
+        $pdf->Rect(22, $y, 50, 4);
+        $pdf->SetFont('Arial', '', 6.5); $pdf->SetXY(23, $y); $pdf->Cell(48, 4, utf8_decode($matricula->grado_nombre ?? ''), 0, 0, 'L');
+
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(75, $y); $pdf->Cell(15, 4, utf8_decode("SECCIÓN"), 0, 0, 'L');
+        $pdf->Rect(90, $y, 20, 4);
+        $pdf->SetFont('Arial', '', 6.5); $pdf->SetXY(91, $y); $pdf->Cell(18, 4, utf8_decode($matricula->seccion_nombre ?? ''), 0, 0, 'C');
+
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(113, $y); $pdf->Cell(15, 4, utf8_decode("JORNADA"), 0, 0, 'L');
+        $pdf->Rect(128, $y, 72, 4);
+        $pdf->SetFont('Arial', '', 6.5); $pdf->SetXY(129, $y); $pdf->Cell(70, 4, utf8_decode($matricula->turno_nombre ?? ''), 0, 0, 'L');
+
+        // Departamento y Municipio
+        $y += 5;
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(8, $y); $pdf->Cell(22, 4, utf8_decode("DEPARTAMENTO"), 0, 0, 'L');
+        $pdf->Rect(31, $y, 35, 4);
+        $pdf->SetFont('Arial', '', 6.5); $pdf->SetXY(32, $y); $pdf->Cell(33, 4, utf8_decode('SANTA ANA'), 0, 0, 'L');
+
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(70, $y); $pdf->Cell(18, 4, utf8_decode("MUNICIPIO"), 0, 0, 'L');
+        $pdf->Rect(88, $y, 112, 4);
+        $pdf->SetFont('Arial', '', 6.5); $pdf->SetXY(89, $y); $pdf->Cell(110, 4, utf8_decode('SANTA ANA'), 0, 0, 'L');
+
+        // B. IDENTIFICACIÓN DEL ESTUDIANTE
+        $y += 6;
+        $pdf->SetFont('Arial', 'B', 6.5);
+        $pdf->SetXY(8, $y);
+        $pdf->Cell(192, 3.5, utf8_decode('B. IDENTIFICACIÓN DEL ESTUDIANTE'), 'B', 1, 'C');
+
+        // NIE, DUI, Pasaporte
+        $y += 4.5;
+        $this->drawInputBox($pdf, 60, $y, 35, 4, '1. NIE', $alumno->nie ?? '');
+        $this->drawInputBox($pdf, 105, $y, 35, 4, '2. DUI', $alumno->dui ?? '');
+        $this->drawInputBox($pdf, 150, $y, 50, 4, '2.5 Pasaporte/Otro', $alumno->pasaporte ?? '');
+
+        // Nombres separados
+        $y += 8;
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(40, $y + 2); $pdf->Cell(20, 4, utf8_decode('3. Nombres'), 0, 0, 'L');
+        $this->drawInputBox($pdf, 60, $y, 40, 4, '', $alumno->nombre_1 ?? '', 'Primer');
+        $this->drawInputBox($pdf, 105, $y, 40, 4, '', $alumno->nombre_2 ?? '', 'Segundo');
+        $this->drawInputBox($pdf, 150, $y, 50, 4, '', $alumno->nombre_3 ?? '', 'Tercer');
+
+        // Apellidos separados
+        $y += 8;
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(40, $y + 2); $pdf->Cell(20, 4, utf8_decode('4. Apellidos'), 0, 0, 'L');
+        $this->drawInputBox($pdf, 60, $y, 40, 4, '', $alumno->apellido_1 ?? '', 'Primer');
+        $this->drawInputBox($pdf, 105, $y, 40, 4, '', $alumno->apellido_2 ?? '', 'Segundo');
+        $this->drawInputBox($pdf, 150, $y, 50, 4, '', $alumno->apellido_3 ?? '', 'Tercer');
+
+        // Fecha de Nacimiento separada (Día, Mes, Año)
+        $y += 8;
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(25, $y + 1); $pdf->Cell(35, 4, utf8_decode('5. Fecha de nacimiento'), 0, 0, 'L');
+        $this->drawInputBox($pdf, 60, $y, 15, 4, '', $diaNac, 'Día');
+        $this->drawInputBox($pdf, 80, $y, 25, 4, '', $mesNac, 'Mes');
+        $this->drawInputBox($pdf, 110, $y, 20, 4, '', $anioNac, 'Año');
+
+        // Nacionalidad
+        $y += 8;
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(35, $y); $pdf->Cell(25, 4, utf8_decode('6. Nacionalidad'), 0, 0, 'L');
+        
+        $this->drawRadio($pdf, 60, $y, $nacionalidad == 'SALVADOREÑA', 'SALVADOREÑA');
+        $this->drawRadio($pdf, 100, $y, $nacionalidad == 'GUATEMALTECA', 'GUATEMALTECA');
+        $this->drawRadio($pdf, 135, $y, $nacionalidad == 'HONDUREÑA', 'HONDUREÑA');
+        $this->drawRadio($pdf, 168, $y, $nacionalidad == 'NICARAGÜENSE', 'NICARAGÜENSE');
+
+        $y += 4;
+        $this->drawRadio($pdf, 60, $y, $nacionalidad == 'COSTARRICENSE', 'COSTARRICENSE');
+        $this->drawRadio($pdf, 100, $y, $nacionalidad == 'PANAMEÑA', 'PANAMEÑA');
+        $this->drawRadio($pdf, 135, $y, $nacionalidad == 'BELICEÑA', 'BELICEÑA');
+        $this->drawRadio($pdf, 168, $y, $nacionalidad == 'SURAMERICANA', 'SURAMERICANA');
+
+        $y += 4;
+        $this->drawRadio($pdf, 60, $y, $nacionalidad == 'NORTEAMERICANA', 'NORTEAMERICANA');
+        $this->drawRadio($pdf, 100, $y, $nacionalidad == 'CARIBEÑA', 'CARIBEÑA');
+        $this->drawRadio($pdf, 135, $y, $nacionalidad == 'EUROPEA', 'EUROPEA');
+        $this->drawRadio($pdf, 168, $y, $nacionalidad == 'ASIÁTICA', 'ASIÁTICA');
+        // Separador
+        $y += 5;
+        $pdf->Line(8, $y, 200, $y);
+
+        // 7, 8, 9, 10. Preguntas cortas
+        $y += 2;
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(40, $y); $pdf->Cell(20, 4, utf8_decode('7. Retornado'), 0, 0, 'L');
+        $this->drawRadio($pdf, 60, $y, ($alumno->retornado ?? 'NO') == 'SI', 'SÍ');
+        $this->drawRadio($pdf, 72, $y, ($alumno->retornado ?? 'NO') == 'NO', 'NO');
+
+        $y += 5;
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(8, $y); $pdf->Cell(50, 4, utf8_decode('8. ¿Posee partida de nacimiento?'), 0, 0, 'L');
+        $this->drawRadio($pdf, 60, $y, ($alumno->posee_partida ?? 'SI') == 'SI', 'SÍ');
+        $this->drawRadio($pdf, 72, $y, ($alumno->posee_partida ?? 'SI') == 'NO', 'NO');
+
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(88, $y); $pdf->Cell(35, 4, utf8_decode('9. ¿Presenta partida de nacimiento?'), 0, 0, 'L');
+        $this->drawRadio($pdf, 122, $y, ($alumno->presenta_partida ?? 'SI') == 'SI', 'SÍ');
+        $this->drawRadio($pdf, 132, $y, ($alumno->presenta_partida ?? 'SI') == 'NO', 'NO');
+
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(145, $y); $pdf->Cell(15, 4, utf8_decode('10. Sexo'), 0, 0, 'L');
+        $this->drawRadio($pdf, 160, $y, ($alumno->sexo ?? 'F') == 'F', 'MUJER');
+        $this->drawRadio($pdf, 180, $y, ($alumno->sexo ?? 'F') == 'M', 'HOMBRE');
+
+        // 11. Etnia
+        $y += 5;
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(45, $y); $pdf->Cell(15, 4, utf8_decode('11. Etnia'), 0, 0, 'L');
+        $etnia = $alumno->etnia ?? 'NO APLICA';
+        $this->drawRadio($pdf, 60, $y, $etnia == 'NO APLICA', 'NO APLICA');
+        $this->drawRadio($pdf, 85, $y, $etnia == 'NAHUA-PIPIL', 'NAHUA-PIPIL');
+        $this->drawRadio($pdf, 118, $y, $etnia == 'LENCA', 'LENCA');
+        $this->drawRadio($pdf, 138, $y, $etnia == 'KAKAWIRA', 'KAKAWIRA');
+        $this->drawRadio($pdf, 168, $y, $etnia == 'OTRO', 'OTRO');
+
+        $y += 5;
+        $pdf->Line(8, $y, 200, $y);
+
+        // 12. Condición de Discapacidad
+        $y += 2;
+        $pdf->SetFont('Arial', 'B', 6);
+        $pdf->SetXY(8, $y); $pdf->Cell(50, 4, utf8_decode('12. Condición de Discapacidad'), 0, 0, 'L');
+        
+        $disc = $alumno->discapacidad ?? 'NO APLICA';
+        $this->drawCheckbox($pdf, 60, $y, $disc == 'NO APLICA', 'NO APLICA');
+        
+        $y += 4;
+        $this->drawCheckbox($pdf, 60, $y, $disc == 'CEGUERA', 'CEGUERA');
+        $this->drawCheckbox($pdf, 105, $y, $disc == 'BAJA VISION', 'BAJA VISIÓN (REMANENTE VISUAL NO FUNCIONAL)');
+
+        $y += 4;
+        $this->drawCheckbox($pdf, 60, $y, $disc == 'SORDERA', 'SORDERA');
+        $this->drawCheckbox($pdf, 105, $y, $disc == 'MULTIDISCAPACIDAD', 'MULTIDISCAPACIDAD Y RETOS MÚLTIPLES');
+
+        $y += 4;
+        $this->drawCheckbox($pdf, 60, $y, $disc == 'SORDO-CEGUERA', 'SORDO-CEGUERA');
+        $this->drawCheckbox($pdf, 105, $y, $disc == 'INTELECTUAL', 'DISCAPACIDAD INTELECTUAL');
+
+        $y += 4;
+        $this->drawCheckbox($pdf, 60, $y, $disc == 'DOWN', 'SÍNDROME DE DOWN');
+        $this->drawCheckbox($pdf, 105, $y, $disc == 'MOTORA', 'DISCAPACIDAD MOTORA');
+
+        $y += 4;
+        $this->drawCheckbox($pdf, 60, $y, $disc == 'AUSENCIA DE MIEMBROS', 'AUSENCIA DE MIEMBROS');
+        $this->drawCheckbox($pdf, 105, $y, $disc == 'AUTISMO', 'TRASTORNO DEL ESPECTRO AUTISTA (AUTISMO, ASPERGER, REET)');
+
+        $y += 4;
+        $this->drawCheckbox($pdf, 60, $y, $disc == 'HIPOACUSIA', 'HIPOACUSIA (AUDICIÓN BAJA)');
+        $this->drawCheckbox($pdf, 105, $y, $disc == 'PSICOSOCIAL', 'PSICOSOCIAL (ESQUIZOFRENIA, DEPRESIÓN, BIPOLARIDAD)');
+
+        return response($pdf->Output('I', 'Ficha_Bloque1.pdf'))
+            ->header('Content-Type', 'application/pdf');
+    }
+
+
 }

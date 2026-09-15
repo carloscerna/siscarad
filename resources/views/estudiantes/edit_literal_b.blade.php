@@ -15,13 +15,85 @@
     }
 </style>
 
+<!-- ================================================================= -->
+<!-- SECCIÓN A. INFORMACIÓN DE LA INSTITUCIÓN Y ACADÉMICA (SÓLO LECTURA) -->
+<!-- ================================================================= -->
+<div class="card shadow-lg border-0 mb-4">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-school me-2"></i> A. INFORMACIÓN DE LA INSTITUCIÓN Y ACADÉMICA
+        </h5>
+        <!-- Botón para Imprimir PDF -->
+        <a href="{{ route('ficha.pdf', $alumno->id_alumno) }}" target="_blank" class="btn btn-danger btn-sm fw-bold me-2">
+            <i class="fas fa-file-pdf me-1"></i> Imprimir Ficha (PDF)
+        </a>
+
+        <!-- Botón Volver a la Nómina reubicado -->
+        <a href="{{ route('ficha.index') }}" class="btn btn-outline-light btn-sm fw-bold">
+            <i class="fas fa-arrow-left me-1"></i> Volver a la Nómina
+        </a>
+    </div>
+    
+    <div class="card-body bg-light p-4">
+        <div class="row">
+            <!-- Código de Infraestructura -->
+            <div class="form-group col-md-3 mb-3">
+                <label class="fw-bold text-secondary">Código Infraestructura:</label>
+                <input type="text" class="form-control bg-white" value="{{ trim($institucion->codigo_institucion ?? '') }}" readonly>
+            </div>
+
+            <!-- Nombre de la Infraestructura / Institución -->
+            <div class="form-group col-md-9 mb-3">
+                <label class="fw-bold text-secondary">Nombre de la Infraestructura:</label>
+                <input type="text" class="form-control bg-white fw-bold" value="{{ trim($institucion->nombre_institucion ?? '') }}" readonly>
+            </div>
+
+            <!-- Grado -->
+            <div class="form-group col-md-4 mb-3">
+                <label class="fw-bold text-secondary">Grado Académico:</label>
+                <input type="text" class="form-control bg-white text-primary fw-bold" value="{{ trim($matricula->grado_nombre ?? 'N/A') }}" readonly>
+            </div>
+
+            <!-- Sección -->
+            <div class="form-group col-md-4 mb-3">
+                <label class="fw-bold text-secondary">Sección:</label>
+                <input type="text" class="form-control bg-white text-primary fw-bold" value="{{ trim($matricula->seccion_nombre ?? 'N/A') }}" readonly>
+            </div>
+
+            <!-- Jornada / Turno -->
+            <div class="form-group col-md-4 mb-3">
+                <label class="fw-bold text-secondary">Jornada / Turno:</label>
+                <input type="text" class="form-control bg-white text-primary fw-bold" value="{{ trim($matricula->turno_nombre ?? 'N/A') }}" readonly>
+            </div>
+
+            <!-- Departamento de la Institución -->
+            <div class="form-group col-md-4 mb-2">
+                <label class="fw-bold text-secondary">Departamento:</label>
+                <input type="text" class="form-control bg-white" value="{{ trim($institucion->departamento_nombre ?? '') }}" readonly>
+            </div>
+
+            <!-- Municipio de la Institución -->
+            <div class="form-group col-md-4 mb-2">
+                <label class="fw-bold text-secondary">Municipio:</label>
+                <input type="text" class="form-control bg-white" value="{{ trim($institucion->municipio_nombre ?? '') }}" readonly>
+            </div>
+
+            <!-- Distrito de la Institución -->
+            <div class="form-group col-md-4 mb-2">
+                <label class="fw-bold text-secondary">Distrito:</label>
+                <input type="text" class="form-control bg-white" value="{{ trim($institucion->distrito_nombre ?? '') }}" readonly>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid py-4">
     <div class="card shadow-lg border-0">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i> B. IDENTIFICACIÓN DEL ESTUDIANTE (NUMERALES 1 AL 24)</h5>
-            <a href="{{ route('ficha.index') }}" class="btn btn-light btn-sm text-primary font-weight-bold">
+           <!-- <a href="{{ route('ficha.index') }}" class="btn btn-light btn-sm text-primary font-weight-bold">
                 <i class="fas fa-arrow-left"></i> Volver a la Nómina
-            </a>
+            </a> -->
         </div>
         <div class="card-body p-4">
             
@@ -562,6 +634,294 @@
     </div>
 </div>
 
+<!-- ==================================================== -->
+<!-- SECCIÓN F. SERVICIO SOCIAL (NUMERALES 45 AL 48)     -->
+<!-- ==================================================== -->
+<div class="card shadow-lg border-0 mt-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i> F. SERVICIO SOCIAL - SOLO EDUCACIÓN MEDIA (NUMERALES 45 AL 48)</h5>
+    </div>
+    <div class="card-body p-4">
+        <form id="formLiteralF">
+            @csrf
+            @method('PUT')
+
+            <div class="row">
+                <!-- 45. Realización de Servicio Social -->
+                <div class="form-group col-md-4 mb-3">
+                    <label class="label-numeral">45. ¿Ha realizado las horas de servicio social?:</label>
+                    <select id="select_servicio_social" name="servicio_social_realizado" class="form-control">
+                        <option value="">-- Seleccione --</option>
+                        <option value="SI" {{ trim($alumno->servicio_social_realizado ?? '') == 'SI' ? 'selected' : '' }}>SI</option>
+                        <option value="NO" {{ trim($alumno->servicio_social_realizado ?? '') == 'NO' ? 'selected' : '' }}>NO</option>
+                    </select>
+                </div>
+
+                <!-- 46. Fecha Finalización -->
+                <div class="form-group col-md-4 mb-3">
+                    <label class="label-numeral">46. Fecha finalización del servicio social:</label>
+                    <input type="date" id="input_fecha_social" name="servicio_social_fecha_finalizado" 
+                           class="form-control" 
+                           value="{{ $alumno->servicio_social_fecha_finalizado ?? '' }}" 
+                           {{ trim($alumno->servicio_social_realizado ?? '') != 'SI' ? 'disabled' : '' }}>
+                </div>
+
+                <!-- 47. Cantidad de Horas -->
+                <div class="form-group col-md-4 mb-3">
+                    <label class="label-numeral">47. Cantidad de horas:</label>
+                    <input type="number" id="input_horas_social" name="servicio_social_horas" 
+                           class="form-control" min="0" placeholder="Ej. 150" 
+                           value="{{ trim($alumno->servicio_social_horas ?? '') }}" 
+                           {{ trim($alumno->servicio_social_realizado ?? '') != 'SI' ? 'disabled' : '' }}>
+                </div>
+
+                <!-- 48. Descripción -->
+                <div class="form-group col-md-12 mb-3">
+                    <label class="label-numeral">48. Descripción del servicio social:</label>
+                    <textarea id="input_desc_social" name="servicio_social_descripcion" 
+                              class="form-control" rows="3" 
+                              placeholder="Detalle la institución o proyecto donde realizó el servicio social..." 
+                              {{ trim($alumno->servicio_social_realizado ?? '') != 'SI' ? 'disabled' : '' }}>{{ trim($alumno->servicio_social_descripcion ?? '') }}</textarea>
+                </div>
+            </div>
+
+            <div class="text-right mt-3">
+                <button type="submit" class="btn btn-secondary btn-lg text-white shadow fw-bold">
+                    <i class="fas fa-save me-1"></i> Guardar Cambios del Literal F
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ==================================================== -->
+<!-- SECCIÓN G. DATOS DEL RESPONSABLE (NUMERALES 49 AL 56) -->
+<!-- ==================================================== -->
+<div class="card shadow-lg border-0 mt-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-users me-2"></i> G. DATOS DEL RESPONSABLE (NUMERALES 49 AL 56)</h5>
+        
+        <!-- Indicador de estado de registros -->
+        <span class="badge bg-light text-dark fw-bold">
+            Registrados: {{ count($encargados) }} / 3
+        </span>
+    </div>
+    
+    <div class="card-body p-4">
+
+        {{-- Alerta si faltan registros por completar --}}
+        @if(count($encargados) < 3)
+            <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Atención:</strong> Ha registrado {{ count($encargados) }} responsable(s). Puede registrar hasta 3 familiares/encargados.
+                </div>
+                <button type="button" class="btn btn-sm btn-primary fw-bold" data-toggle="modal" data-target="#modalNuevoResponsable">
+                    <i class="fas fa-plus-circle me-1"></i> Agregar Familiar
+                </button>
+            </div>
+        @endif
+
+        @if(count($encargados) > 0)
+            <!-- Navegación por pestañas (*Tabs*) -->
+            <ul class="nav nav-tabs mb-3" id="tabResponsables" role="tablist">
+                @foreach($encargados as $index => $enc)
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {{ $index == 0 ? 'active' : '' }}" 
+                                id="tab-encargado-{{ $enc->id_alumno_encargado }}" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#encargado-{{ $enc->id_alumno_encargado }}" 
+                                type="button" role="tab">
+                            
+                            @if($enc->encargado)
+                                <i class="fas fa-star text-warning me-1" title="Responsable Principal"></i>
+                            @else
+                                <i class="fas fa-user me-1"></i>
+                            @endif
+
+                            {{ $enc->nombres ? trim($enc->nombres) : 'Familiar #'.($index+1) }}
+                        </button>
+                    </li>
+                @endforeach
+            </ul>
+
+            <!-- Contenido de las pestañas -->
+            <div class="tab-content" id="tabResponsablesContent">
+                @foreach($encargados as $index => $enc)
+                    <div class="tab-pane fade {{ $index == 0 ? 'show active' : '' }}" 
+                         id="encargado-{{ $enc->id_alumno_encargado }}" 
+                         role="tabpanel">
+                        
+                        <form class="formGuardarResponsable">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="id_alumno_encargado" value="{{ $enc->id_alumno_encargado }}">
+
+                            <div class="row">
+                                <!-- Marcar como Responsable Principal -->
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check form-switch bg-light p-2 rounded border">
+                                        <input class="form-check-input ms-2" type="checkbox" name="encargado" id="chk_encargado_{{ $enc->id_alumno_encargado }}" {{ $enc->encargado ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-bold ms-2" for="chk_encargado_{{ $enc->id_alumno_encargado }}">
+                                            Designar como Responsable Principal del Estudiante
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- 49. Nº DUI -->
+                                <div class="form-group col-md-3 mb-3">
+                                    <label class="label-numeral">49. Nº DUI:</label>
+                                    <input type="text" name="dui" class="form-control" placeholder="00000000-0" value="{{ trim($enc->dui ?? '') }}">
+                                </div>
+
+                                <!-- 50. Nº Pasaporte/Otro -->
+                                <div class="form-group col-md-3 mb-3">
+                                    <label class="label-numeral">50. Nº Pasaporte / Otro:</label>
+                                    <input type="text" name="pasaporte_otro" class="form-control" value="{{ trim($enc->pasaporte_otro ?? '') }}">
+                                </div>
+
+                                <!-- 51. Tipo Parentesco -->
+                                <div class="form-group col-md-3 mb-3">
+                                    <label class="label-numeral">51. Parentesco:</label>
+                                    <select name="codigo_familiar" class="form-control">
+                                        <option value="">-- Seleccione --</option>
+                                        @foreach($parentescos as $par)
+                                            <option value="{{ trim($par->codigo) }}" {{ trim($enc->codigo_familiar ?? '') == trim($par->codigo) ? 'selected' : '' }}>
+                                                {{ trim($par->descripcion) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- 52. Nombre Completo -->
+                                <div class="form-group col-md-3 mb-3">
+                                    <label class="label-numeral">52. Nombre Completo:</label>
+                                    <input type="text" name="nombres" class="form-control" value="{{ trim($enc->nombres ?? '') }}">
+                                </div>
+
+                                <!-- 53. Teléfono -->
+                                <div class="form-group col-md-3 mb-3">
+                                    <label class="label-numeral">53. Teléfono:</label>
+                                    <input type="text" name="telefono" class="form-control" value="{{ trim($enc->telefono ?? '') }}">
+                                </div>
+
+                                <!-- 54. Teléfono Alternativo -->
+                                <div class="form-group col-md-3 mb-3">
+                                    <label class="label-numeral">54. Teléfono Alternativo:</label>
+                                    <input type="text" name="telefono_alternativo" class="form-control" value="{{ trim($enc->telefono_alternativo ?? '') }}">
+                                </div>
+
+                                <!-- 55. Correo Electrónico -->
+                                <div class="form-group col-md-3 mb-3">
+                                    <label class="label-numeral">55. Correo Electrónico:</label>
+                                    <input type="email" name="correo_electronico" class="form-control" value="{{ trim($enc->correo_electronico ?? '') }}">
+                                </div>
+
+                                <!-- 56. ÚLTIMO GRADO DE ESCOLARIDAD -->
+                                <div class="form-group col-md-3 mb-3">
+                                    <label class="label-numeral">56. Grado Escolaridad:</label>
+                                    <select name="codigo_ultimo_grado_aprobado" class="form-control">
+                                        <option value="">-- Seleccione --</option>
+                                        @foreach($gradosEscolaridad as $gra)
+                                            <option value="{{ trim($gra->codigo) }}" {{ trim($enc->codigo_ultimo_grado_aprobado ?? '') == trim($gra->codigo) ? 'selected' : '' }}>
+                                                {{ trim($gra->descripcion) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="text-right mt-3">
+                                <button type="submit" class="btn btn-primary shadow fw-bold">
+                                    <i class="fas fa-save me-1"></i> Guardar Cambios de este Responsable
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="text-center py-4">
+                <p class="text-muted">No hay información de responsables registrada para este estudiante.</p>
+                <button type="button" class="btn btn-primary fw-bold" data-toggle="modal" data-target="#modalNuevoResponsable">
+                    <i class="fas fa-plus-circle me-1"></i> Registrar Primer Responsable
+                </button>
+            </div>
+        @endif
+    </div>
+</div>
+
+<!-- ==================================================== -->
+<!-- MODAL PARA AGREGAR NUEVO RESPONSABLE FALTANTE        -->
+<!-- ==================================================== -->
+<div class="modal fade" id="modalNuevoResponsable" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i> Registrar Nuevo Familiar/Responsable</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="formNuevoResponsable">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="form-group col-md-4 mb-3">
+                            <label>49. Nº DUI:</label>
+                            <input type="text" name="dui" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4 mb-3">
+                            <label>50. Nº Pasaporte / Otro:</label>
+                            <input type="text" name="pasaporte_otro" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4 mb-3">
+                            <label>51. Parentesco:</label>
+                            <select name="codigo_familiar" class="form-control">
+                                <option value="">-- Seleccione --</option>
+                                @foreach($parentescos as $par)
+                                    <option value="{{ trim($par->codigo) }}">{{ trim($par->descripcion) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6 mb-3">
+                            <label>52. Nombre Completo:</label>
+                            <input type="text" name="nombres" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-3 mb-3">
+                            <label>53. Teléfono:</label>
+                            <input type="text" name="telefono" class="form-control">
+                        </div>
+                        <div class="form-group col-md-3 mb-3">
+                            <label>54. Teléfono Alt.:</label>
+                            <input type="text" name="telefono_alternativo" class="form-control">
+                        </div>
+                        <div class="form-group col-md-6 mb-3">
+                            <label>55. Correo Electrónico:</label>
+                            <input type="email" name="correo_electronico" class="form-control">
+                        </div>
+                        <div class="form-group col-md-6 mb-3">
+                            <label>56. Grado Escolaridad:</label>
+                            <select name="codigo_ultimo_grado_aprobado" class="form-control">
+                                <option value="">-- Seleccione --</option>
+                                @foreach($gradosEscolaridad as $gra)
+                                    <option value="{{ trim($gra->codigo) }}">{{ trim($gra->descripcion) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold">Guardar Nuevo Responsable</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 </div> <!-- CONTENEDOR PRINCIPAL -->
 @endsection
 
@@ -873,6 +1233,158 @@ $('#formLiteralE').submit(function(e) {
                 icon: 'error',
                 title: 'Error al guardar',
                 text: 'Ocurrió un inconveniente al actualizar los servicios de comunicación.',
+                confirmButtonColor: '#d33'
+            });
+        }
+    });
+});
+
+// =======================================================
+// LÓGICA DE INTERACCIÓN Y GUARDADO DEL LITERAL F
+// =======================================================
+
+// Habilitar / Deshabilitar campos según la respuesta a la pregunta 45
+$('#select_servicio_social').change(function() {
+    let realizado = $(this).val();
+    let fechaInput = $('#input_fecha_social');
+    let horasInput = $('#input_horas_social');
+    let descInput  = $('#input_desc_social');
+
+    if (realizado === 'SI') {
+        fechaInput.prop('disabled', false);
+        horasInput.prop('disabled', false);
+        descInput.prop('disabled', false);
+    } else {
+        fechaInput.prop('disabled', true).val('');
+        horasInput.prop('disabled', true).val('');
+        descInput.prop('disabled', true).val('');
+    }
+});
+
+// Envío del formulario Literal F vía AJAX
+$('#formLiteralF').submit(function(e) {
+    e.preventDefault();
+    let id_alumno = $('#id_alumno').val();
+
+    let urlGuardarF = "{{ route('ficha.guardar-literal-f', ':id') }}";
+    urlGuardarF = urlGuardarF.replace(':id', id_alumno);
+
+    Swal.fire({
+        title: 'Guardando Servicio Social...',
+        text: 'Por favor espere mientras se procesan los datos.',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    $.ajax({
+        url: urlGuardarF,
+        type: "POST",
+        data: $(this).serialize(),
+        dataType: "json",
+        success: function(response) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Guardado Correctamente!',
+                text: response.message,
+                confirmButtonColor: '#3085d6'
+            });
+        },
+        error: function(xhr) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al guardar',
+                text: 'Ocurrió un inconveniente al actualizar el servicio social.',
+                confirmButtonColor: '#d33'
+            });
+        }
+    });
+});
+
+// =======================================================
+// LÓGICA DE ACTUALIZACIÓN Y AGREGADO DEL LITERAL G
+// =======================================================
+
+// Actualizar información del responsable seleccionado
+$('.formGuardarResponsable').submit(function(e) {
+    e.preventDefault();
+    let id_alumno = $('#id_alumno').val();
+
+    let urlGuardar = "{{ route('ficha.guardar-responsable', ':id') }}";
+    urlGuardar = urlGuardar.replace(':id', id_alumno);
+
+    Swal.fire({
+        title: 'Guardando datos del responsable...',
+        text: 'Por favor espere...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    $.ajax({
+        url: urlGuardar,
+        type: "POST",
+        data: $(this).serialize(),
+        dataType: "json",
+        success: function(response) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Actualizado!',
+                text: response.message,
+                confirmButtonColor: '#3085d6'
+            }).then(() => {
+                location.reload(); // Recarga para refrescar estados de las pestañas
+            });
+        },
+        error: function(xhr) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al actualizar',
+                text: 'No se pudo guardar la información del responsable.',
+                confirmButtonColor: '#d33'
+            });
+        }
+    });
+});
+
+// Guardar nuevo responsable desde el Modal
+$('#formNuevoResponsable').submit(function(e) {
+    e.preventDefault();
+    let id_alumno = $('#id_alumno').val();
+
+    let urlCrear = "{{ route('ficha.crear-responsable', ':id') }}";
+    urlCrear = urlCrear.replace(':id', id_alumno);
+
+    Swal.fire({
+        title: 'Creando nuevo registro...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    $.ajax({
+        url: urlCrear,
+        type: "POST",
+        data: $(this).serialize(),
+        dataType: "json",
+        success: function(response) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Registrado!',
+                text: response.message,
+                confirmButtonColor: '#3085d6'
+            }).then(() => {
+                location.reload();
+            });
+        },
+        error: function(xhr) {
+            let msg = 'Error al registrar la información.';
+            if(xhr.responseJSON && xhr.responseJSON.errors) {
+                msg = xhr.responseJSON.errors.join('<br>');
+            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                html: msg,
                 confirmButtonColor: '#d33'
             });
         }
