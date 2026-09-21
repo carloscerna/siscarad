@@ -24,6 +24,7 @@ class FichaEstudianteController extends Controller
         // 2. Obtener el año lectivo en formato de 2 dígitos (ej. '26' para 2026)
         // Nota: Si en tu base de datos el año se guarda como '2026', cambia 'y' por 'Y'.
         $annLectivoActual = date('y');
+        $annLectivoPdf = 2027;
 
         // 3. Construcción de la consulta base
       $query = DB::table('alumno as al')
@@ -637,229 +638,4178 @@ public function guardarLiteralC(Request $request, $id)
         }
     }
 
-    public function generarPdf($id)
-    {
-        // 1. OBTENCIÓN Y PREPARACIÓN DE DATOS
-        $alumno = DB::table('alumno')->where('id_alumno', $id)->first();
-        $institucion = DB::table('informacion_institucion')->first();
-        $annLectivoActual = date('y');
+   public function generarPdf($id)
+{
+    /*
+     * FICHA DEL ESTUDIANTE - MATRÍCULA
+     * Versión compactada verticalmente para mantener
+     * los puntos 1-19 en página 1 y 20-54 en página 2.
+     */
 
-        // Consulta de Matrícula (Grado, Sección y Jornada/Turno)
-        $matricula = DB::table('alumno_matricula as mat')
-            ->leftJoin('grado_ano as gra', DB::raw('TRIM(mat.codigo_grado)'), '=', DB::raw('TRIM(gra.codigo)'))
-            ->leftJoin('seccion as sec', DB::raw('TRIM(mat.codigo_seccion)'), '=', DB::raw('TRIM(sec.codigo)'))
-            ->leftJoin('turno as tur', DB::raw('TRIM(mat.codigo_turno)'), '=', DB::raw('TRIM(tur.codigo)'))
-            ->where('mat.codigo_alumno', $id)
-            ->select('gra.nombre as grado_nombre', 'sec.nombre as seccion_nombre', 'tur.nombre as turno_nombre')
-            ->first();
+    // ================================================================
+    // 1. DATOS PRINCIPALES
+    // ================================================================
+    $alumno = DB::table('alumno')->where('id_alumno', $id)->first();
 
-        // Procesamiento de Fecha de Nacimiento
-        $diaNac = ''; $mesNac = ''; $anioNac = '';
-        if (!empty($alumno->fecha_nacimiento)) {
-            $fechaComp = strtotime($alumno->fecha_nacimiento);
+    if (!$alumno) {
+        return redirect()->route('ficha.index')
+            ->with('error', 'El estudiante no existe.');
+    }
+
+    $institucion = DB::table('informacion_institucion')->first();
+    $annLectivoActual = date('y');
+    $annLectivoPdf = '20' . $annLectivoActual;
+
+    $matricula = DB::table('alumno_matricula as mat')
+        ->leftJoin(
+            'grado_ano as gra',
+            DB::raw('TRIM(mat.codigo_grado)'),
+            '=',
+            DB::raw('TRIM(gra.codigo)')
+        )
+        ->leftJoin(
+            'seccion as sec',
+            DB::raw('TRIM(mat.codigo_seccion)'),
+            '=',
+            DB::raw('TRIM(sec.codigo)')
+        )
+        ->leftJoin(
+            'turno as tur',
+            DB::raw('TRIM(mat.codigo_turno)'),
+            '=',
+            DB::raw('TRIM(tur.codigo)')
+        )
+        ->where('mat.codigo_alumno', $id)
+        ->where(
+            DB::raw('TRIM(mat.codigo_ann_lectivo)'),
+            $annLectivoActual
+        )
+        ->select(
+            'mat.*',
+            'gra.nombre as grado_nombre',
+            'sec.nombre as seccion_nombre',
+            'tur.nombre as turno_nombre'
+        )
+        ->first();
+
+    // ================================================================
+    // 2. ENCARGADO PRINCIPAL
+    // ================================================================
+    $encargado = DB::table('alumno_encargado')
+        ->where('codigo_alumno', $id)
+        ->orderBy('encargado', 'desc')
+        ->orderBy('id_alumno_encargado', 'asc')
+        ->first();
+
+    // ================================================================
+    // 3. CATÁLOGOS
+    // ================================================================
+    $catalogo = function ($tabla, $codigo) {
+        if ($codigo === null || $codigo === '') {
+            return '';
+        }
+
+        try {
+            $valor = DB::table($tabla)
+                ->whereRaw(
+                    'TRIM(CAST(codigo AS TEXT)) = ?',
+                    [trim((string) $codigo)]
+                )
+                ->value('descripcion');
+
+            return $valor ?? '';
+        } catch (\Throwable $e) {
+            return '';
+        }
+    };
+
+    $nacionalidad = $catalogo(
+        'catalogo_nacionalidad',
+        $alumno->codigo_nacionalidad ?? null
+    );
+
+    if ($nacionalidad === '') {
+        $nacionalidad = $alumno->nacionalidad ?? 'SALVADOREÑA';
+    }
+
+    $etnia = $catalogo(
+        'catalogo_etnia',
+        $alumno->codigo_etnia ?? null
+    );
+
+    if ($etnia === '') {
+        $etnia = $alumno->etnia ?? 'NO APLICA';
+    }
+
+    $discapacidad = $catalogo(
+        'catalogo_tipo_de_discapacidad',
+        $alumno->codigo_discapacidad ?? null
+    );
+
+    if ($discapacidad === '') {
+        $discapacidad = $alumno->discapacidad ?? 'NO APLICA';
+    }
+
+    $diagnostico = $catalogo(
+        'catalogo_diagnostico',
+        $alumno->codigo_diagnostico ?? null
+    );
+
+    $apoyoEducativo = $catalogo(
+        'catalogo_servicios_de_apoyo_educativo',
+        $alumno->codigo_apoyo_educativo ?? null
+    );
+
+    $actividadEconomica = $catalogo(
+        'catalogo_actividad_economica',
+        $alumno->codigo_actividad_economica ?? null
+    );
+
+    $estadoCivil = $catalogo(
+        'catalogo_estado_civil',
+        $alumno->codigo_estado_civil ?? null
+    );
+
+    $estadoFamiliar = $catalogo(
+        'catalogo_estado_familiar',
+        $alumno->codigo_estado_familiar ?? null
+    );
+
+    $parentesco = $catalogo(
+        'catalogo_familiar',
+        $encargado->codigo_familiar ?? null
+    );
+
+    $escolaridadResponsable = $catalogo(
+        'catalogo_ultimo_grado_aprobado',
+        $encargado->codigo_ultimo_grado_aprobado ?? null
+    );
+
+    $abastecimiento = $catalogo(
+        'catalogo_abastecimiento',
+        $alumno->codigo_abastecimiento ?? null
+    );
+
+    $tipoVivienda = $catalogo(
+        'catalogo_tipo_vivienda',
+        $alumno->codigo_tipo_vivienda ?? null
+    );
+
+    $zonaResidencia = $catalogo(
+        'catalogo_zona_residencia',
+        $alumno->codigo_zona_residencia ?? null
+    );
+
+    $departamento = $catalogo(
+        'catalogo_departamentos',
+        $alumno->codigo_departamento ?? null
+    );
+
+    $municipio = '';
+
+    if (
+        !empty($alumno->codigo_departamento) &&
+        !empty($alumno->codigo_municipio)
+    ) {
+        try {
+            $municipio = DB::table('catalogo_municipios')
+                ->whereRaw(
+                    'TRIM(CAST(codigo_departamento AS TEXT)) = ?',
+                    [trim((string) $alumno->codigo_departamento)]
+                )
+                ->whereRaw(
+                    'TRIM(CAST(codigo AS TEXT)) = ?',
+                    [trim((string) $alumno->codigo_municipio)]
+                )
+                ->value('descripcion') ?? '';
+        } catch (\Throwable $e) {
+            $municipio = '';
+        }
+    }
+
+    $canton = '';
+
+    if (!empty($alumno->codigo_canton)) {
+        try {
+            $qCanton = DB::table('catalogo_canton')
+                ->whereRaw(
+                    'TRIM(CAST(codigo AS TEXT)) = ?',
+                    [trim((string) $alumno->codigo_canton)]
+                );
+
+            if (!empty($alumno->codigo_departamento)) {
+                $qCanton->whereRaw(
+                    'TRIM(CAST(codigo_departamento AS TEXT)) = ?',
+                    [
+                        str_pad(
+                            trim((string) $alumno->codigo_departamento),
+                            2,
+                            '0',
+                            STR_PAD_LEFT
+                        )
+                    ]
+                );
+            }
+
+            if (!empty($alumno->codigo_municipio)) {
+                $qCanton->whereRaw(
+                    'TRIM(CAST(codigo_nuevo_municipio AS TEXT)) = ?',
+                    [
+                        str_pad(
+                            trim((string) $alumno->codigo_municipio),
+                            2,
+                            '0',
+                            STR_PAD_LEFT
+                        )
+                    ]
+                );
+            }
+
+            if (!empty($alumno->codigo_distrito)) {
+                $qCanton->whereRaw(
+                    'TRIM(CAST(codigo_distrito AS TEXT)) = ?',
+                    [
+                        str_pad(
+                            trim((string) $alumno->codigo_distrito),
+                            2,
+                            '0',
+                            STR_PAD_LEFT
+                        )
+                    ]
+                );
+            }
+
+            $canton = $qCanton->value('descripcion') ?? '';
+        } catch (\Throwable $e) {
+            $canton = '';
+        }
+    }
+
+    // ================================================================
+    // 4. NORMALIZACIÓN
+    // ================================================================
+    $normalizar = function ($valor) {
+        $valor = trim((string) ($valor ?? ''));
+        $valor = mb_strtoupper($valor, 'UTF-8');
+
+        return str_replace(
+            ['Á','É','Í','Ó','Ú','Ü','Ñ'],
+            ['A','E','I','O','U','U','N'],
+            $valor
+        );
+    };
+
+    $tiene = function ($valor, $texto) use ($normalizar) {
+        $v = $normalizar($valor);
+        $t = $normalizar($texto);
+
+        return $v === $t || strpos($v, $t) !== false;
+    };
+
+    // ================================================================
+    // 5. NOMBRES
+    // ================================================================
+    $nombre1 = trim((string) ($alumno->nombre_1 ?? ''));
+    $nombre2 = trim((string) ($alumno->nombre_2 ?? ''));
+    $nombre3 = trim((string) ($alumno->nombre_3 ?? ''));
+
+    if ($nombre1 === '' && !empty($alumno->nombre_completo)) {
+
+        $partesNombres = preg_split(
+            '/\s+/',
+            trim((string) $alumno->nombre_completo)
+        );
+
+        $nombre1 = $partesNombres[0] ?? '';
+        $nombre2 = $partesNombres[1] ?? '';
+        $nombre3 = count($partesNombres) > 2
+            ? implode(' ', array_slice($partesNombres, 2))
+            : '';
+    }
+
+    $apellido1 = trim(
+        (string) (
+            $alumno->apellido_1 ??
+            $alumno->apellido_paterno ??
+            ''
+        )
+    );
+
+    $apellido2 = trim(
+        (string) (
+            $alumno->apellido_2 ??
+            $alumno->apellido_materno ??
+            ''
+        )
+    );
+
+    $apellido3 = trim(
+        (string) ($alumno->apellido_3 ?? '')
+    );
+
+    // ================================================================
+    // 6. FECHA DE NACIMIENTO
+    // ================================================================
+    $diaNac = '';
+    $mesNac = '';
+    $anioNac = '';
+
+    if (!empty($alumno->fecha_nacimiento)) {
+
+        $fechaComp = strtotime($alumno->fecha_nacimiento);
+
+        if ($fechaComp !== false) {
             $diaNac = date('d', $fechaComp);
             $mesNac = date('m', $fechaComp);
             $anioNac = date('Y', $fechaComp);
         }
-
-        // Normalización de Nacionalidad
-        $nacionalidad = mb_strtoupper($alumno->nacionalidad ?? 'SALVADOREÑA', 'UTF-8');
-
-        // 2. CONSTRUCCIÓN DEL PDF EN FPDF
-        $pdf = new Fpdf('P', 'mm', 'Letter');
-        $pdf->SetMargins(8, 6, 8);
-        $pdf->AddPage();
-
-        // Encabezado
-        $pdf->SetFont('Arial', 'B', 7.5);
-        $pdf->Cell(0, 3, utf8_decode('MINISTERIO DE EDUCACIÓN'), 0, 1, 'C');
-        $pdf->Cell(0, 3, utf8_decode('CIENCIA Y TECNOLOGÍA'), 0, 1, 'C');
-        $pdf->Ln(1);
-        $pdf->SetFont('Arial', 'B', 7);
-        $pdf->Cell(0, 3, utf8_decode('DIRECCIÓN DE PLANIFICACIÓN'), 0, 1, 'C');
-        $pdf->Cell(0, 3, utf8_decode('FICHA DEL ESTUDIANTE – MATRÍCULA 2024'), 0, 1, 'C');
-        $pdf->Ln(2);
-
-        // Bloque Infraestructura / Ubicación
-        $y = $pdf->GetY();
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(8, $y);
-        $pdf->Cell(32, 4, utf8_decode("CÓDIGO\nINFRAESTRUCTURA"), 0, 0, 'L');
-        $pdf->Rect(35, $y, 25, 4.5);
-        $pdf->SetFont('Arial', '', 6.5);
-        $pdf->SetXY(35, $y);
-        $pdf->Cell(25, 4.5, utf8_decode($institucion->codigo_institucion ?? '10391'), 0, 0, 'C');
-
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(63, $y + 0.5);
-        $pdf->Cell(28, 4, utf8_decode("CENTRO EDUCATIVO"), 0, 0, 'L');
-        $pdf->Rect(90, $y, 110, 4.5);
-        $pdf->SetFont('Arial', '', 6.5);
-        $pdf->SetXY(91, $y);
-        $pdf->Cell(108, 4.5, utf8_decode($institucion->nombre_institucion ?? 'COMPLEJO EDUCATIVO COLONIA RIO ZARCO'), 0, 0, 'L');
-
-        // Grado, Sección y Jornada (Llenado automático)
-        $y += 5.5;
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(8, $y); $pdf->Cell(15, 4, utf8_decode("GRADO"), 0, 0, 'L');
-        $pdf->Rect(22, $y, 50, 4);
-        $pdf->SetFont('Arial', '', 6.5); $pdf->SetXY(23, $y); $pdf->Cell(48, 4, utf8_decode($matricula->grado_nombre ?? ''), 0, 0, 'L');
-
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(75, $y); $pdf->Cell(15, 4, utf8_decode("SECCIÓN"), 0, 0, 'L');
-        $pdf->Rect(90, $y, 20, 4);
-        $pdf->SetFont('Arial', '', 6.5); $pdf->SetXY(91, $y); $pdf->Cell(18, 4, utf8_decode($matricula->seccion_nombre ?? ''), 0, 0, 'C');
-
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(113, $y); $pdf->Cell(15, 4, utf8_decode("JORNADA"), 0, 0, 'L');
-        $pdf->Rect(128, $y, 72, 4);
-        $pdf->SetFont('Arial', '', 6.5); $pdf->SetXY(129, $y); $pdf->Cell(70, 4, utf8_decode($matricula->turno_nombre ?? ''), 0, 0, 'L');
-
-        // Departamento y Municipio
-        $y += 5;
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(8, $y); $pdf->Cell(22, 4, utf8_decode("DEPARTAMENTO"), 0, 0, 'L');
-        $pdf->Rect(31, $y, 35, 4);
-        $pdf->SetFont('Arial', '', 6.5); $pdf->SetXY(32, $y); $pdf->Cell(33, 4, utf8_decode('SANTA ANA'), 0, 0, 'L');
-
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(70, $y); $pdf->Cell(18, 4, utf8_decode("MUNICIPIO"), 0, 0, 'L');
-        $pdf->Rect(88, $y, 112, 4);
-        $pdf->SetFont('Arial', '', 6.5); $pdf->SetXY(89, $y); $pdf->Cell(110, 4, utf8_decode('SANTA ANA'), 0, 0, 'L');
-
-        // B. IDENTIFICACIÓN DEL ESTUDIANTE
-        $y += 6;
-        $pdf->SetFont('Arial', 'B', 6.5);
-        $pdf->SetXY(8, $y);
-        $pdf->Cell(192, 3.5, utf8_decode('B. IDENTIFICACIÓN DEL ESTUDIANTE'), 'B', 1, 'C');
-
-        // NIE, DUI, Pasaporte
-        $y += 4.5;
-        $this->drawInputBox($pdf, 60, $y, 35, 4, '1. NIE', $alumno->nie ?? '');
-        $this->drawInputBox($pdf, 105, $y, 35, 4, '2. DUI', $alumno->dui ?? '');
-        $this->drawInputBox($pdf, 150, $y, 50, 4, '2.5 Pasaporte/Otro', $alumno->pasaporte ?? '');
-
-        // Nombres separados
-        $y += 8;
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(40, $y + 2); $pdf->Cell(20, 4, utf8_decode('3. Nombres'), 0, 0, 'L');
-        $this->drawInputBox($pdf, 60, $y, 40, 4, '', $alumno->nombre_1 ?? '', 'Primer');
-        $this->drawInputBox($pdf, 105, $y, 40, 4, '', $alumno->nombre_2 ?? '', 'Segundo');
-        $this->drawInputBox($pdf, 150, $y, 50, 4, '', $alumno->nombre_3 ?? '', 'Tercer');
-
-        // Apellidos separados
-        $y += 8;
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(40, $y + 2); $pdf->Cell(20, 4, utf8_decode('4. Apellidos'), 0, 0, 'L');
-        $this->drawInputBox($pdf, 60, $y, 40, 4, '', $alumno->apellido_1 ?? '', 'Primer');
-        $this->drawInputBox($pdf, 105, $y, 40, 4, '', $alumno->apellido_2 ?? '', 'Segundo');
-        $this->drawInputBox($pdf, 150, $y, 50, 4, '', $alumno->apellido_3 ?? '', 'Tercer');
-
-        // Fecha de Nacimiento separada (Día, Mes, Año)
-        $y += 8;
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(25, $y + 1); $pdf->Cell(35, 4, utf8_decode('5. Fecha de nacimiento'), 0, 0, 'L');
-        $this->drawInputBox($pdf, 60, $y, 15, 4, '', $diaNac, 'Día');
-        $this->drawInputBox($pdf, 80, $y, 25, 4, '', $mesNac, 'Mes');
-        $this->drawInputBox($pdf, 110, $y, 20, 4, '', $anioNac, 'Año');
-
-        // Nacionalidad
-        $y += 8;
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(35, $y); $pdf->Cell(25, 4, utf8_decode('6. Nacionalidad'), 0, 0, 'L');
-        
-        $this->drawRadio($pdf, 60, $y, $nacionalidad == 'SALVADOREÑA', 'SALVADOREÑA');
-        $this->drawRadio($pdf, 100, $y, $nacionalidad == 'GUATEMALTECA', 'GUATEMALTECA');
-        $this->drawRadio($pdf, 135, $y, $nacionalidad == 'HONDUREÑA', 'HONDUREÑA');
-        $this->drawRadio($pdf, 168, $y, $nacionalidad == 'NICARAGÜENSE', 'NICARAGÜENSE');
-
-        $y += 4;
-        $this->drawRadio($pdf, 60, $y, $nacionalidad == 'COSTARRICENSE', 'COSTARRICENSE');
-        $this->drawRadio($pdf, 100, $y, $nacionalidad == 'PANAMEÑA', 'PANAMEÑA');
-        $this->drawRadio($pdf, 135, $y, $nacionalidad == 'BELICEÑA', 'BELICEÑA');
-        $this->drawRadio($pdf, 168, $y, $nacionalidad == 'SURAMERICANA', 'SURAMERICANA');
-
-        $y += 4;
-        $this->drawRadio($pdf, 60, $y, $nacionalidad == 'NORTEAMERICANA', 'NORTEAMERICANA');
-        $this->drawRadio($pdf, 100, $y, $nacionalidad == 'CARIBEÑA', 'CARIBEÑA');
-        $this->drawRadio($pdf, 135, $y, $nacionalidad == 'EUROPEA', 'EUROPEA');
-        $this->drawRadio($pdf, 168, $y, $nacionalidad == 'ASIÁTICA', 'ASIÁTICA');
-        // Separador
-        $y += 5;
-        $pdf->Line(8, $y, 200, $y);
-
-        // 7, 8, 9, 10. Preguntas cortas
-        $y += 2;
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(40, $y); $pdf->Cell(20, 4, utf8_decode('7. Retornado'), 0, 0, 'L');
-        $this->drawRadio($pdf, 60, $y, ($alumno->retornado ?? 'NO') == 'SI', 'SÍ');
-        $this->drawRadio($pdf, 72, $y, ($alumno->retornado ?? 'NO') == 'NO', 'NO');
-
-        $y += 5;
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(8, $y); $pdf->Cell(50, 4, utf8_decode('8. ¿Posee partida de nacimiento?'), 0, 0, 'L');
-        $this->drawRadio($pdf, 60, $y, ($alumno->posee_partida ?? 'SI') == 'SI', 'SÍ');
-        $this->drawRadio($pdf, 72, $y, ($alumno->posee_partida ?? 'SI') == 'NO', 'NO');
-
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(88, $y); $pdf->Cell(35, 4, utf8_decode('9. ¿Presenta partida de nacimiento?'), 0, 0, 'L');
-        $this->drawRadio($pdf, 122, $y, ($alumno->presenta_partida ?? 'SI') == 'SI', 'SÍ');
-        $this->drawRadio($pdf, 132, $y, ($alumno->presenta_partida ?? 'SI') == 'NO', 'NO');
-
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(145, $y); $pdf->Cell(15, 4, utf8_decode('10. Sexo'), 0, 0, 'L');
-        $this->drawRadio($pdf, 160, $y, ($alumno->sexo ?? 'F') == 'F', 'MUJER');
-        $this->drawRadio($pdf, 180, $y, ($alumno->sexo ?? 'F') == 'M', 'HOMBRE');
-
-        // 11. Etnia
-        $y += 5;
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(45, $y); $pdf->Cell(15, 4, utf8_decode('11. Etnia'), 0, 0, 'L');
-        $etnia = $alumno->etnia ?? 'NO APLICA';
-        $this->drawRadio($pdf, 60, $y, $etnia == 'NO APLICA', 'NO APLICA');
-        $this->drawRadio($pdf, 85, $y, $etnia == 'NAHUA-PIPIL', 'NAHUA-PIPIL');
-        $this->drawRadio($pdf, 118, $y, $etnia == 'LENCA', 'LENCA');
-        $this->drawRadio($pdf, 138, $y, $etnia == 'KAKAWIRA', 'KAKAWIRA');
-        $this->drawRadio($pdf, 168, $y, $etnia == 'OTRO', 'OTRO');
-
-        $y += 5;
-        $pdf->Line(8, $y, 200, $y);
-
-        // 12. Condición de Discapacidad
-        $y += 2;
-        $pdf->SetFont('Arial', 'B', 6);
-        $pdf->SetXY(8, $y); $pdf->Cell(50, 4, utf8_decode('12. Condición de Discapacidad'), 0, 0, 'L');
-        
-        $disc = $alumno->discapacidad ?? 'NO APLICA';
-        $this->drawCheckbox($pdf, 60, $y, $disc == 'NO APLICA', 'NO APLICA');
-        
-        $y += 4;
-        $this->drawCheckbox($pdf, 60, $y, $disc == 'CEGUERA', 'CEGUERA');
-        $this->drawCheckbox($pdf, 105, $y, $disc == 'BAJA VISION', 'BAJA VISIÓN (REMANENTE VISUAL NO FUNCIONAL)');
-
-        $y += 4;
-        $this->drawCheckbox($pdf, 60, $y, $disc == 'SORDERA', 'SORDERA');
-        $this->drawCheckbox($pdf, 105, $y, $disc == 'MULTIDISCAPACIDAD', 'MULTIDISCAPACIDAD Y RETOS MÚLTIPLES');
-
-        $y += 4;
-        $this->drawCheckbox($pdf, 60, $y, $disc == 'SORDO-CEGUERA', 'SORDO-CEGUERA');
-        $this->drawCheckbox($pdf, 105, $y, $disc == 'INTELECTUAL', 'DISCAPACIDAD INTELECTUAL');
-
-        $y += 4;
-        $this->drawCheckbox($pdf, 60, $y, $disc == 'DOWN', 'SÍNDROME DE DOWN');
-        $this->drawCheckbox($pdf, 105, $y, $disc == 'MOTORA', 'DISCAPACIDAD MOTORA');
-
-        $y += 4;
-        $this->drawCheckbox($pdf, 60, $y, $disc == 'AUSENCIA DE MIEMBROS', 'AUSENCIA DE MIEMBROS');
-        $this->drawCheckbox($pdf, 105, $y, $disc == 'AUTISMO', 'TRASTORNO DEL ESPECTRO AUTISTA (AUTISMO, ASPERGER, REET)');
-
-        $y += 4;
-        $this->drawCheckbox($pdf, 60, $y, $disc == 'HIPOACUSIA', 'HIPOACUSIA (AUDICIÓN BAJA)');
-        $this->drawCheckbox($pdf, 105, $y, $disc == 'PSICOSOCIAL', 'PSICOSOCIAL (ESQUIZOFRENIA, DEPRESIÓN, BIPOLARIDAD)');
-
-        return response($pdf->Output('I', 'Ficha_Bloque1.pdf'))
-            ->header('Content-Type', 'application/pdf');
     }
 
+    // ================================================================
+    // 7. SEXO
+    // ================================================================
+    $genero = $normalizar(
+        $alumno->codigo_genero ??
+        ($alumno->sexo ?? '')
+    );
+
+    $esMujer = in_array(
+        $genero,
+        ['F', 'FEMENINO', 'MUJER', '2'],
+        true
+    );
+
+    $esHombre = in_array(
+        $genero,
+        ['M', 'MASCULINO', 'HOMBRE', '1'],
+        true
+    );
+
+    // ================================================================
+    // 8. FUNCIONES DE DIBUJO
+    // ================================================================
+    $txt = function ($texto) {
+        return iconv(
+            'UTF-8',
+            'windows-1252//TRANSLIT',
+            (string) ($texto ?? '')
+        );
+    };
+
+    /*
+     * RADIO COMPACTO
+     */
+    $radio = function (
+        $pdf,
+        $x,
+        $y,
+        $checked,
+        $label,
+        $fontSize = 5.6
+    ) use ($txt) {
+
+        $pdf->SetLineWidth(0.20);
+
+        $pdf->Ellipse(
+            $x + 1.25,
+            $y + 1.55,
+            1.15,
+            1.15
+        );
+
+        if ($checked) {
+
+            $pdf->SetFillColor(0, 0, 0);
+
+            $pdf->Ellipse(
+                $x + 1.25,
+                $y + 1.55,
+                0.68,
+                0.68,
+                'F'
+            );
+        }
+
+        $pdf->SetFont(
+            'Arial',
+            '',
+            $fontSize
+        );
+
+        $pdf->SetXY(
+            $x + 3.1,
+            $y - 0.05
+        );
+
+        $pdf->Cell(
+            0,
+            3.2,
+            $txt($label),
+            0,
+            0,
+            'L'
+        );
+    };
+
+    /*
+     * CHECKBOX COMPACTO
+     */
+    $check = function (
+        $pdf,
+        $x,
+        $y,
+        $checked,
+        $label,
+        $fontSize = 5.3
+    ) use ($txt) {
+
+        $pdf->SetLineWidth(0.20);
+
+        $pdf->Rect(
+            $x,
+            $y,
+            2.2,
+            2.2
+        );
+
+        if ($checked) {
+
+            $pdf->SetFont(
+                'Arial',
+                'B',
+                5.8
+            );
+
+            $pdf->SetXY(
+                $x,
+                $y - 0.35
+            );
+
+            $pdf->Cell(
+                2.2,
+                2.2,
+                'X',
+                0,
+                0,
+                'C'
+            );
+        }
+
+        $pdf->SetFont(
+            'Arial',
+            '',
+            $fontSize
+        );
+
+        $pdf->SetXY(
+            $x + 3.1,
+            $y - 0.25
+        );
+
+        $pdf->Cell(
+            0,
+            3.2,
+            $txt($label),
+            0,
+            0,
+            'L'
+        );
+    };
+
+    /*
+     * CAJA
+     */
+    $box = function (
+        $pdf,
+        $x,
+        $y,
+        $w,
+        $h,
+        $value = '',
+        $label = '',
+        $sub = '',
+        $align = 'L'
+    ) use ($txt) {
+
+        if ($label !== '') {
+
+            $pdf->SetFont(
+                'Arial',
+                'B',
+                5.4
+            );
+
+            $pdf->SetXY(
+                $x,
+                $y - 2.7
+            );
+
+            $pdf->Cell(
+                $w,
+                2.7,
+                $txt($label),
+                0,
+                0,
+                'L'
+            );
+        }
+
+        $pdf->Rect(
+            $x,
+            $y,
+            $w,
+            $h
+        );
+
+        if ($sub !== '') {
+
+            $pdf->SetFont(
+                'Arial',
+                '',
+                4.9
+            );
+
+            $pdf->SetXY(
+                $x + 0.8,
+                $y - 2.9
+            );
+
+            $pdf->Cell(
+                $w - 1.6,
+                2.4,
+                $txt($sub),
+                0,
+                0,
+                'L'
+            );
+        }
+
+        if (
+            $value !== null &&
+            trim((string) $value) !== ''
+        ) {
+
+            $pdf->SetFont(
+                'Arial',
+                '',
+                6.3
+            );
+
+            $pdf->SetXY(
+                $x + 1,
+                $y + 0.20
+            );
+
+            $pdf->Cell(
+                $w - 2,
+                $h - 0.4,
+                $txt($value),
+                0,
+                0,
+                $align
+            );
+        }
+    };
+
+    $line = function ($pdf, $y) {
+
+        $pdf->SetLineWidth(0.22);
+
+        $pdf->Line(
+            8,
+            $y,
+            200,
+            $y
+        );
+    };
+
+    $section = function (
+        $pdf,
+        $y,
+        $title
+    ) use ($txt) {
+
+        $pdf->SetFillColor(
+            224,
+            224,
+            224
+        );
+
+        $pdf->SetDrawColor(
+            110,
+            110,
+            110
+        );
+
+        $pdf->SetFont(
+            'Arial',
+            'B',
+            7
+        );
+
+        $pdf->SetXY(
+            8,
+            $y
+        );
+
+        $pdf->Cell(
+            192,
+            5,
+            $txt($title),
+            1,
+            1,
+            'C',
+            true
+        );
+
+        $pdf->SetDrawColor(
+            0,
+            0,
+            0
+        );
+
+        return $y + 6;
+    };
+
+    // ================================================================
+    // 9. PDF
+    // ================================================================
+    $pdf = new Fpdf(
+        'P',
+        'mm',
+        'Letter'
+    );
+
+    $pdf->SetMargins(
+        8,
+        6,
+        8
+    );
+
+    $pdf->SetAutoPageBreak(false);
+
+    $pdf->SetTitle(
+        'Ficha del Estudiante - Matrícula ' .
+        $annLectivoPdf
+    );
+
+    $pdf->SetAuthor(
+        'Sistema Académico'
+    );
+
+    // ================================================================
+    // PÁGINA 1
+    // ================================================================
+    $pdf->AddPage();
+
+    $logo = public_path(
+        'images/escudo_republica.png'
+    );
+
+    if (is_file($logo)) {
+
+        $pdf->Image(
+            $logo,
+            96,
+            7,
+            16,
+            16
+        );
+    }
+
+    $pdf->SetFont(
+        'Arial',
+        '',
+        9
+    );
+
+    $pdf->SetXY(
+        8,
+        23
+    );
+
+    $pdf->Cell(
+        192,
+        4,
+        $txt('MINISTERIO DE EDUCACIÓN'),
+        0,
+        1,
+        'C'
+    );
+
+    $pdf->Cell(
+        192,
+        4,
+        $txt('CIENCIA Y TECNOLOGÍA'),
+        0,
+        1,
+        'C'
+    );
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        9
+    );
+
+    $pdf->Cell(
+        192,
+        4,
+        $txt('DIRECCIÓN DE PLANIFICACIÓN'),
+        0,
+        1,
+        'C'
+    );
+
+    $pdf->Cell(
+        192,
+        4,
+        $txt(
+            'FICHA DEL ESTUDIANTE – MATRÍCULA ' .
+            $annLectivoPdf
+        ),
+        0,
+        1,
+        'C'
+    );
+
+    $y = 43;
+
+    // ================================================================
+    // DATOS INSTITUCIONALES
+    // ================================================================
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        6.5
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        31,
+        4,
+        $txt("CÓDIGO\nINFRAESTRUCTURA"),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        43,
+        $y,
+        25,
+        5.2,
+        $institucion->codigo_institucion ?? '10391',
+        '',
+        '',
+        'C'
+    );
+
+    $pdf->SetXY(
+        71,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        30,
+        4,
+        $txt('CENTRO EDUCATIVO'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        100,
+        $y,
+        100,
+        5.2,
+        $institucion->nombre_institucion ??
+        'COMPLEJO EDUCATIVO COLONIA RIO ZARCO'
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // MATRÍCULA
+    // ================================================================
+    $y += 9;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        6.2
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        24,
+        4,
+        $txt('GRADO'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        32,
+        $y,
+        48,
+        5.2,
+        $matricula->grado_nombre ?? ''
+    );
+
+    $pdf->SetXY(
+        84,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        20,
+        4,
+        $txt('SECCIÓN'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        104,
+        $y,
+        20,
+        5.2,
+        $matricula->seccion_nombre ?? '',
+        '',
+        '',
+        'C'
+    );
+
+    $pdf->SetXY(
+        127,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        22,
+        4,
+        $txt('JORNADA'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        149,
+        $y,
+        51,
+        5.2,
+        $matricula->turno_nombre ?? ''
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // DEPARTAMENTO / MUNICIPIO
+    // ================================================================
+    $y += 9;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        6.2
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        31,
+        4,
+        $txt('DEPARTAMENTO'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        39,
+        $y,
+        35,
+        5.2,
+        $departamento !== ''
+            ? $departamento
+            : 'SANTA ANA'
+    );
+
+    $pdf->SetXY(
+        78,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        23,
+        4,
+        $txt('MUNICIPIO'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        101,
+        $y,
+        99,
+        5.2,
+        $municipio !== ''
+            ? $municipio
+            : 'SANTA ANA'
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // B. IDENTIFICACIÓN
+    // ================================================================
+    $y += 10;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        7.5
+    );
+
+    $pdf->SetXY(
+        8,
+        $y
+    );
+
+    $pdf->Cell(
+        192,
+        4,
+        $txt(
+            'B. IDENTIFICACIÓN DEL ESTUDIANTE'
+        ),
+        0,
+        1,
+        'C'
+    );
+
+    $line(
+        $pdf,
+        $y + 5
+    );
+
+    // ================================================================
+    // 1, 2, 2.5
+    // ================================================================
+    $y += 9;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        6.1
+    );
+
+    $pdf->SetXY(
+        50,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        16,
+        4,
+        $txt('1. NIE'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        66,
+        $y,
+        28,
+        5.3,
+        $alumno->codigo_nie ??
+        ($alumno->nie ?? '')
+    );
+
+    $pdf->SetXY(
+        100,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        16,
+        4,
+        $txt('2. DUI'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        116,
+        $y,
+        28,
+        5.3,
+        $alumno->dui ?? ''
+    );
+
+    $pdf->SetXY(
+        149,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        27,
+        4,
+        $txt('2.5 Pasaporte/Otro'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        177,
+        $y,
+        23,
+        5.3,
+        $alumno->pasaporte ?? ''
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // 3. NOMBRES
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        6.1
+    );
+
+    $pdf->SetXY(
+        40,
+        $y + 2
+    );
+
+    $pdf->Cell(
+        25,
+        4,
+        $txt('3. Nombres'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        66,
+        $y,
+        35,
+        5.3,
+        $nombre1,
+        '',
+        'Primer'
+    );
+
+    $box(
+        $pdf,
+        107,
+        $y,
+        35,
+        5.3,
+        $nombre2,
+        '',
+        'Segundo'
+    );
+
+    $box(
+        $pdf,
+        147,
+        $y,
+        53,
+        5.3,
+        $nombre3,
+        '',
+        'Tercer'
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // 4. APELLIDOS
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetXY(
+        40,
+        $y + 2
+    );
+
+    $pdf->Cell(
+        25,
+        4,
+        $txt('4. Apellidos'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        66,
+        $y,
+        35,
+        5.3,
+        $apellido1,
+        '',
+        'Primer'
+    );
+
+    $box(
+        $pdf,
+        107,
+        $y,
+        35,
+        5.3,
+        $apellido2,
+        '',
+        'Segundo'
+    );
+
+    $box(
+        $pdf,
+        147,
+        $y,
+        53,
+        5.3,
+        $apellido3,
+        '',
+        'Tercer'
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // 5. FECHA DE NACIMIENTO
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetXY(
+        28,
+        $y + 2
+    );
+
+    $pdf->Cell(
+        38,
+        4,
+        $txt('5. Fecha de nacimiento'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        66,
+        $y,
+        16,
+        5.3,
+        $diaNac,
+        '',
+        'Día',
+        'C'
+    );
+
+    $box(
+        $pdf,
+        87,
+        $y,
+        16,
+        5.3,
+        $mesNac,
+        '',
+        'Mes',
+        'C'
+    );
+
+    $box(
+        $pdf,
+        108,
+        $y,
+        24,
+        5.3,
+        $anioNac,
+        '',
+        'Año',
+        'C'
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // 6. NACIONALIDAD
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        6
+    );
+
+    $pdf->SetXY(
+        27,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        39,
+        4,
+        $txt('6. Nacionalidad'),
+        0,
+        0,
+        'L'
+    );
+
+    $nac = $normalizar($nacionalidad);
+
+    $radio(
+        $pdf,
+        66,
+        $y,
+        $tiene($nac, 'SALVADORE'),
+        'SALVADOREÑA'
+    );
+
+    $radio(
+        $pdf,
+        102,
+        $y,
+        $tiene($nac, 'GUATEMAL'),
+        'GUATEMALTECA'
+    );
+
+    $radio(
+        $pdf,
+        138,
+        $y,
+        $tiene($nac, 'HONDUR'),
+        'HONDUREÑA'
+    );
+
+    $radio(
+        $pdf,
+        174,
+        $y,
+        $tiene($nac, 'NICARAG'),
+        'NICARAGÜENSE'
+    );
+
+    $y += 4.5;
+
+    $radio(
+        $pdf,
+        66,
+        $y,
+        $tiene($nac, 'COSTARRIC'),
+        'COSTARRICENSE'
+    );
+
+    $radio(
+        $pdf,
+        102,
+        $y,
+        $tiene($nac, 'PANAME'),
+        'PANAMEÑA'
+    );
+
+    $radio(
+        $pdf,
+        138,
+        $y,
+        $tiene($nac, 'BELICE'),
+        'BELICEÑA'
+    );
+
+    $radio(
+        $pdf,
+        174,
+        $y,
+        $tiene($nac, 'SURAMERIC'),
+        'SURAMERICANA'
+    );
+
+    $y += 4.5;
+
+    $radio(
+        $pdf,
+        66,
+        $y,
+        $tiene($nac, 'NORTEAMERIC'),
+        'NORTEAMERICANA'
+    );
+
+    $radio(
+        $pdf,
+        102,
+        $y,
+        $tiene($nac, 'CARIBE'),
+        'CARIBEÑA'
+    );
+
+    $radio(
+        $pdf,
+        138,
+        $y,
+        $tiene($nac, 'EUROPE'),
+        'EUROPEA'
+    );
+
+    $radio(
+        $pdf,
+        174,
+        $y,
+        $tiene($nac, 'ASIATIC'),
+        'ASIÁTICA'
+    );
+
+    $line(
+        $pdf,
+        $y + 5.5
+    );
+
+    // ================================================================
+    // 7. RETORNADO
+    // ================================================================
+    $y += 7;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.8
+    );
+
+    $pdf->SetXY(
+        43,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        23,
+        4,
+        $txt('7. Retornado'),
+        0,
+        0,
+        'L'
+    );
+
+    $retornado = $normalizar(
+        $alumno->retornado ?? 'NO'
+    );
+
+    $radio(
+        $pdf,
+        66,
+        $y,
+        $retornado === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        80,
+        $y,
+        $retornado === 'NO',
+        'NO'
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    // ================================================================
+    // 8, 9, 10
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        54,
+        4,
+        $txt(
+            '8. ¿Posee partida de nacimiento?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $poseePartida = $normalizar(
+        $alumno->posee_pn ??
+        ($alumno->posee_partida ?? '')
+    );
+
+    $radio(
+        $pdf,
+        63,
+        $y,
+        $poseePartida === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        76,
+        $y,
+        $poseePartida === 'NO',
+        'NO'
+    );
+
+    $pdf->SetXY(
+        93,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        43,
+        4,
+        $txt(
+            '9. ¿Presenta partida de nacimiento?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $presentaPartida = $normalizar(
+        $alumno->presenta_pn ??
+        ($alumno->presenta_partida ?? '')
+    );
+
+    $radio(
+        $pdf,
+        137,
+        $y,
+        $presentaPartida === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        151,
+        $y,
+        $presentaPartida === 'NO',
+        'NO'
+    );
+
+    $pdf->SetXY(
+        164,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        17,
+        4,
+        $txt('10. Sexo'),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        181,
+        $y,
+        $esMujer,
+        'MUJER'
+    );
+
+    $radio(
+        $pdf,
+        181,
+        $y + 4,
+        $esHombre,
+        'HOMBRE'
+    );
+
+    $line(
+        $pdf,
+        $y + 10
+    );
+
+    // ================================================================
+    // 11. ETNIA
+    // ================================================================
+    $y += 12;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.8
+    );
+
+    $pdf->SetXY(
+        47,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        19,
+        4,
+        $txt('11. Etnia'),
+        0,
+        0,
+        'L'
+    );
+
+    $et = $normalizar($etnia);
+
+    $radio(
+        $pdf,
+        66,
+        $y,
+        $tiene($et, 'NO APLICA'),
+        'NO APLICA'
+    );
+
+    $radio(
+        $pdf,
+        103,
+        $y,
+        $tiene($et, 'NAHUA'),
+        'NAHUA-PIPIL'
+    );
+
+    $radio(
+        $pdf,
+        137,
+        $y,
+        $tiene($et, 'LENCA'),
+        'LENCA'
+    );
+
+    $radio(
+        $pdf,
+        160,
+        $y,
+        $tiene($et, 'KAKAWIRA'),
+        'KAKAWIRA'
+    );
+
+    $radio(
+        $pdf,
+        183,
+        $y,
+        $tiene($et, 'OTRO'),
+        'OTRO'
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    // ================================================================
+    // 12. DISCAPACIDAD
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.8
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        54,
+        4,
+        $txt(
+            '12. Condición de Discapacidad'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $disc = $normalizar($discapacidad);
+
+    $check(
+        $pdf,
+        66,
+        $y,
+        $tiene($disc, 'NO APLICA'),
+        'NO APLICA'
+    );
+
+    $y += 4.5;
+
+    $check(
+        $pdf,
+        66,
+        $y,
+        $tiene($disc, 'CEGUERA'),
+        'CEGUERA'
+    );
+
+    $check(
+        $pdf,
+        106,
+        $y,
+        $tiene($disc, 'BAJA VISION'),
+        'BAJA VISIÓN (REMANENTE VISUAL NO FUNCIONAL)'
+    );
+
+    $y += 4.5;
+
+    $check(
+        $pdf,
+        66,
+        $y,
+        $tiene($disc, 'SORDERA'),
+        'SORDERA'
+    );
+
+    $check(
+        $pdf,
+        106,
+        $y,
+        $tiene($disc, 'MULTIDISCAPACIDAD'),
+        'MULTIDISCAPACIDAD Y RETOS MÚLTIPLES'
+    );
+
+    $y += 4.5;
+
+    $check(
+        $pdf,
+        66,
+        $y,
+        $tiene($disc, 'SORDO-CEGUERA'),
+        'SORDO-CEGUERA'
+    );
+
+    $check(
+        $pdf,
+        106,
+        $y,
+        $tiene($disc, 'INTELECTUAL'),
+        'DISCAPACIDAD INTELECTUAL'
+    );
+
+    $y += 4.5;
+
+    $check(
+        $pdf,
+        66,
+        $y,
+        $tiene($disc, 'DOWN'),
+        'SÍNDROME DE DOWN'
+    );
+
+    $check(
+        $pdf,
+        106,
+        $y,
+        $tiene($disc, 'MOTORA'),
+        'DISCAPACIDAD MOTORA'
+    );
+
+    $y += 4.5;
+
+    $check(
+        $pdf,
+        66,
+        $y,
+        $tiene($disc, 'AUSENCIA'),
+        'AUSENCIA DE MIEMBROS'
+    );
+
+    $check(
+        $pdf,
+        106,
+        $y,
+        $tiene($disc, 'AUTISMO') ||
+        $tiene($disc, 'ESPECTRO AUTISTA'),
+        'TRASTORNO DEL ESPECTRO AUTISTA (AUTISMO, ASPERGER, REET)'
+    );
+
+    $y += 4.5;
+
+    $check(
+        $pdf,
+        66,
+        $y,
+        $tiene($disc, 'HIPOACUSIA'),
+        'HIPOACUSIA (AUDICIÓN BAJA)'
+    );
+
+    $check(
+        $pdf,
+        106,
+        $y,
+        $tiene($disc, 'PSICOSOCIAL'),
+        'PSICOSOCIAL (ESQUIZOFRENIA, DEPRESIÓN, BIPOLARIDAD)'
+    );
+
+    $pdf->SetFont(
+        'Arial',
+        '',
+        5
+    );
+
+    $pdf->SetXY(
+        66,
+        $y + 3.5
+    );
+
+    $pdf->Cell(
+        134,
+        3,
+        $txt('(Puedes marcar más de una opción)'),
+        0,
+        0,
+        'L'
+    );
+
+    // ================================================================
+    // 13. DIAGNÓSTICO
+    // ================================================================
+    $y += 8;
+
+    $line(
+        $pdf,
+        $y
+    );
+
+    $y += 3;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        53,
+        4,
+        $txt(
+            '13. ¿Posee diagnóstico clínico?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $diagAplica =
+        $diagnostico === '' ||
+        $tiene($diagnostico, 'NO APLICA');
+
+    $radio(
+        $pdf,
+        66,
+        $y,
+        $diagAplica,
+        'NO APLICA'
+    );
+
+    $radio(
+        $pdf,
+        101,
+        $y,
+        !$diagAplica &&
+        $diagnostico !== '',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        116,
+        $y,
+        false,
+        'NO'
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    // ================================================================
+    // 14. REFERENCIA
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        50,
+        4,
+        $txt(
+            '14. El estudiante ha sido referido a'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        66,
+        $y,
+        true,
+        'NO APLICA'
+    );
+
+    $radio(
+        $pdf,
+        101,
+        $y,
+        false,
+        'DOCENTE DE APOYO A LA INCLUSIÓN',
+        5.1
+    );
+
+    $radio(
+        $pdf,
+        151,
+        $y,
+        false,
+        'CENTRO DE ORIENTACIÓN Y RECURSO (COR)',
+        5.1
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    // ================================================================
+    // 15. SERVICIOS DE APOYO
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        48,
+        4,
+        $txt(
+            '15. El estudiante recibe'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $apoyo = $normalizar(
+        $apoyoEducativo
+    );
+
+    $check(
+        $pdf,
+        66,
+        $y,
+        $tiene($apoyo, 'NO APLICA'),
+        'NO APLICA'
+    );
+
+    $check(
+        $pdf,
+        106,
+        $y,
+        $tiene($apoyo, 'LENGUAJE'),
+        'TERAPIA DE LENGUAJE'
+    );
+
+    $check(
+        $pdf,
+        150,
+        $y,
+        $tiene($apoyo, 'AUDICION') ||
+        $tiene($apoyo, 'AUDICIÓN'),
+        'TERAPIA DE AUDICIÓN Y LENGUAJE',
+        5.0
+    );
+
+    $y += 4.2;
+
+    $check(
+        $pdf,
+        66,
+        $y,
+        $tiene($apoyo, 'REHABILITACION'),
+        'TERAPIA DE REHABILITACIÓN'
+    );
+
+    $check(
+        $pdf,
+        106,
+        $y,
+        $tiene($apoyo, 'FISIOTERAPIA'),
+        'FISIOTERAPIA'
+    );
+
+    $check(
+        $pdf,
+        150,
+        $y,
+        $tiene($apoyo, 'PSICOLOG'),
+        'ATENCIÓN PSICOLÓGICA'
+    );
+
+    $y += 4.2;
+
+    $check(
+        $pdf,
+        66,
+        $y,
+        $tiene($apoyo, 'PSIQUIATR'),
+        'ATENCIÓN PSIQUIÁTRICA'
+    );
+
+    $check(
+        $pdf,
+        106,
+        $y,
+        $tiene($apoyo, 'NEUROLOG'),
+        'ATENCIÓN NEUROLÓGICA'
+    );
+
+    $check(
+        $pdf,
+        150,
+        $y,
+        $tiene($apoyo, 'OTRO'),
+        'OTRO'
+    );
+
+    $pdf->SetFont(
+        'Arial',
+        '',
+        5
+    );
+
+    $pdf->SetXY(
+        66,
+        $y + 3.5
+    );
+
+    $pdf->Cell(
+        134,
+        3,
+        $txt('(Puedes marcar más de una opción)'),
+        0,
+        0,
+        'L'
+    );
+
+    // ================================================================
+    // 16, 17, 18
+    // ================================================================
+    $y += 8;
+
+    $line(
+        $pdf,
+        $y
+    );
+
+    $y += 3;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.6
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        45,
+        4,
+        $txt(
+            '16. Correo electrónico de contacto'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        53,
+        $y,
+        42,
+        5.3,
+        $alumno->direccion_email ?? ''
+    );
+
+    $pdf->SetXY(
+        98,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        32,
+        4,
+        $txt(
+            '17. Teléfono de contacto si lo posee'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        130,
+        $y,
+        24,
+        5.3,
+        $alumno->telefono_celular ?? ''
+    );
+
+    $pdf->SetXY(
+        157,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        24,
+        4,
+        $txt('18. ¿Tiene WhatsApp?'),
+        0,
+        0,
+        'L'
+    );
+
+    $whatsapp = $normalizar(
+        $alumno->whatsapp ?? ''
+    );
+
+    $radio(
+        $pdf,
+        182,
+        $y,
+        $whatsapp === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        182,
+        $y + 4,
+        $whatsapp === 'NO',
+        'NO'
+    );
+
+    // ================================================================
+    // 19. TIPO DE TRABAJO
+    // ================================================================
+    $y += 9;
+
+    $line(
+        $pdf,
+        $y
+    );
+
+    $y += 3;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.8
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        48,
+        4,
+        $txt('19. ¿Tipo de trabajo?'),
+        0,
+        0,
+        'L'
+    );
+
+    $trabajo = $normalizar(
+        $actividadEconomica
+    );
+
+    $trabajosIzq = [
+        ['NO TRABAJA', 'NO TRABAJA'],
+        ['CANA DE AZUCAR', 'CAÑA DE AZÚCAR'],
+        ['PEPENADOR DE BASURA', 'PEPENADOR DE BASURA'],
+        ['COHETERIA', 'COHETERÍA'],
+        ['VENTAS', 'VENTAS (AMBULATORIAS POR MAYOR Y MENOR)'],
+        ['TRABAJO AGRICOLA', 'TRABAJO AGRÍCOLA (DIFERENTE DEL CAFÉ Y CAÑA)'],
+        ['AVES', 'AVES DE CORRAL U OTROS ANIMALES'],
+        ['ALIMENTACION', 'ACTIVIDADES DE ALIMENTACIÓN (VER INSTRUCTIVO)'],
+    ];
+
+    $trabajosDer = [
+        ['OTRAS ACTIVIDADES', 'OTRAS ACTIVIDADES (REMUNERADAS O NO)'],
+        ['PESCA', 'PESCA'],
+        ['TRABAJO DOMESTICO', 'TRABAJO DOMÉSTICO REMUNERADO'],
+        ['CAFE', 'CAFÉ'],
+        ['SERVICIOS', 'SERVICIOS (VER INSTRUCTIVO)'],
+        ['GANADO', 'CRÍA DE GANADO'],
+        ['CONSTRUCCION', 'CONSTRUCCIÓN'],
+        ['MANUFACTURERAS', 'ACTIVIDADES MANUFACTURERAS'],
+    ];
+
+    $yy = $y;
+
+    foreach ($trabajosIzq as $item) {
+
+        $radio(
+            $pdf,
+            66,
+            $yy,
+            $tiene($trabajo, $item[0]),
+            $item[1],
+            5.1
+        );
+
+        $yy += 4.4;
+    }
+
+    $yy = $y;
+
+    foreach ($trabajosDer as $item) {
+
+        $radio(
+            $pdf,
+            132,
+            $yy,
+            $tiene($trabajo, $item[0]),
+            $item[1],
+            5.1
+        );
+
+        $yy += 4.4;
+    }
+
+    // ================================================================
+    // PÁGINA 2
+    // ================================================================
+    $pdf->AddPage();
+
+    $y = 9;
+
+    // ================================================================
+    // 20. ESTADO CIVIL
+    // ================================================================
+    $line(
+        $pdf,
+        $y
+    );
+
+    $y += 3;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.8
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        43,
+        4,
+        $txt('20. Estado familiar'),
+        0,
+        0,
+        'L'
+    );
+
+    $ec = $normalizar(
+        $estadoCivil
+    );
+
+    $radio(
+        $pdf,
+        52,
+        $y,
+        $tiene($ec, 'SOLTER'),
+        'SOLTERO'
+    );
+
+    $radio(
+        $pdf,
+        76,
+        $y,
+        $tiene($ec, 'ACOMPA'),
+        'ACOMPAÑADO'
+    );
+
+    $radio(
+        $pdf,
+        106,
+        $y,
+        $tiene($ec, 'CASAD'),
+        'CASADO'
+    );
+
+    $radio(
+        $pdf,
+        132,
+        $y,
+        $tiene($ec, 'DIVORCI'),
+        'DIVORCIADO'
+    );
+
+    $radio(
+        $pdf,
+        163,
+        $y,
+        $tiene($ec, 'VIUD'),
+        'VIUDO'
+    );
+
+    $radio(
+        $pdf,
+        181,
+        $y,
+        $tiene($ec, 'NO APLICA'),
+        'NO APLICA'
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    // ================================================================
+    // 21. CONVIVENCIA FAMILIAR
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.8
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 4
+    );
+
+    $pdf->Cell(
+        45,
+        4,
+        $txt('21. Convivencia familiar'),
+        0,
+        0,
+        'L'
+    );
+
+    $conv = $normalizar(
+        $estadoFamiliar
+    );
+
+    $convRows = [
+        ['VIVE SOLO CON LA MADRE', 52, 0],
+        ['VIVE SOLO CON EL PADRE', 94, 0],
+        ['VIVE CON MADRE Y PADRE', 139, 0],
+
+        ['VIVE CON FAMILIARES', 52, 4.4],
+        ['NO VIVE CON FAMILIARES', 94, 4.4],
+        ['VIVE CON MADRE Y PADRASTRO', 139, 4.4],
+
+        ['VIVE CON PADRE Y MADRASTRA', 52, 8.8],
+        ['VIVE SOLO', 94, 8.8],
+        ['VIVE SOLO CON SU CÓNYUGE', 139, 8.8],
+
+        ['VIVE CON SU CÓNYUGE E HIJOS', 52, 13.2],
+        ['VIVE SOLO CON SUS HIJOS', 94, 13.2],
+    ];
+
+    foreach ($convRows as $r) {
+
+        $radio(
+            $pdf,
+            $r[1],
+            $y + $r[2],
+            $tiene($conv, $r[0]),
+            $r[0],
+            5.1
+        );
+    }
+
+    $line(
+        $pdf,
+        $y + 20
+    );
+
+    // ================================================================
+    // 22
+    // ================================================================
+    $y += 22;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        53,
+        4,
+        $txt(
+            '22. ¿Está embarazada la estudiante?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $embarazada = $normalizar(
+        $alumno->embarazada ?? ''
+    );
+
+    $radio(
+        $pdf,
+        63,
+        $y,
+        $embarazada === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        77,
+        $y,
+        $embarazada === 'NO',
+        'NO'
+    );
+
+    $radio(
+        $pdf,
+        92,
+        $y,
+        $embarazada === 'NO APLICA',
+        'NO APLICA'
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    // ================================================================
+    // 23 Y 24
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        53,
+        4,
+        $txt(
+            '23. ¿El estudiante tiene hijos o hijas?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $hijos = $normalizar(
+        $alumno->tiene_hijos ?? ''
+    );
+
+    $radio(
+        $pdf,
+        63,
+        $y,
+        $hijos === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        77,
+        $y,
+        $hijos === 'NO',
+        'NO'
+    );
+
+    $pdf->SetXY(
+        101,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        46,
+        4,
+        $txt(
+            '24. Cantidad de hijos del o de la estudiante'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        169,
+        $y,
+        20,
+        5.3,
+        $alumno->cantidad_hijos ?? '0',
+        '',
+        '',
+        'C'
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    // ================================================================
+    // C. RESIDENCIA
+    // ================================================================
+    $y = $section(
+        $pdf,
+        $y + 8,
+        'C. RESIDENCIA'
+    );
+
+    $zona = $normalizar(
+        $zonaResidencia
+    );
+
+    $vivienda = $normalizar(
+        $tipoVivienda
+    );
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        29,
+        4,
+        $txt('25. Zona'),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        37,
+        $y,
+        $tiene($zona, 'URBANA'),
+        'URBANA'
+    );
+
+    $radio(
+        $pdf,
+        67,
+        $y,
+        $tiene($zona, 'RURAL'),
+        'RURAL'
+    );
+
+    $pdf->SetXY(
+        93,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        42,
+        4,
+        $txt(
+            '26. ¿Tipo de vivienda del estudiante?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        137,
+        $y,
+        $tiene($vivienda, 'MIXTA'),
+        'MIXTA'
+    );
+
+    $radio(
+        $pdf,
+        157,
+        $y,
+        $tiene($vivienda, 'ADOBE'),
+        'ADOBE'
+    );
+
+    $radio(
+        $pdf,
+        177,
+        $y,
+        $tiene($vivienda, 'BAHAREQUE'),
+        'BAHAREQUE'
+    );
+
+    $radio(
+        $pdf,
+        195,
+        $y,
+        $tiene($vivienda, 'LAMINA'),
+        'LÁMINA'
+    );
+
+    $y += 7;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        27,
+        4,
+        $txt('27. Departamento'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        36,
+        $y,
+        32,
+        5.3,
+        $departamento
+    );
+
+    $pdf->SetXY(
+        70,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        29,
+        4,
+        $txt('28. Municipio'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        99,
+        $y,
+        101,
+        5.3,
+        $municipio
+    );
+
+    $y += 7;
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        27,
+        4,
+        $txt('29. Cantón'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        36,
+        $y,
+        48,
+        5.3,
+        $canton
+    );
+
+    $pdf->SetXY(
+        87,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        24,
+        4,
+        $txt('30. Caserío'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        111,
+        $y,
+        89,
+        5.3,
+        $alumno->caserio ?? ''
+    );
+
+    $y += 7;
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        27,
+        4,
+        $txt('31. Dirección'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        36,
+        $y,
+        164,
+        5.3,
+        $alumno->direccion_alumno ?? ''
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // D. SERVICIOS BÁSICOS
+    // ================================================================
+    $y = $section(
+        $pdf,
+        $y + 8,
+        'D. SERVICIOS BÁSICOS'
+    );
+
+    $energia = $normalizar(
+        $alumno->servicio_energia ?? ''
+    );
+
+    $basura = $normalizar(
+        $alumno->recoleccion_basura ?? ''
+    );
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.6
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        72,
+        4,
+        $txt(
+            '32. ¿Cuenta con servicio de energía eléctrica en su casa?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        81,
+        $y,
+        $energia === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        95,
+        $y,
+        $energia === 'NO',
+        'NO'
+    );
+
+    $pdf->SetXY(
+        107,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        66,
+        4,
+        $txt(
+            '33. ¿Cuenta con servicio de recolección de basura?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        176,
+        $y,
+        $basura === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        190,
+        $y,
+        $basura === 'NO',
+        'NO'
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.5
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 4
+    );
+
+    $pdf->Cell(
+        58,
+        4,
+        $txt(
+            '34. ¿Cuál es la fuente principal de abastecimiento de agua de su casa?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $agua = $normalizar(
+        $abastecimiento
+    );
+
+    $radio(
+        $pdf,
+        66,
+        $y,
+        $tiene($agua, 'ACARREO'),
+        'ACARREO (RÍO, LAGO, NACIMIENTO DE AGUA, CHORRO PÚBLICO CANTARERA)',
+        4.8
+    );
+
+    $radio(
+        $pdf,
+        170,
+        $y,
+        $tiene($agua, 'PIPA'),
+        'PIPA',
+        4.8
+    );
+
+    $radio(
+        $pdf,
+        66,
+        $y + 5,
+        $tiene($agua, 'CAÑERIA INTERNA') ||
+        $tiene($agua, 'SERVICIO DE AGUA'),
+        'SERVICIO DE AGUA POR CAÑERÍA INTERNA A LA CASA',
+        4.8
+    );
+
+    $radio(
+        $pdf,
+        170,
+        $y + 5,
+        $tiene($agua, 'POZO'),
+        'POZO',
+        4.8
+    );
+
+    $radio(
+        $pdf,
+        66,
+        $y + 10,
+        $tiene($agua, 'LLUVIA'),
+        'AGUA LLUVIA',
+        4.8
+    );
+
+    $line(
+        $pdf,
+        $y + 17
+    );
+
+    // ================================================================
+    // E. SERVICIOS DE COMUNICACIÓN
+    // ================================================================
+    $y = $section(
+        $pdf,
+        $y + 8,
+        'E. SERVICIOS DE COMUNICACIÓN'
+    );
+
+    $internet = $normalizar(
+        $alumno->acceso_internet ?? ''
+    );
+
+    $conexion = $normalizar(
+        $alumno->tipo_conexion_internet ?? ''
+    );
+
+    $radioCasa = $normalizar(
+        $alumno->posee_radio ?? ''
+    );
+
+    $tv = $normalizar(
+        $alumno->posee_tv ?? ''
+    );
+
+    $canal10 = $normalizar(
+        $alumno->sintoniza_canal_10 ?? ''
+    );
+
+    $computadora = $normalizar(
+        $alumno->posee_computadora ?? ''
+    );
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.5
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        38,
+        4,
+        $txt('35. Acceso a Internet'),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        46,
+        $y,
+        $internet === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        60,
+        $y,
+        $internet === 'NO',
+        'NO'
+    );
+
+    $pdf->SetXY(
+        76,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        53,
+        4,
+        $txt(
+            '36. ¿Tiene algún tipo de conexión a Internet residencial?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        131,
+        $y,
+        $conexion !== '' &&
+        $conexion !== 'NO',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        145,
+        $y,
+        $conexion === 'NO',
+        'NO'
+    );
+
+    $pdf->SetXY(
+        159,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        28,
+        4,
+        $txt('37. ¿Posee radio?'),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        187,
+        $y,
+        $radioCasa === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        187,
+        $y + 4,
+        $radioCasa === 'NO',
+        'NO'
+    );
+
+    $line(
+        $pdf,
+        $y + 10
+    );
+
+    // ================================================================
+    // 38, 39, 40
+    // ================================================================
+    $y += 12;
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        39,
+        4,
+        $txt('38. ¿Posee T.V.?'),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        47,
+        $y,
+        $tv === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        61,
+        $y,
+        $tv === 'NO',
+        'NO'
+    );
+
+    $pdf->SetXY(
+        78,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        51,
+        4,
+        $txt('39. ¿Sintoniza canal 10?'),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        130,
+        $y,
+        $canal10 === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        144,
+        $y,
+        $canal10 === 'NO',
+        'NO'
+    );
+
+    $radio(
+        $pdf,
+        158,
+        $y,
+        $canal10 === 'NO APLICA',
+        'NO APLICA'
+    );
+
+    $pdf->SetXY(
+        164,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        26,
+        4,
+        $txt('40. ¿Posee computadora?'),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        191,
+        $y,
+        $computadora === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        191,
+        $y + 4,
+        $computadora === 'NO',
+        'NO'
+    );
+
+    $line(
+        $pdf,
+        $y + 10
+    );
+
+    // ================================================================
+    // 41. MODALIDAD
+    // ================================================================
+    $y += 12;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.5
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        74,
+        4,
+        $txt(
+            '41. El estudiante ha recibido sus clases bajo la siguiente modalidad'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $modalidad = $normalizar(
+        $catalogo(
+            'catalogo_clase_bajo_modalidad',
+            $alumno->codigo_clases_bajo_modalidad ?? null
+        )
+    );
+
+    $radio(
+        $pdf,
+        83,
+        $y,
+        $tiene($modalidad, 'PRESENCIAL'),
+        'PRESENCIAL'
+    );
+
+    $radio(
+        $pdf,
+        117,
+        $y,
+        $tiene($modalidad, 'SEMIPRESENCIAL'),
+        'SEMIPRESENCIAL'
+    );
+
+    $radio(
+        $pdf,
+        159,
+        $y,
+        $tiene($modalidad, 'VIRTUAL'),
+        'VIRTUAL (DESDE CASA)'
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    // ================================================================
+    // 42. CANALES DE ATENCIÓN
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.3
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 5
+    );
+
+    $pdf->Cell(
+        45,
+        4,
+        $txt(
+            '42. El estudiante ha recibido sus clases de acuerdo a los siguientes canales de atención'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $canalAtencion = $normalizar(
+        $catalogo(
+            'catalogo_clases_canales_atencion',
+            $alumno->codigo_clases_canales_atencion ?? null
+        )
+    );
+
+    $canalesIzq = [
+        [
+            'IMPRESOS',
+            'IMPRESOS - GUÍAS DE APRENDIZAJE'
+        ],
+        [
+            'TELECLASES',
+            'TELECLASES DE LA FRANJA "APRENDAMOS EN CASA"; TELEVISIÓN DE EL SALVADOR'
+        ],
+        [
+            'RADIO',
+            'RADIO CLASES "APRENDAMOS EN CASA CON LA RADIO"'
+        ],
+        [
+            'REDES',
+            'REDES SOCIALES (WHATSAPP, FACEBOOK, YOUTUBE)'
+        ],
+    ];
+
+    $canalesDer = [
+        [
+            'LIBRO',
+            'IMPRESOS-LIBRO DE TEXTO'
+        ],
+        [
+            'CORREO',
+            'CORREO ELECTRÓNICO'
+        ],
+        [
+            'GOOGLE',
+            'GOOGLE CLASSROOM'
+        ],
+        [
+            'OTRAS',
+            'OTRAS PLATAFORMAS'
+        ],
+        [
+            'LINEA',
+            'EDUCACIÓN EN LÍNEA - GOOGLE SITES.'
+        ],
+    ];
+
+    $yy = $y;
+
+    foreach ($canalesIzq as $item) {
+
+        $check(
+            $pdf,
+            66,
+            $yy,
+            $tiene($canalAtencion, $item[0]),
+            $item[1],
+            4.7
+        );
+
+        $yy += 4.4;
+    }
+
+    $yy = $y;
+
+    foreach ($canalesDer as $item) {
+
+        $check(
+            $pdf,
+            135,
+            $yy,
+            $tiene($canalAtencion, $item[0]),
+            $item[1],
+            4.7
+        );
+
+        $yy += 4.4;
+    }
+
+    $pdf->SetFont(
+        'Arial',
+        '',
+        5
+    );
+
+    $pdf->SetXY(
+        66,
+        $y + 19
+    );
+
+    $pdf->Cell(
+        134,
+        3,
+        $txt('(Puedes marcar más de una opción)'),
+        0,
+        0,
+        'L'
+    );
+
+    // ================================================================
+    // F. SERVICIO SOCIAL
+    // ================================================================
+    $y = $section(
+        $pdf,
+        $y + 23,
+        'F. SERVICIO SOCIAL (Solo Educación Media)'
+    );
+
+    $servSocial = $normalizar(
+        $alumno->servicio_social_realizado ?? ''
+    );
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.6
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        65,
+        4,
+        $txt(
+            '43. ¿Ha realizado las horas de servicio social?'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $radio(
+        $pdf,
+        76,
+        $y,
+        $servSocial === 'SI',
+        'SÍ'
+    );
+
+    $radio(
+        $pdf,
+        90,
+        $y,
+        $servSocial === 'NO',
+        'NO'
+    );
+
+    $pdf->SetXY(
+        108,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        40,
+        4,
+        $txt(
+            '44. Fecha finalización del servicio social'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $fechaSS =
+        $alumno->servicio_social_fecha_finalizado ?? '';
+
+    $dSS = '';
+    $mSS = '';
+    $aSS = '';
+
+    if ($fechaSS) {
+
+        $tsSS = strtotime($fechaSS);
+
+        if ($tsSS !== false) {
+
+            $dSS = date('d', $tsSS);
+            $mSS = date('m', $tsSS);
+            $aSS = date('Y', $tsSS);
+        }
+    }
+
+    $box(
+        $pdf,
+        149,
+        $y,
+        16,
+        5.3,
+        $dSS,
+        '',
+        'Día',
+        'C'
+    );
+
+    $box(
+        $pdf,
+        169,
+        $y,
+        16,
+        5.3,
+        $mSS,
+        '',
+        'Mes',
+        'C'
+    );
+
+    $box(
+        $pdf,
+        189,
+        $y,
+        11,
+        5.3,
+        $aSS,
+        '',
+        'Año',
+        'C'
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // 45
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        50,
+        4,
+        $txt('45. Cantidad de horas'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        58,
+        $y,
+        24,
+        5.3,
+        $alumno->servicio_social_horas ?? '',
+        '',
+        '',
+        'C'
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // 46
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        30,
+        4,
+        $txt('46. Descripción'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        38,
+        $y,
+        162,
+        5.3,
+        $alumno->servicio_social_descripcion ?? ''
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // G. DATOS DEL RESPONSABLE
+    // ================================================================
+    $y = $section(
+        $pdf,
+        $y + 8,
+        'G. DATOS DEL RESPONSABLE'
+    );
+
+    // ================================================================
+    // 47
+    // ================================================================
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        20,
+        4,
+        $txt('47. DUI'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        28,
+        $y,
+        34,
+        5.3,
+        $encargado->dui ?? ''
+    );
+
+    $pdf->SetXY(
+        126,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        28,
+        4,
+        $txt('47.5 Pasaporte/Otro'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        154,
+        $y,
+        46,
+        5.3,
+        $encargado->pasaporte_otro ?? ''
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // 48. PARENTESCO
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        27,
+        4,
+        $txt('48. Tipo parentesco'),
+        0,
+        0,
+        'L'
+    );
+
+    $par = $normalizar(
+        $parentesco
+    );
+
+    $radio(
+        $pdf,
+        36,
+        $y,
+        $tiene($par, 'PADRE'),
+        'PADRE'
+    );
+
+    $radio(
+        $pdf,
+        56,
+        $y,
+        $tiene($par, 'MADRE'),
+        'MADRE'
+    );
+
+    $radio(
+        $pdf,
+        78,
+        $y,
+        $tiene($par, 'HERMANO'),
+        'HERMANO/A'
+    );
+
+    $radio(
+        $pdf,
+        104,
+        $y,
+        $tiene($par, 'TIO'),
+        'TÍO/A'
+    );
+
+    $radio(
+        $pdf,
+        126,
+        $y,
+        $tiene($par, 'ABUELO'),
+        'ABUELO/A'
+    );
+
+    $radio(
+        $pdf,
+        153,
+        $y,
+        $tiene($par, 'HIJO'),
+        'HIJO/A'
+    );
+
+    $y += 4.5;
+
+    $radio(
+        $pdf,
+        36,
+        $y,
+        $tiene($par, 'PRIMO'),
+        'PRIMO/A'
+    );
+
+    $radio(
+        $pdf,
+        56,
+        $y,
+        $tiene($par, 'SOBRINO'),
+        'SOBRINO/A'
+    );
+
+    $radio(
+        $pdf,
+        84,
+        $y,
+        $tiene($par, 'CONYUGE') ||
+        $tiene($par, 'CÓNYUGE'),
+        'CÓNYUGE'
+    );
+
+    $radio(
+        $pdf,
+        114,
+        $y,
+        $tiene($par, 'PADRASTRO'),
+        'PADRASTRO'
+    );
+
+    $radio(
+        $pdf,
+        146,
+        $y,
+        $tiene($par, 'MADRASTRA'),
+        'MADRASTRA'
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    // ================================================================
+    // 49. NOMBRES RESPONSABLE
+    // ================================================================
+    $y += 8;
+
+    $nomResp = trim(
+        (string) ($encargado->nombres ?? '')
+    );
+
+    $rn1 = '';
+    $rn2 = '';
+    $rn3 = '';
+
+    if ($nomResp !== '') {
+
+        $pp = preg_split(
+            '/\s+/',
+            $nomResp
+        );
+
+        $rn1 = $pp[0] ?? '';
+        $rn2 = $pp[1] ?? '';
+
+        $rn3 = count($pp) > 2
+            ? implode(
+                ' ',
+                array_slice($pp, 2)
+            )
+            : '';
+    }
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 2
+    );
+
+    $pdf->Cell(
+        27,
+        4,
+        $txt(
+            '49. Nombres responsable'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        53,
+        $y,
+        38,
+        5.3,
+        $rn1,
+        '',
+        'Primer'
+    );
+
+    $box(
+        $pdf,
+        101,
+        $y,
+        38,
+        5.3,
+        $rn2,
+        '',
+        'Segundo'
+    );
+
+    $box(
+        $pdf,
+        149,
+        $y,
+        51,
+        5.3,
+        $rn3,
+        '',
+        'Tercer'
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // 50. APELLIDOS RESPONSABLE
+    // ================================================================
+    $y += 8;
+
+    $apResp = trim(
+        (string) ($encargado->apellidos ?? '')
+    );
+
+    $ra1 = '';
+    $ra2 = '';
+    $ra3 = '';
+
+    if ($apResp !== '') {
+
+        $pp = preg_split(
+            '/\s+/',
+            $apResp
+        );
+
+        $ra1 = $pp[0] ?? '';
+        $ra2 = $pp[1] ?? '';
+
+        $ra3 = count($pp) > 2
+            ? implode(
+                ' ',
+                array_slice($pp, 2)
+            )
+            : '';
+    }
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 2
+    );
+
+    $pdf->Cell(
+        27,
+        4,
+        $txt(
+            '50. Apellidos responsable'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        53,
+        $y,
+        38,
+        5.3,
+        $ra1,
+        '',
+        'Primer'
+    );
+
+    $box(
+        $pdf,
+        101,
+        $y,
+        38,
+        5.3,
+        $ra2,
+        '',
+        'Segundo'
+    );
+
+    $box(
+        $pdf,
+        149,
+        $y,
+        51,
+        5.3,
+        $ra3,
+        '',
+        'Tercer'
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // 51, 52, 53
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.7
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 2
+    );
+
+    $pdf->Cell(
+        21,
+        4,
+        $txt('51. Teléfono'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        29,
+        $y,
+        23,
+        5.3,
+        $encargado->telefono ?? ''
+    );
+
+    $pdf->SetXY(
+        58,
+        $y + 2
+    );
+
+    $pdf->Cell(
+        31,
+        4,
+        $txt('52. Teléfono alternativo'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        89,
+        $y,
+        23,
+        5.3,
+        $encargado->telefono_alternativo ?? ''
+    );
+
+    $pdf->SetXY(
+        118,
+        $y + 2
+    );
+
+    $pdf->Cell(
+        29,
+        4,
+        $txt('53. Correo electrónico'),
+        0,
+        0,
+        'L'
+    );
+
+    $box(
+        $pdf,
+        147,
+        $y,
+        53,
+        5.3,
+        $encargado->correo_electronico ?? ''
+    );
+
+    $line(
+        $pdf,
+        $y + 7
+    );
+
+    // ================================================================
+    // 54. ESCOLARIDAD DEL RESPONSABLE
+    // ================================================================
+    $y += 8;
+
+    $pdf->SetFont(
+        'Arial',
+        'B',
+        5.5
+    );
+
+    $pdf->SetXY(
+        8,
+        $y + 1
+    );
+
+    $pdf->Cell(
+        53,
+        4,
+        $txt(
+            '54. Último grado de Escolaridad Aprobado'
+        ),
+        0,
+        0,
+        'L'
+    );
+
+    $esc = $normalizar(
+        $escolaridadResponsable
+    );
+
+    $radio(
+        $pdf,
+        66,
+        $y,
+        $tiene($esc, 'NINGUNA'),
+        'NINGUNA',
+        5.2
+    );
+
+    $radio(
+        $pdf,
+        94,
+        $y,
+        $tiene($esc, 'INICIAL'),
+        'INICIAL',
+        5.2
+    );
+
+    $radio(
+        $pdf,
+        118,
+        $y,
+        $tiene($esc, 'PARVULARIA'),
+        'PARVULARIA',
+        5.2
+    );
+
+    $radio(
+        $pdf,
+        151,
+        $y,
+        $tiene($esc, 'BASICA CICLO I') ||
+        $tiene($esc, 'CICLO I'),
+        'BÁSICA CICLO I (1°, 2° Y 3°)',
+        4.9
+    );
+
+    $y += 4.5;
+
+    $radio(
+        $pdf,
+        66,
+        $y,
+        $tiene($esc, 'BASICA CICLO II') ||
+        $tiene($esc, 'CICLO II'),
+        'BÁSICA CICLO II (4°, 5° Y 6°)',
+        4.9
+    );
+
+    $radio(
+        $pdf,
+        119,
+        $y,
+        $tiene($esc, 'BASICA CICLO III') ||
+        $tiene($esc, 'CICLO III'),
+        'BÁSICA CICLO III (7°, 8° Y 9°)',
+        4.9
+    );
+
+    $radio(
+        $pdf,
+        166,
+        $y,
+        $tiene($esc, 'MEDIA'),
+        'MEDIA',
+        5.2
+    );
+
+    $radio(
+        $pdf,
+        185,
+        $y,
+        $tiene($esc, 'SUPERIOR'),
+        'SUPERIOR',
+        5.2
+    );
+
+    $line(
+        $pdf,
+        $y + 6
+    );
+
+    // ================================================================
+    // SALIDA
+    // ================================================================
+    return response(
+        $pdf->Output(
+            'S',
+            'Ficha_Estudiante_Matricula_' .
+            $annLectivoPdf .
+            '.pdf'
+        )
+    )
+    ->header(
+        'Content-Type',
+        'application/pdf'
+    )
+    ->header(
+        'Content-Disposition',
+        'inline; filename="Ficha_Estudiante_Matricula_' .
+        $annLectivoPdf .
+        '.pdf"'
+    );
+}
+   
 
 }
+
+
+
