@@ -425,3 +425,29 @@ if (!function_exists('convertirTexto')) {
 }
 
 // LA LLAVE EXTRA HA SIDO ELIMINADA DE AQUÍ
+
+// ================================================================
+// FUNCIONES HELPER / NORMALIZACIÓN
+// ================================================================
+
+// Función para remover acentos, diéresis y convertir a mayúsculas
+$normalizar = function ($texto) {
+    if (empty($texto)) {
+        return '';
+    }
+    
+    $texto = mb_strtoupper($texto, 'UTF-8');
+    
+    $buscar  = ['Á', 'É', 'Í', 'Ó', 'Ú', 'Ü', 'Ñ'];
+    $reemplaz = ['A', 'E', 'I', 'O', 'U', 'U', 'N'];
+    
+    return str_replace($buscar, $reemplaz, $texto);
+};
+
+// Función para verificar si un patrón existe dentro del texto normalizado
+$tiene = function ($texto, $patron) use ($normalizar) {
+    if (empty($texto) || empty($patron)) {
+        return false;
+    }
+    return str_contains($normalizar($texto), $normalizar($patron));
+};

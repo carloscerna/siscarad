@@ -14,77 +14,116 @@ class FichaEstudianteController extends Controller
      * Muestra la nómina de estudiantes asociando la matrícula activa 
      * con las tablas exactas del sistema PostgreSQL.
      */
-    public function index(Request $request)
-    {
-       $buscar = $request->get('buscar');
-        
-        // 1. Obtener el código personal del docente autenticado
-        $codigoDocente = Auth::user()->codigo_personal; 
-        
-        // 2. Obtener el año lectivo en formato de 2 dígitos (ej. '26' para 2026)
-        // Nota: Si en tu base de datos el año se guarda como '2026', cambia 'y' por 'Y'.
-        $annLectivoActual = date('y');
-        $annLectivoPdf = 2027;
+public function index(Request $request)
+{
+    $buscar = $request->get('buscar');
 
-        // 3. Construcción de la consulta base
-      $query = DB::table('alumno as al')
-            ->join('alumno_matricula as mat', 'mat.codigo_alumno', '=', 'al.id_alumno')
-            ->join('grado_ano as gr', 'gr.codigo', '=', 'mat.codigo_grado')
-            ->join('seccion as sec', 'sec.codigo', '=', 'mat.codigo_seccion')
-            ->leftJoin('turno as tur', 'tur.codigo', '=', 'mat.codigo_turno')
-            ->leftJoin('bachillerato_ciclo as bach', 'bach.codigo', '=', 'mat.codigo_bach_o_ciclo')
-            
-            // JOIN corregido con la tabla encargado_grado
-            ->join('encargado_grado as enc_gr', function($join) use ($codigoDocente, $annLectivoActual) {
-                $join->on('enc_gr.codigo_grado', '=', 'mat.codigo_grado')
-                     ->on('enc_gr.codigo_seccion', '=', 'mat.codigo_seccion')
-                     ->on('enc_gr.codigo_turno', '=', 'mat.codigo_turno')
-                     ->where('enc_gr.codigo_docente', '=', $codigoDocente)
-                     ->where('enc_gr.encargado', '=', true)
-                     ->where('enc_gr.codigo_ann_lectivo', '=', $annLectivoActual);
-            })
-            
-            ->leftJoin('alumno_encargado as enc', function($join) {
-                $join->on('enc.codigo_alumno', '=', 'al.id_alumno')
-                     ->where('enc.encargado', '=', true);
-            })
-            
-            ->where('mat.codigo_ann_lectivo', '=', $annLectivoActual)
-            ->where('mat.retirado', '=', false);
+    // 1. Obtener el código personal del docente autenticado
+    $codigoDocente = Auth::user()->codigo_personal;
 
-        // 4. Aplicar el buscador si existe un parámetro de búsqueda
-        if ($buscar) {
-            $query->where(function($q) use ($buscar) {
-                $q->where('al.nombre_completo', 'ILIKE', "%{$buscar}%")
-                  ->orWhere('al.codigo_nie', 'ILIKE', "%{$buscar}%")
-                  ->orWhere('al.apellido_paterno', 'ILIKE', "%{$buscar}%")
-                  ->orWhere('al.apellido_materno', 'ILIKE', "%{$buscar}%");
-            });
-        }
+    // 2. Año lectivo actual en 2 dígitos
+    $annLectivoActual = date('y');
 
-        // 5. Selección y ordenamiento
-        $alumnos = $query->select(
-                'al.id_alumno',
-                'al.codigo_nie',
-                'al.apellido_paterno',
-                'al.apellido_materno',
-                'al.nombre_completo',
-                'al.foto',
-                'al.codigo_genero',
-                'gr.nombre as grado_nombre',
-                'sec.nombre as seccion_nombre',
-                'tur.nombre as turno_nombre',
-                'bach.nombre as bachillerato_nombre',
-                'enc.firma_autorizacion'
-            )
-            ->orderBy(DB::raw("translate(lower(al.apellido_paterno), 'áéíóúü', 'aeiouu')"), 'asc')
-            ->orderBy(DB::raw("translate(lower(al.apellido_materno), 'áéíóúü', 'aeiouu')"), 'asc')
-            ->orderBy(DB::raw("translate(lower(al.nombre_completo), 'áéíóúü', 'aeiouu')"), 'asc')
-            ->get();
+    // 3. Consulta base
+    $query = DB::table('alumno as al')
 
-        return view('estudiantes.index_ficha', compact('alumnos'));
+        // Matrícula activa del estudiante
+        ->join('alumno_matricula as mat', function ($join) use ($annLectivoActual) {
+            $join->on('mat.codigo_alumno', '=', 'al.id_alumno')
+                 ->where('mat.codigo_ann_lectivo', '=', $annLectivoActual)
+                 ->where('mat.retirado', '=', false);
+        })
+
+        // Grado
+        ->join('grado_ano as gr', function ($join) {
+            $join->on('gr.codigo', '=', 'mat.codigo_grado');
+        })
+
+        // Sección
+        ->join('seccion as sec', function ($join) {
+            $join->on('sec.codigo', '=', 'mat.codigo_seccion');
+        })
+
+        // Turno
+        ->leftJoin('turno as tur', function ($join) {
+            $join->on('tur.codigo', '=', 'mat.codigo_turno');
+        })
+
+        // Bachillerato / ciclo
+        ->leftJoin('bachillerato_ciclo as bach', function ($join) {
+            $join->on('bach.codigo', '=', 'mat.codigo_bach_o_ciclo');
+        })
+
+        // Verificar que el docente sea encargado del grupo.
+        // EXISTS evita duplicar estudiantes si existen varios registros
+        // coincidentes en encargado_grado.
+        ->whereExists(function ($subquery) use ($codigoDocente, $annLectivoActual) {
+            $subquery->select(DB::raw(1))
+                ->from('encargado_grado as enc_gr')
+                ->whereColumn('enc_gr.codigo_grado', 'mat.codigo_grado')
+                ->whereColumn('enc_gr.codigo_seccion', 'mat.codigo_seccion')
+                ->whereColumn('enc_gr.codigo_turno', 'mat.codigo_turno')
+                ->whereColumn(
+                                'enc_gr.codigo_bachillerato',
+                                'mat.codigo_bach_o_ciclo'
+                            )
+                ->where('enc_gr.codigo_docente', '=', $codigoDocente)
+                ->where('enc_gr.encargado', '=', true)
+                ->where('enc_gr.codigo_ann_lectivo', '=', $annLectivoActual);
+        });
+
+    // 4. Aplicar búsqueda
+    if ($buscar) {
+        $query->where(function ($q) use ($buscar) {
+            $q->where('al.nombre_completo', 'ILIKE', "%{$buscar}%")
+              ->orWhere('al.codigo_nie', 'ILIKE', "%{$buscar}%")
+              ->orWhere('al.apellido_paterno', 'ILIKE', "%{$buscar}%")
+              ->orWhere('al.apellido_materno', 'ILIKE', "%{$buscar}%");
+        });
     }
 
+    // 5. Selección
+    $alumnos = $query
+        ->select(
+            'al.id_alumno',
+            'al.codigo_nie',
+            'al.apellido_paterno',
+            'al.apellido_materno',
+            'al.nombre_completo',
+            'al.foto',
+            'al.codigo_genero',
+            'gr.nombre as grado_nombre',
+            'sec.nombre as seccion_nombre',
+            'tur.nombre as turno_nombre',
+            'bach.nombre as bachillerato_nombre',
+
+            // Obtener únicamente la firma del encargado principal
+            DB::raw("(
+                SELECT ae.firma_autorizacion
+                FROM alumno_encargado ae
+                WHERE ae.codigo_alumno = al.id_alumno
+                  AND ae.encargado = true
+                ORDER BY ae.id_alumno_encargado ASC
+                LIMIT 1
+            ) as firma_autorizacion")
+        )
+
+        ->orderBy(
+            DB::raw("translate(lower(al.apellido_paterno), 'áéíóúü', 'aeiouu')"),
+            'asc'
+        )
+        ->orderBy(
+            DB::raw("translate(lower(al.apellido_materno), 'áéíóúü', 'aeiouu')"),
+            'asc'
+        )
+        ->orderBy(
+            DB::raw("translate(lower(al.nombre_completo), 'áéíóúü', 'aeiouu')"),
+            'asc'
+        )
+        ->get();
+
+    return view('estudiantes.index_ficha', compact('alumnos'));
+}
     /**
  * Muestra el formulario para editar la Ficha del Estudiante (Literales B y C).
  */
@@ -144,7 +183,11 @@ public function edit($id)
     }
 
     // Catálogos del Literal B
-    $nacionalidades       = DB::table('catalogo_nacionalidad')->orderBy('descripcion')->get();
+    // Catálogos del Literal B
+$nacionalidades = DB::table('catalogo_nacionalidad')
+    ->select('codigo', 'descripcion', 'gentilicio')
+    ->orderBy('descripcion')
+    ->get();
     $etnias               = DB::table('catalogo_etnia')->orderBy('codigo')->get();
     $discapacidades       = DB::table('catalogo_tipo_de_discapacidad')->orderBy('codigo')->get();
     $diagnosticos         = DB::table('catalogo_diagnostico')->orderBy('codigo')->get();
@@ -640,6 +683,33 @@ public function guardarLiteralC(Request $request, $id)
 
    public function generarPdf($id)
 {
+
+    // =========================================================================
+    // 1. PASO OBLIGATORIO: DEFINIR HELPERS AL INICIO DEL MÉTODO
+    // =========================================================================
+    $txt = function ($str) {
+        return utf8_decode($str);
+    };
+
+    $normalizar = function ($texto) {
+        if (empty($texto)) {
+            return '';
+        }
+        $str = mb_strtoupper((string) $texto, 'UTF-8');
+        return str_replace(
+            ['Á', 'É', 'Í', 'Ó', 'Ú', 'Ü', 'Ñ'],
+            ['A', 'E', 'I', 'O', 'U', 'U', 'N'],
+            $str
+        );
+    };
+
+    $tiene = function ($texto, $patron) use ($normalizar) {
+        if (empty($texto) || empty($patron)) {
+            return false;
+        }
+        return str_contains($normalizar($texto), $normalizar($patron));
+    };
+
     /*
      * FICHA DEL ESTUDIANTE - MATRÍCULA
      * Versión compactada verticalmente para mantener
@@ -723,14 +793,24 @@ public function guardarLiteralC(Request $request, $id)
         }
     };
 
-    $nacionalidad = $catalogo(
-        'catalogo_nacionalidad',
-        $alumno->codigo_nacionalidad ?? null
-    );
-
-    if ($nacionalidad === '') {
-        $nacionalidad = $alumno->nacionalidad ?? 'SALVADOREÑA';
+// 1. Obtener el gentilicio directamente desde la tabla catalogo_nacionalidad
+$gentilicioBd = null;
+if (!empty($alumno->codigo_nacionalidad)) {
+    try {
+        $gentilicioBd = DB::table('catalogo_nacionalidad')
+            ->whereRaw('TRIM(CAST(codigo AS TEXT)) = ?', [trim((string) $alumno->codigo_nacionalidad)])
+            ->value('gentilicio'); // Extrae la columna 'gentilicio'
+    } catch (\Throwable $e) {
+        $gentilicioBd = null;
     }
+}
+
+// 2. Si no viene en el catálogo o no hay código, evalúa contra campos alternativos o un valor por defecto
+if (empty($gentilicioBd)) {
+    $gentilicioBd = $alumno->gentilicio ?? $alumno->nacionalidad ?? 'SALVADOREÑA';
+}
+
+$nac = $normalizar($gentilicioBd);
 
     $etnia = $catalogo(
         'catalogo_etnia',
@@ -1223,53 +1303,24 @@ public function guardarLiteralC(Request $request, $id)
         );
     };
 
-    $section = function (
-        $pdf,
-        $y,
-        $title
-    ) use ($txt) {
+    // Modificar la definición existente de $section
+$section = function ($pdf, $y, $titulo) use ($txt) {
+    // 1. Configurar colores: Fondo azul claro (RGB: 217, 234, 247), texto y borde negro
+    $pdf->SetFillColor(217, 234, 247);
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetDrawColor(0, 0, 0);
 
-        $pdf->SetFillColor(
-            224,
-            224,
-            224
-        );
+    // 2. Fuente negrita
+    $pdf->SetFont('Arial', 'B', 7);
+    $pdf->SetXY(7, $y);
 
-        $pdf->SetDrawColor(
-            110,
-            110,
-            110
-        );
+    // 3. Imprimir celda: Borde arriba y abajo ('TB'), con relleno activo (1)
+    // Se utiliza alto de 4.5 mm (o el alto estándar de tus secciones)
+    $pdf->Cell(195, 4.5, $txt($titulo), 'TB', 1, 'C', 1);
 
-        $pdf->SetFont(
-            'Arial',
-            'B',
-            7
-        );
-
-        $pdf->SetXY(
-            8,
-            $y
-        );
-
-        $pdf->Cell(
-            192,
-            5,
-            $txt($title),
-            1,
-            1,
-            'C',
-            true
-        );
-
-        $pdf->SetDrawColor(
-            0,
-            0,
-            0
-        );
-
-        return $y + 6;
-    };
+    // 4. Retornar la nueva posición de $y para que el texto posterior no quede encimado
+    return $y + 4.5;
+};
 
     // ================================================================
     // 9. PDF
@@ -1296,6 +1347,28 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetAuthor(
         'Sistema Académico'
     );
+
+// ================================================================
+// CONFIGURACIÓN Y DIBUJO DE ENCABEZADOS DE SECCIÓN (AZUL CLARO)
+// ================================================================
+
+// Definir color azul claro para el fondo (R: 217, G: 234, B: 247)
+$pdf->SetFillColor(217, 234, 247); 
+
+// Definir color negro para el texto y bordes
+$pdf->SetTextColor(0, 0, 0);
+$pdf->SetDrawColor(0, 0, 0);
+
+// Función helper para imprimir la franja del título de sección
+$seccionTitulo = function ($pdf, $y, $texto) use ($txt) {
+    $pdf->SetFont('Arial', 'B', 7);  // Fuente negrita
+    $pdf->SetXY(7, $y);             // Posición X e Y del encabezado
+    
+    // Ancho: 162 mm, Alto: 4.5 mm
+    // Borde: 'TB' (Top y Bottom / Arriba y Abajo)
+    // Relleno: 1 (Activo)
+    $pdf->Cell(195, 4.5, $txt($texto), 'TB', 1, 'C', 1); 
+};
 
     // ================================================================
     // PÁGINA 1
@@ -1608,17 +1681,8 @@ public function guardarLiteralC(Request $request, $id)
         8,
         $y
     );
-
-    $pdf->Cell(
-        192,
-        4,
-        $txt(
-            'B. IDENTIFICACIÓN DEL ESTUDIANTE'
-        ),
-        0,
-        1,
-        'C'
-    );
+    // B. IDENTIFICACIÓN DEL ESTUDIANTE
+        $seccionTitulo($pdf, $y, 'B. IDENTIFICACIÓN DEL ESTUDIANTE');
 
     $line(
         $pdf,
@@ -1633,11 +1697,11 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        6.1
+        8
     );
 
     $pdf->SetXY(
-        50,
+        7,
         $y + 1
     );
 
@@ -1719,11 +1783,11 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        6.1
+        8
     );
 
     $pdf->SetXY(
-        40,
+        7,
         $y + 2
     );
 
@@ -1780,7 +1844,7 @@ public function guardarLiteralC(Request $request, $id)
     $y += 8;
 
     $pdf->SetXY(
-        40,
+        7,
         $y + 2
     );
 
@@ -1837,7 +1901,7 @@ public function guardarLiteralC(Request $request, $id)
     $y += 8;
 
     $pdf->SetXY(
-        28,
+        7,
         $y + 2
     );
 
@@ -1892,136 +1956,37 @@ public function guardarLiteralC(Request $request, $id)
     );
 
     // ================================================================
-    // 6. NACIONALIDAD
-    // ================================================================
-    $y += 8;
+// 6. NACIONALIDAD (Comparación por Gentilicio)
+// ================================================================
+$y += 8;
 
-    $pdf->SetFont(
-        'Arial',
-        'B',
-        6
-    );
+$pdf->SetFont('Arial', 'B', 8);
+$pdf->SetXY(7, $y + 1);
+$pdf->Cell(39, 4, $txt('6. Nacionalidad'), 0, 0, 'L');
 
-    $pdf->SetXY(
-        27,
-        $y + 1
-    );
+// Fila 1
+$radio($pdf, 66,  $y, $tiene($nac, 'SALVADOR'),   'SALVADOREÑA');
+$radio($pdf, 102, $y, $tiene($nac, 'GUATEMAL'),   'GUATEMALTECA');
+$radio($pdf, 138, $y, $tiene($nac, 'HONDUR'),     'HONDUREÑA');
+$radio($pdf, 174, $y, $tiene($nac, 'NICARAG'),    'NICARAGÜENSE');
 
-    $pdf->Cell(
-        39,
-        4,
-        $txt('6. Nacionalidad'),
-        0,
-        0,
-        'L'
-    );
+$y += 4.5;
 
-    $nac = $normalizar($nacionalidad);
+// Fila 2
+$radio($pdf, 66,  $y, $tiene($nac, 'COSTARRIC'), 'COSTARRICENSE');
+$radio($pdf, 102, $y, $tiene($nac, 'PANAME'),     'PANAMEÑA');
+$radio($pdf, 138, $y, $tiene($nac, 'BELICE'),     'BELICEÑA');
+$radio($pdf, 174, $y, $tiene($nac, 'SURAMERIC'),  'SURAMERICANA');
 
-    $radio(
-        $pdf,
-        66,
-        $y,
-        $tiene($nac, 'SALVADORE'),
-        'SALVADOREÑA'
-    );
+$y += 4.5;
 
-    $radio(
-        $pdf,
-        102,
-        $y,
-        $tiene($nac, 'GUATEMAL'),
-        'GUATEMALTECA'
-    );
+// Fila 3
+$radio($pdf, 66,  $y, $tiene($nac, 'NORTEAMERIC'), 'NORTEAMERICANA');
+$radio($pdf, 102, $y, $tiene($nac, 'CARIBE'),      'CARIBEÑA');
+$radio($pdf, 138, $y, $tiene($nac, 'EUROPE'),      'EUROPEA');
+$radio($pdf, 174, $y, $tiene($nac, 'ASIATIC'),     'ASIÁTICA');
 
-    $radio(
-        $pdf,
-        138,
-        $y,
-        $tiene($nac, 'HONDUR'),
-        'HONDUREÑA'
-    );
-
-    $radio(
-        $pdf,
-        174,
-        $y,
-        $tiene($nac, 'NICARAG'),
-        'NICARAGÜENSE'
-    );
-
-    $y += 4.5;
-
-    $radio(
-        $pdf,
-        66,
-        $y,
-        $tiene($nac, 'COSTARRIC'),
-        'COSTARRICENSE'
-    );
-
-    $radio(
-        $pdf,
-        102,
-        $y,
-        $tiene($nac, 'PANAME'),
-        'PANAMEÑA'
-    );
-
-    $radio(
-        $pdf,
-        138,
-        $y,
-        $tiene($nac, 'BELICE'),
-        'BELICEÑA'
-    );
-
-    $radio(
-        $pdf,
-        174,
-        $y,
-        $tiene($nac, 'SURAMERIC'),
-        'SURAMERICANA'
-    );
-
-    $y += 4.5;
-
-    $radio(
-        $pdf,
-        66,
-        $y,
-        $tiene($nac, 'NORTEAMERIC'),
-        'NORTEAMERICANA'
-    );
-
-    $radio(
-        $pdf,
-        102,
-        $y,
-        $tiene($nac, 'CARIBE'),
-        'CARIBEÑA'
-    );
-
-    $radio(
-        $pdf,
-        138,
-        $y,
-        $tiene($nac, 'EUROPE'),
-        'EUROPEA'
-    );
-
-    $radio(
-        $pdf,
-        174,
-        $y,
-        $tiene($nac, 'ASIATIC'),
-        'ASIÁTICA'
-    );
-
-    $line(
-        $pdf,
-        $y + 5.5
-    );
+$line($pdf, $y + 5.5);
 
     // ================================================================
     // 7. RETORNADO
@@ -2031,11 +1996,11 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        5.8
+        8
     );
 
     $pdf->SetXY(
-        43,
+        7,
         $y + 1
     );
 
@@ -2081,11 +2046,11 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        5.7
+        8
     );
 
     $pdf->SetXY(
-        8,
+        7,
         $y + 1
     );
 
@@ -2122,7 +2087,7 @@ public function guardarLiteralC(Request $request, $id)
     );
 
     $pdf->SetXY(
-        93,
+        7,
         $y + 1
     );
 
@@ -2201,11 +2166,11 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        5.8
+        8
     );
 
     $pdf->SetXY(
-        47,
+        7,
         $y + 1
     );
 
@@ -2273,11 +2238,11 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        5.8
+        8
     );
 
     $pdf->SetXY(
-        8,
+        7,
         $y + 1
     );
 
@@ -2446,7 +2411,7 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        5.7
+        8
     );
 
     $pdf->SetXY(
@@ -2507,11 +2472,11 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        5.7
+        8
     );
 
     $pdf->SetXY(
-        8,
+        7,
         $y + 1
     );
 
@@ -2565,11 +2530,11 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        5.7
+        8
     );
 
     $pdf->SetXY(
-        8,
+        7,
         $y + 1
     );
 
@@ -2701,11 +2666,11 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        5.6
+        5.7
     );
 
     $pdf->SetXY(
-        8,
+        7,
         $y + 1
     );
 
@@ -2722,7 +2687,7 @@ public function guardarLiteralC(Request $request, $id)
 
     $box(
         $pdf,
-        53,
+        45,
         $y,
         42,
         5.3,
@@ -2730,7 +2695,7 @@ public function guardarLiteralC(Request $request, $id)
     );
 
     $pdf->SetXY(
-        98,
+        93,
         $y + 1
     );
 
@@ -2803,11 +2768,11 @@ public function guardarLiteralC(Request $request, $id)
     $pdf->SetFont(
         'Arial',
         'B',
-        5.8
+        8
     );
 
     $pdf->SetXY(
-        8,
+        7,
         $y + 1
     );
 
@@ -3172,6 +3137,8 @@ public function guardarLiteralC(Request $request, $id)
     // ================================================================
     // C. RESIDENCIA
     // ================================================================
+
+    
     $y = $section(
         $pdf,
         $y + 8,
@@ -3209,7 +3176,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         37,
-        $y,
+        $y+1,
         $tiene($zona, 'URBANA'),
         'URBANA'
     );
@@ -3217,7 +3184,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         67,
-        $y,
+        $y+1,
         $tiene($zona, 'RURAL'),
         'RURAL'
     );
@@ -3241,7 +3208,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         137,
-        $y,
+        $y+1,
         $tiene($vivienda, 'MIXTA'),
         'MIXTA'
     );
@@ -3249,7 +3216,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         157,
-        $y,
+        $y+1,
         $tiene($vivienda, 'ADOBE'),
         'ADOBE'
     );
@@ -3257,7 +3224,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         177,
-        $y,
+        $y+1,
         $tiene($vivienda, 'BAHAREQUE'),
         'BAHAREQUE'
     );
@@ -3265,7 +3232,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         195,
-        $y,
+        $y+1,
         $tiene($vivienda, 'LAMINA'),
         'LÁMINA'
     );
@@ -3444,7 +3411,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         81,
-        $y,
+        $y+1,
         $energia === 'SI',
         'SÍ'
     );
@@ -3452,7 +3419,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         95,
-        $y,
+        $y+1,
         $energia === 'NO',
         'NO'
     );
@@ -3476,7 +3443,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         176,
-        $y,
+        $y+1,
         $basura === 'SI',
         'SÍ'
     );
@@ -3484,7 +3451,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         190,
-        $y,
+        $y+1,
         $basura === 'NO',
         'NO'
     );
@@ -3504,19 +3471,20 @@ public function guardarLiteralC(Request $request, $id)
 
     $pdf->SetXY(
         8,
-        $y + 4
+        $y - 2
     );
 
-    $pdf->Cell(
-        58,
-        4,
+    $pdf->MultiCell(
+        40,
+        3.2,
         $txt(
             '34. ¿Cuál es la fuente principal de abastecimiento de agua de su casa?'
         ),
         0,
-        0,
         'L'
     );
+
+$y = $pdf->GetY() - 5;
 
     $agua = $normalizar(
         $abastecimiento
@@ -3568,10 +3536,7 @@ public function guardarLiteralC(Request $request, $id)
         4.8
     );
 
-    $line(
-        $pdf,
-        $y + 17
-    );
+    //$line(        $pdf,        $y + 17    );
 
     // ================================================================
     // E. SERVICIOS DE COMUNICACIÓN
@@ -3628,16 +3593,16 @@ public function guardarLiteralC(Request $request, $id)
 
     $radio(
         $pdf,
-        46,
-        $y,
+        40,
+        $y + 1,
         $internet === 'SI',
         'SÍ'
     );
 
     $radio(
         $pdf,
-        60,
-        $y,
+        54,
+        $y+ 1,
         $internet === 'NO',
         'NO'
     );
@@ -3661,7 +3626,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         131,
-        $y,
+        $y +1,
         $conexion !== '' &&
         $conexion !== 'NO',
         'SÍ'
@@ -3670,7 +3635,7 @@ public function guardarLiteralC(Request $request, $id)
     $radio(
         $pdf,
         145,
-        $y,
+        $y + 1,
         $conexion === 'NO',
         'NO'
     );
@@ -3711,7 +3676,7 @@ public function guardarLiteralC(Request $request, $id)
     );
 
     // ================================================================
-    // 38, 39, 40
+    // 38, 39, 40, 
     // ================================================================
     $y += 12;
 
@@ -3721,7 +3686,7 @@ public function guardarLiteralC(Request $request, $id)
     );
 
     $pdf->Cell(
-        39,
+        30,
         4,
         $txt('38. ¿Posee T.V.?'),
         0,
@@ -3731,22 +3696,22 @@ public function guardarLiteralC(Request $request, $id)
 
     $radio(
         $pdf,
-        47,
-        $y,
+        42,
+        $y +1,
         $tv === 'SI',
         'SÍ'
     );
 
     $radio(
         $pdf,
-        61,
-        $y,
+        56,
+        $y +1,
         $tv === 'NO',
         'NO'
     );
 
     $pdf->SetXY(
-        78,
+        73,
         $y + 1
     );
 
@@ -3761,24 +3726,24 @@ public function guardarLiteralC(Request $request, $id)
 
     $radio(
         $pdf,
-        130,
-        $y,
+        100,
+        $y + 1,
         $canal10 === 'SI',
         'SÍ'
     );
 
     $radio(
         $pdf,
-        144,
-        $y,
+        114,
+        $y +1,
         $canal10 === 'NO',
         'NO'
     );
 
     $radio(
         $pdf,
-        158,
-        $y,
+        128,
+        $y+ 1,
         $canal10 === 'NO APLICA',
         'NO APLICA'
     );
@@ -3881,32 +3846,38 @@ public function guardarLiteralC(Request $request, $id)
         $y + 6
     );
 
-    // ================================================================
-    // 42. CANALES DE ATENCIÓN
-    // ================================================================
-    $y += 8;
 
-    $pdf->SetFont(
-        'Arial',
-        'B',
-        5.3
-    );
+  
+// ================================================================
+// 42. CANALES DE ATENCIÓN
+// ================================================================
 
-    $pdf->SetXY(
-        8,
-        $y + 5
-    );
+$y += 8;
 
-    $pdf->Cell(
-        45,
-        4,
-        $txt(
-            '42. El estudiante ha recibido sus clases de acuerdo a los siguientes canales de atención'
-        ),
-        0,
-        0,
-        'L'
-    );
+$pdf->SetFont(
+    'Arial',
+    'B',
+    5.3
+);
+
+$pdf->SetXY(
+    8,
+    $y + 5
+);
+
+$pdf->MultiCell(
+    50,        // Ancho disponible
+    3.2,        // Interlineado
+    $txt(
+        '42. El estudiante ha recibido sus clases de acuerdo a los siguientes canales de atención'
+    ),
+    0,          // Sin borde
+    'L'         // Alineación izquierda
+);
+
+// Actualizar $y para que lo que venga después
+// no se monte sobre el texto
+$y = $pdf->GetY() - 10;
 
     $canalAtencion = $normalizar(
         $catalogo(
@@ -3979,7 +3950,7 @@ public function guardarLiteralC(Request $request, $id)
 
         $check(
             $pdf,
-            135,
+            145,
             $yy,
             $tiene($canalAtencion, $item[0]),
             $item[1],
@@ -4277,7 +4248,7 @@ public function guardarLiteralC(Request $request, $id)
 
     $line(
         $pdf,
-        $y + 7
+        $y + 6.5
     );
 
     // ================================================================
@@ -4402,7 +4373,7 @@ public function guardarLiteralC(Request $request, $id)
 
     $line(
         $pdf,
-        $y + 6
+        $y + 5
     );
 
     // ================================================================
@@ -4491,10 +4462,7 @@ public function guardarLiteralC(Request $request, $id)
         'Tercer'
     );
 
-    $line(
-        $pdf,
-        $y + 7
-    );
+   // $line(        $pdf,        $y + 7);
 
     // ================================================================
     // 50. APELLIDOS RESPONSABLE
@@ -4808,8 +4776,55 @@ public function guardarLiteralC(Request $request, $id)
     );
 }
    
+private function drawPreguntaLarga(
+    $pdf,
+    &$y,
+    $numero,
+    $texto,
+    $respuesta,
+    $opciones = ['SI', 'NO']
+) {
+    // Texto de la pregunta
+    $pdf->SetFont('Arial', 'B', 6);
 
+    $textoCompleto = utf8_decode($numero . '. ' . $texto);
+
+    $pdf->SetXY(8, $y);
+
+    $pdf->MultiCell(
+        192,
+        3.2,
+        $textoCompleto,
+        0,
+        'L'
+    );
+
+    // Nueva posición después del texto
+    $y = $pdf->GetY() + 1;
+
+    // Respuestas
+    $pdf->SetFont('Arial', '', 6);
+
+    $x = 60;
+
+    foreach ($opciones as $opcion) {
+
+        $this->drawRadio(
+            $pdf,
+            $x,
+            $y,
+            $respuesta == $opcion,
+            $opcion == 'SI' ? 'SÍ' : ($opcion == 'NO' ? 'NO' : $opcion)
+        );
+
+        $x += 25;
+    }
+
+    // Espacio antes del siguiente numeral
+    $y += 5;
 }
 
+
+}
 
 

@@ -39,6 +39,7 @@ class AlumnoInformacionController extends Controller
         ->join('encargado_grado as enc_gr', function($join) use ($codigoDocente, $annLectivoActual) {
             $join->on('enc_gr.codigo_grado', '=', 'mat.codigo_grado')
                  ->on('enc_gr.codigo_seccion', '=', 'mat.codigo_seccion')
+                 ->on('enc_gr.codigo_bachillerato', '=', 'mat.codigo_bach_o_ciclo')
                  ->on('enc_gr.codigo_turno', '=', 'mat.codigo_turno') // <-- Corregido con el alias enc_gr
                  ->where('enc_gr.codigo_docente', '=', $codigoDocente)
                  ->where('enc_gr.encargado', '=', true)
