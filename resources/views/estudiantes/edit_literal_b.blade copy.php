@@ -88,324 +88,267 @@
 </div>
 
 <div class="container-fluid py-4">
-  <form id="formFichaCompleta">
-    @csrf
-    @method('PUT')
-    <input type="hidden" id="id_alumno" value="{{ $alumno->id_alumno }}">
-
-    <!-- BARRA FLOTANTE CON EL BOTÓN PRINCIPAL DE GUARDADO -->
-    <div class="card shadow-sm border-0 sticky-top mb-4 bg-white">
-        <div class="card-body d-flex justify-content-between align-items-center py-2 px-4">
-            <h5 class="mb-0 fw-bold text-primary">
-                <i class="fas fa-edit me-2"></i> Edición de Ficha del Estudiante
-            </h5>
-            <button type="submit" class="btn btn-success btn-lg shadow fw-bold">
-                <i class="fas fa-save me-2"></i> Guardar Toda la Ficha
-            </button>
-        </div>
-    </div>
-
-    <!-- ================================================================= -->
-    <!-- B. IDENTIFICACIÓN DEL ESTUDIANTE -->
-    <!-- ================================================================= -->
-    <div class="card shadow-lg border-0 mb-4">
-        <div class="card-header bg-primary text-white">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i> B. IDENTIFICACIÓN DEL ESTUDIANTE (NUMERALES 1 AL 24)</h5>
+           <!-- <a href="{{ route('ficha.index') }}" class="btn btn-light btn-sm text-primary font-weight-bold">
+                <i class="fas fa-arrow-left"></i> Volver a la Nómina
+            </a> -->
         </div>
         <div class="card-body p-4">
-            <div class="row">
-                <!-- 1. NIE -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">1. NIE:</label>
-                    <input type="text" id="codigo_nie" name="codigo_nie" class="form-control" value="{{ trim($alumno->codigo_nie ?? '') }}" readonly>
-                </div>
+            
+            <form id="formLiteralB">
+                @csrf
+                @method('PUT')
+                <input type="hidden" id="id_alumno" value="{{ $alumno->id_alumno }}">
 
-                <!-- 2. DUI -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">2. DUI:</label>
-                    <input type="text" name="dui" class="form-control" value="{{ trim($alumno->dui ?? '') }}">
-                </div>
-
-                <!-- Pasaporte / Carné Residencia -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">2.5 Pasaporte / Carné Residencia:</label>
-                    <input type="text" name="pasaporte" class="form-control" value="{{ trim($alumno->pasaporte ?? '') }}">
-                </div>
-
-                <!-- 3. Nombres -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">3. Nombres (según partida):</label>
-                    <input type="text" name="nombre_completo" class="form-control" value="{{ trim($alumno->nombre_completo ?? '') }}" required>
-                </div>
-
-                <!-- 4. Apellidos -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">4.1 Primer Apellido:</label>
-                    <input type="text" name="apellido_paterno" class="form-control" value="{{ trim($alumno->apellido_paterno ?? '') }}" required>
-                </div>
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">4.2 Segundo Apellido:</label>
-                    <input type="text" name="apellido_materno" class="form-control" value="{{ trim($alumno->apellido_materno ?? '') }}">
-                </div>
-
-                <!-- 5. Fecha Nacimiento -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">5. Fecha de Nacimiento:</label>
-                    <input type="date" name="fecha_nacimiento" class="form-control" value="{{ $alumno->fecha_nacimiento ?? '' }}">
-                </div>
-
-                <!-- 6. Nacionalidad -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">6. Nacionalidad:</label>
-                    <select name="codigo_nacionalidad" class="form-control">
-                        @foreach($nacionalidades as $nac)
-                            <option value="{{ $nac->codigo }}" {{ ($alumno->codigo_nacionalidad ?? '') == $nac->codigo ? 'selected' : '' }}>
-                                {{ trim($nac->descripcion) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- 7. Retornado -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">7. ¿Es estudiante retornado?</label>
-                    <select name="retornado" class="form-control">
-                        <option value="No" {{ ($alumno->retornado ?? '') == 'No' ? 'selected' : '' }}>NO</option>
-                        <option value="Si" {{ ($alumno->retornado ?? '') == 'Si' ? 'selected' : '' }}>SÍ</option>
-                    </select>
-                </div>
-
-                <!-- 8. Posee PN -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">8. ¿Posee Partida de Nac.?</label>
-                    <select name="posee_pn" class="form-control">
-                        <option value="Si" {{ ($alumno->posee_pn ?? '') == 'Si' ? 'selected' : '' }}>SÍ</option>
-                        <option value="No" {{ ($alumno->posee_pn ?? '') == 'No' ? 'selected' : '' }}>NO</option>
-                    </select>
-                </div>
-
-                <!-- 9. Presenta PN -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">9. ¿Presenta Partida de Nac.?</label>
-                    <select name="presenta_pn" class="form-control">
-                        <option value="Si" {{ ($alumno->presenta_pn ?? '') == 'Si' ? 'selected' : '' }}>SÍ</option>
-                        <option value="No" {{ ($alumno->presenta_pn ?? '') == 'No' ? 'selected' : '' }}>NO</option>
-                    </select>
-                </div>
-
-                <!-- 10. Género -->
-                <div class="form-group col-md-3 mb-3">
-                    <label class="label-numeral">10. Género / Sexo:</label>
-                    <select name="codigo_genero" class="form-control">
-                        <option value="01" {{ ($alumno->codigo_genero ?? '') == '01' ? 'selected' : '' }}>Hombre</option>
-                        <option value="02" {{ ($alumno->codigo_genero ?? '') == '02' ? 'selected' : '' }}>Mujer</option>
-                    </select>
-                </div>
-
-                <!-- 11. Etnia -->
-                <div class="form-group col-md-4 mb-3">
-                    <label class="label-numeral">11. Autoidentificación Étnica:</label>
-                    <select name="codigo_etnia" class="form-control">
-                        @foreach($etnias as $et)
-                            <option value="{{ $et->codigo }}" {{ ($alumno->codigo_etnia ?? '') == $et->codigo ? 'selected' : '' }}>
-                                {{ trim($et->descripcion) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- 12. Discapacidad -->
-                <!-- 12. Condición de Discapacidad (Checkboxes dinámicos) -->
-                <div class="form-group col-md-12 mb-3">
-                    <label class="label-numeral mb-2">12. Condición de Discapacidad (Puede seleccionar más de una opción):</label>
-                    
-                    @php
-                        // Convertimos el valor guardado en 'codigo_discapacidad' (ej: "01,03") en un array
-                        $discapacidadesGuardadas = !empty($alumno->codigo_discapacidad) 
-                            ? array_map('trim', explode(',', $alumno->codigo_discapacidad)) 
-                            : [];
-                    @endphp
-
-                    <div class="row bg-light p-3 rounded border">
-                        @foreach($discapacidades as $disc)
-                            @php
-                                $codigoLimpio = trim($disc->codigo);
-                                $isChecked = in_array($codigoLimpio, $discapacidadesGuardadas);
-                            @endphp
-                            <div class="col-md-6 col-lg-4 mb-2">
-                                <div class="form-check">
-                                    <input class="form-check-input chk-discapacidad" 
-                                        type="checkbox" 
-                                        name="codigo_discapacidad[]" 
-                                        value="{{ $codigoLimpio }}" 
-                                        id="disc_{{ $codigoLimpio }}"
-                                        {{ $isChecked ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="disc_{{ $codigoLimpio }}">
-                                        <strong>[{{ $codigoLimpio }}]</strong> {{ trim($disc->nombre) }}
-                                    </label>
-                                </div>
-                            </div>
-                        @endforeach
+                <div class="row">
+                    <!-- 1. NIE -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">1. NIE:</label>
+                        <input type="text" id="codigo_nie" name="codigo_nie" class="form-control" value="{{ trim($alumno->codigo_nie ?? '') }}" readonly>
                     </div>
-                </div>
 
-                <!-- 13. Diagnóstico Clínico -->
-                <div class="form-group col-md-6 mb-3">
-                    <label class="label-numeral">13. Diagnóstico Clínico:</label>
-                    <select name="codigo_diagnostico" class="form-control">
-                        @foreach($diagnosticos as $diag)
-                            <option value="{{ $diag->codigo }}" {{ ($alumno->codigo_diagnostico ?? '') == $diag->codigo ? 'selected' : '' }}>
-                                {{ trim($diag->descripcion) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-<!-- 14. Apoyo Educativo Especializado (Numeral 14 - Campo: codigo_apoyo_educativo) -->
-<div class="form-group col-md-6 mb-3">
-    <label class="label-numeral">14. Apoyo Educativo Especializado:</label>
-    <select name="codigo_apoyo_educativo" class="form-control">
-        <option value="">-- Seleccione --</option>
-        @foreach($apoyosEducativos as $ap)
-            <option value="{{ $ap->codigo }}" {{ ($alumno->codigo_apoyo_educativo ?? '') == $ap->codigo ? 'selected' : '' }}>
-                {{ trim($ap->nombre ?? $ap->descripcion) }}
-            </option>
-        @endforeach
-    </select>
-</div>
-
-<!-- 15. El estudiante recibe (Numeral 15 - Checkboxes dinámicos - Campo: codigo_recibe) -->
-<div class="form-group col-md-12 mb-3">
-    <label class="label-numeral mb-2">15. El estudiante recibe (Puede seleccionar más de una opción):</label>
-    
-    @php
-        // Extraemos únicamente el campo 'codigo_recibe'
-        $recibeGuardados = !empty($alumno->codigo_recibe) 
-            ? array_map('trim', explode(',', $alumno->codigo_recibe)) 
-            : [];
-    @endphp
-
-    <div class="row bg-light p-3 rounded border">
-        @foreach($catalogoRecibe as $item)
-            @php
-                $codigoLimpio = trim($item->codigo);
-                $isChecked = in_array($codigoLimpio, $recibeGuardados);
-            @endphp
-            <div class="col-md-6 col-lg-4 mb-2">
-                <div class="form-check">
-                    <input class="form-check-input chk-recibe" 
-                           type="checkbox" 
-                           name="codigo_recibe[]" 
-                           value="{{ $codigoLimpio }}" 
-                           id="recibe_{{ $codigoLimpio }}"
-                           {{ $isChecked ? 'checked' : '' }}>
-                    <label class="form-check-label text-dark" for="recibe_{{ $codigoLimpio }}">
-                        <strong>[{{ $codigoLimpio }}]</strong> {{ trim($item->descripcion) }}
-                    </label>
-                </div>
-            </div>
-        @endforeach
-    </div>
-</div>
-
-                <!-- 16. Correo Electrónico -->
-                <div class="form-group col-md-4 mb-3">
-                    <label class="label-numeral">16. Correo Electrónico:</label>
-                    <div class="input-group">
-                        <input type="email" id="direccion_email" name="direccion_email" class="form-control" value="{{ trim($alumno->direccion_email ?? '') }}" placeholder="ejemplo@clases.edu.sv">
-                        <button class="btn btn-outline-secondary" type="button" id="btnGenerarCorreo" title="Generar correo institucional">
-                            <i class="fas fa-magic"></i>
-                        </button>
+                    <!-- 2. DUI -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">2. DUI:</label>
+                        <input type="text" name="dui" class="form-control" value="{{ trim($alumno->dui ?? '') }}">
                     </div>
+
+                    <!-- Pasaporte / Carné Residencia -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">2.5 Pasaporte / Carné Residencia:</label>
+                        <input type="text" name="pasaporte" class="form-control" value="{{ trim($alumno->pasaporte ?? '') }}">
+                    </div>
+
+                    <!-- 3. Nombres -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">3. Nombres (según partida):</label>
+                        <input type="text" name="nombre_completo" class="form-control" value="{{ trim($alumno->nombre_completo ?? '') }}" required>
+                    </div>
+
+                    <!-- 4. Apellidos -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">4.1 Primer Apellido:</label>
+                        <input type="text" name="apellido_paterno" class="form-control" value="{{ trim($alumno->apellido_paterno ?? '') }}" required>
+                    </div>
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">4.2 Segundo Apellido:</label>
+                        <input type="text" name="apellido_materno" class="form-control" value="{{ trim($alumno->apellido_materno ?? '') }}">
+                    </div>
+
+                    <!-- 5. Fecha Nacimiento -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">5. Fecha de Nacimiento:</label>
+                        <input type="date" name="fecha_nacimiento" class="form-control" value="{{ $alumno->fecha_nacimiento ?? '' }}">
+                    </div>
+
+                    <!-- 6. Nacionalidad -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">6. Nacionalidad:</label>
+                        <select name="codigo_nacionalidad" class="form-control">
+                            @foreach($nacionalidades as $nac)
+                                <option value="{{ $nac->codigo }}" {{ ($alumno->codigo_nacionalidad ?? '') == $nac->codigo ? 'selected' : '' }}>
+                                    {{ trim($nac->descripcion) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- 7. Retornado -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">7. ¿Es estudiante retornado?</label>
+                        <select name="retornado" class="form-control">
+                            <option value="No" {{ ($alumno->retornado ?? '') == 'No' ? 'selected' : '' }}>NO</option>
+                            <option value="Si" {{ ($alumno->retornado ?? '') == 'Si' ? 'selected' : '' }}>SÍ</option>
+                        </select>
+                    </div>
+
+                    <!-- 8. Posee PN -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">8. ¿Posee Partida de Nac.?</label>
+                        <select name="posee_pn" class="form-control">
+                            <option value="Si" {{ ($alumno->posee_pn ?? '') == 'Si' ? 'selected' : '' }}>SÍ</option>
+                            <option value="No" {{ ($alumno->posee_pn ?? '') == 'No' ? 'selected' : '' }}>NO</option>
+                        </select>
+                    </div>
+
+                    <!-- 9. Presenta PN -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">9. ¿Presenta Partida de Nac.?</label>
+                        <select name="presenta_pn" class="form-control">
+                            <option value="Si" {{ ($alumno->presenta_pn ?? '') == 'Si' ? 'selected' : '' }}>SÍ</option>
+                            <option value="No" {{ ($alumno->presenta_pn ?? '') == 'No' ? 'selected' : '' }}>NO</option>
+                        </select>
+                    </div>
+
+                    <!-- 10. Género -->
+                    <div class="form-group col-md-3 mb-3">
+                        <label class="label-numeral">10. Género / Sexo:</label>
+                        <select name="codigo_genero" class="form-control">
+                            <option value="01" {{ ($alumno->codigo_genero ?? '') == '01' ? 'selected' : '' }}>Masculino</option>
+                            <option value="02" {{ ($alumno->codigo_genero ?? '') == '02' ? 'selected' : '' }}>Femenino</option>
+                        </select>
+                    </div>
+
+                    <!-- 11. Etnia -->
+                    <div class="form-group col-md-4 mb-3">
+                        <label class="label-numeral">11. Autoidentificación Étnica:</label>
+                        <select name="codigo_etnia" class="form-control">
+                            @foreach($etnias as $et)
+                                <option value="{{ $et->codigo }}" {{ ($alumno->codigo_etnia ?? '') == $et->codigo ? 'selected' : '' }}>
+                                    {{ trim($et->descripcion) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- 12. Discapacidad -->
+                    <div class="form-group col-md-8 mb-3">
+                        <label class="label-numeral">12. Tipo de Discapacidad:</label>
+                        <select name="codigo_discapacidad" class="form-control">
+                            @foreach($discapacidades as $disc)
+                                <option value="{{ $disc->codigo }}" {{ ($alumno->codigo_discapacidad ?? '') == $disc->codigo ? 'selected' : '' }}>
+                                    {{ trim($disc->nombre) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- 13. Diagnóstico Clínico -->
+                    <div class="form-group col-md-6 mb-3">
+                        <label class="label-numeral">13. Diagnóstico Clínico:</label>
+                        <select name="codigo_diagnostico" class="form-control">
+                            @foreach($diagnosticos as $diag)
+                                <option value="{{ $diag->codigo }}" {{ ($alumno->codigo_diagnostico ?? '') == $diag->codigo ? 'selected' : '' }}>
+                                    {{ trim($diag->descripcion) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- 14. Apoyo Educativo -->
+                    <div class="form-group col-md-6 mb-3">
+                        <label class="label-numeral">14. Apoyo Educativo Especializado:</label>
+                        <select name="codigo_apoyo_educativo" class="form-control">
+                            @foreach($apoyosEducativos as $ap)
+                                <option value="{{ $ap->codigo }}" {{ ($alumno->codigo_apoyo_educativo ?? '') == $ap->codigo ? 'selected' : '' }}>
+                                    {{ trim($ap->nombre) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- 16. Correo Electrónico con autocompletado institucional -->
+                    <div class="form-group col-md-4 mb-3">
+                        <label class="label-numeral">16. Correo Electrónico:</label>
+                        <div class="input-group">
+                            <input type="email" id="direccion_email" name="direccion_email" class="form-control" value="{{ trim($alumno->direccion_email ?? '') }}" placeholder="ejemplo@clases.edu.sv">
+                            <button class="btn btn-outline-secondary" type="button" id="btnGenerarCorreo" title="Generar correo institucional">
+                                <i class="fas fa-magic"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 17. Teléfono -->
+                    <div class="form-group col-md-4 mb-3">
+                        <label class="label-numeral">17. Teléfono Celular:</label>
+                        <input type="text" name="telefono_celular" class="form-control" value="{{ trim($alumno->telefono_celular ?? $alumno->telefono_matricula ?? '') }}">
+                    </div>
+
+                    <!-- 18. WhatsApp -->
+                    <div class="form-group col-md-4 mb-3">
+                        <label class="label-numeral">18. ¿Posee WhatsApp?</label>
+                        <select name="whatsapp" class="form-control">
+                            <option value="Si" {{ ($alumno->whatsapp ?? '') == 'Si' ? 'selected' : '' }}>SÍ</option>
+                            <option value="No" {{ ($alumno->whatsapp ?? '') == 'No' ? 'selected' : '' }}>NO</option>
+                        </select>
+                    </div>
+
+                    <!-- 19. Actividad Económica -->
+                    <div class="form-group col-md-12 mb-3">
+                        <label class="label-numeral">19. Actividad Económica / Trabajo:</label>
+                        <select name="codigo_actividad_economica" class="form-control">
+                            @foreach($actividadesEconomicas as $act)
+                                <option value="{{ $act->codigo }}" {{ ($alumno->codigo_actividad_economica ?? '') == $act->codigo ? 'selected' : '' }}>
+                                    {{ trim($act->nombre) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- 20. Estado Civil -->
+                    <div class="form-group col-md-6 mb-3">
+                        <label class="label-numeral">20. Estado Civil:</label>
+                        <select name="codigo_estado_civil" class="form-control">
+                            @foreach($estadosCiviles as $ec)
+                                <option value="{{ $ec->codigo }}" {{ ($alumno->codigo_estado_civil ?? '') == $ec->codigo ? 'selected' : '' }}>
+                                    {{ trim($ec->nombre) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- 21. Convivencia / Estado Familiar -->
+                    <div class="form-group col-md-6 mb-3">
+                        <label class="label-numeral">21. Convivencia / Estado Familiar:</label>
+                        <select name="codigo_estado_familiar" class="form-control">
+                            @foreach($estadosFamiliares as $ef)
+                                <option value="{{ $ef->codigo }}" {{ ($alumno->codigo_estado_familiar ?? '') == $ef->codigo ? 'selected' : '' }}>
+                                    {{ trim($ef->nombre) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- 22. Embarazo -->
+                    <div class="form-group col-md-4 mb-3">
+                        <label class="label-numeral">22. ¿Está Embarazada?</label>
+                        <select name="embarazada" class="form-control">
+                            <option value="No" {{ ($alumno->embarazada ?? '') == 'No' ? 'selected' : '' }}>NO</option>
+                            <option value="Si" {{ ($alumno->embarazada ?? '') == 'Si' ? 'selected' : '' }}>SÍ</option>
+                            <option value="No Aplica" {{ ($alumno->embarazada ?? '') == 'No Aplica' ? 'selected' : '' }}>NO APLICA</option>
+                        </select>
+                    </div>
+
+                    <!-- 23. Tiene Hijos -->
+                    <div class="form-group col-md-4 mb-3">
+                        <label class="label-numeral">23. ¿Tiene Hijos/Hijas?</label>
+                        <select name="tiene_hijos" class="form-control">
+                            <option value="0" {{ !($alumno->tiene_hijos ?? false) ? 'selected' : '' }}>NO</option>
+                            <option value="1" {{ ($alumno->tiene_hijos ?? false) ? 'selected' : '' }}>SÍ</option>
+                        </select>
+                    </div>
+
+                    <!-- 24. Cantidad de Hijos -->
+                    <div class="form-group col-md-4 mb-3">
+                        <label class="label-numeral">24. Cantidad de Hijos:</label>
+                        <input type="number" name="cantidad_hijos" class="form-control" value="{{ $alumno->cantidad_hijos ?? 0 }}" min="0" max="10">
+                    </div>
+
                 </div>
 
-                <!-- 17. Teléfono -->
-                <div class="form-group col-md-4 mb-3">
-                    <label class="label-numeral">17. Teléfono Celular:</label>
-                    <input type="text" name="telefono_celular" class="form-control" value="{{ trim($alumno->telefono_celular ?? $alumno->telefono_matricula ?? '') }}">
+                <div class="text-right mt-4">
+                    <button type="submit" class="btn btn-success btn-lg shadow">
+                        <i class="fas fa-save me-1"></i> Guardar Cambios del Literal B
+                    </button>
                 </div>
+            </form>
 
-                <!-- 18. WhatsApp -->
-                <div class="form-group col-md-4 mb-3">
-                    <label class="label-numeral">18. ¿Posee WhatsApp?</label>
-                    <select name="whatsapp" class="form-control">
-                        <option value="Si" {{ ($alumno->whatsapp ?? '') == 'Si' ? 'selected' : '' }}>SÍ</option>
-                        <option value="No" {{ ($alumno->whatsapp ?? '') == 'No' ? 'selected' : '' }}>NO</option>
-                    </select>
-                </div>
-
-                <!-- 19. Actividad Económica -->
-                <div class="form-group col-md-12 mb-3">
-                    <label class="label-numeral">19. Actividad Económica / Trabajo:</label>
-                    <select name="codigo_actividad_economica" class="form-control">
-                        @foreach($actividadesEconomicas as $act)
-                            <option value="{{ $act->codigo }}" {{ ($alumno->codigo_actividad_economica ?? '') == $act->codigo ? 'selected' : '' }}>
-                                {{ trim($act->nombre) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- 20. Estado Civil -->
-                <div class="form-group col-md-6 mb-3">
-                    <label class="label-numeral">20. Estado Civil:</label>
-                    <select name="codigo_estado_civil" class="form-control">
-                        @foreach($estadosCiviles as $ec)
-                            <option value="{{ $ec->codigo }}" {{ ($alumno->codigo_estado_civil ?? '') == $ec->codigo ? 'selected' : '' }}>
-                                {{ trim($ec->nombre) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- 21. Convivencia / Estado Familiar -->
-                <div class="form-group col-md-6 mb-3">
-                    <label class="label-numeral">21. Convivencia / Estado Familiar:</label>
-                    <select name="codigo_estado_familiar" class="form-control">
-                        @foreach($estadosFamiliares as $ef)
-                            <option value="{{ $ef->codigo }}" {{ ($alumno->codigo_estado_familiar ?? '') == $ef->codigo ? 'selected' : '' }}>
-                                {{ trim($ef->nombre) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- 22. Embarazo -->
-                <div class="form-group col-md-4 mb-3">
-                    <label class="label-numeral">22. ¿Está Embarazada?</label>
-                    <select name="embarazada" class="form-control">
-                        <option value="No" {{ ($alumno->embarazada ?? '') == 'No' ? 'selected' : '' }}>NO</option>
-                        <option value="Si" {{ ($alumno->embarazada ?? '') == 'Si' ? 'selected' : '' }}>SÍ</option>
-                        <option value="No Aplica" {{ ($alumno->embarazada ?? '') == 'No Aplica' ? 'selected' : '' }}>NO APLICA</option>
-                    </select>
-                </div>
-
-                <!-- 23. Tiene Hijos -->
-                <div class="form-group col-md-4 mb-3">
-                    <label class="label-numeral">23. ¿Tiene Hijos/Hijas?</label>
-                    <select name="tiene_hijos" class="form-control">
-                        <option value="0" {{ !($alumno->tiene_hijos ?? false) ? 'selected' : '' }}>NO</option>
-                        <option value="1" {{ ($alumno->tiene_hijos ?? false) ? 'selected' : '' }}>SÍ</option>
-                    </select>
-                </div>
-
-                <!-- 24. Cantidad de Hijos -->
-                <div class="form-group col-md-4 mb-3">
-                    <label class="label-numeral">24. Cantidad de Hijos:</label>
-                    <input type="number" name="cantidad_hijos" class="form-control" value="{{ $alumno->cantidad_hijos ?? 0 }}" min="0" max="10">
-                </div>
-            </div>
         </div>
     </div>
+    <!-- ========================================== -->
+<!-- SECCIÓN C. RESIDENCIA (NUMERALES 25 AL 32) -->
+<!-- ========================================== -->
+<div class="card shadow-lg border-0 mt-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-home me-2"></i> C. RESIDENCIA DEL ESTUDIANTE (NUMERALES 25 AL 32)</h5>
+    </div>
+    <div class="card-body p-4">
+        <form id="formLiteralC">
+            @csrf
+            @method('PUT')
 
-    <!-- ================================================================= -->
-    <!-- C. RESIDENCIA -->
-    <!-- ================================================================= -->
-    <div class="card shadow-lg border-0 mb-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0"><i class="fas fa-home me-2"></i> C. RESIDENCIA DEL ESTUDIANTE (NUMERALES 25 AL 32)</h5>
-        </div>
-        <div class="card-body p-4">
             <div class="row">
                 <!-- 25. Zona de Residencia -->
                 <div class="form-group col-md-3 mb-3">
@@ -478,7 +421,8 @@
                     <select id="select_canton" name="codigo_canton" class="form-control">
                         <option value="">-- Seleccione --</option>
                         @foreach($cantones as $cant)
-                            <option value="{{ trim($cant->codigo) }}" {{ trim($alumno->codigo_canton ?? '') == trim($cant->codigo) ? 'selected' : '' }}>
+                            <option value="{{ trim($cant->codigo) }}" 
+                                {{ trim($alumno->codigo_canton ?? '') == trim($cant->codigo) ? 'selected' : '' }}>
                                 {{ trim($cant->descripcion) }}
                             </option>
                         @endforeach
@@ -497,17 +441,28 @@
                     <textarea name="direccion_alumno" class="form-control" rows="2" placeholder="Calle, pasaje, número de casa, punto de referencia...">{{ trim($alumno->direccion_alumno ?? '') }}</textarea>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- ================================================================= -->
-    <!-- D. SERVICIOS BÁSICOS -->
-    <!-- ================================================================= -->
-    <div class="card shadow-lg border-0 mb-4">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0"><i class="fas fa-faucet me-2"></i> D. SERVICIOS BÁSICOS DEL ESTUDIANTE (NUMERALES 33 AL 35)</h5>
-        </div>
-        <div class="card-body p-4">
+            <div class="text-right mt-3">
+                <button type="submit" class="btn btn-info btn-lg text-white shadow">
+                    <i class="fas fa-save me-1"></i> Guardar Cambios del Literal C
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =============================================== -->
+<!-- SECCIÓN D. SERVICIOS BÁSICOS (NUMERALES 33 AL 35) -->
+<!-- =============================================== -->
+<div class="card shadow-lg border-0 mt-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-faucet me-2"></i> D. SERVICIOS BÁSICOS DEL ESTUDIANTE (NUMERALES 33 AL 35)</h5>
+    </div>
+    <div class="card-body p-4">
+        <form id="formLiteralD">
+            @csrf
+            @method('PUT')
+
             <div class="row">
                 <!-- 33. Energía Eléctrica -->
                 <div class="form-group col-md-4 mb-3">
@@ -535,24 +490,36 @@
                     <select name="codigo_abastecimiento" class="form-control">
                         <option value="">-- Seleccione --</option>
                         @foreach($abastecimientosAgua as $abast)
-                            <option value="{{ trim($abast->codigo) }}" {{ trim($alumno->codigo_abastecimiento ?? '') == trim($abast->codigo) ? 'selected' : '' }}>
+                            <option value="{{ trim($abast->codigo) }}" 
+                                {{ trim($alumno->codigo_abastecimiento ?? '') == trim($abast->codigo) ? 'selected' : '' }}>
                                 {{ trim($abast->descripcion) }}
                             </option>
                         @endforeach
                     </select>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- ================================================================= -->
-    <!-- E. SERVICIOS DE COMUNICACIÓN -->
-    <!-- ================================================================= -->
-    <div class="card shadow-lg border-0 mb-4">
-        <div class="card-header bg-warning text-dark">
-            <h5 class="mb-0"><i class="fas fa-wifi me-2"></i> E. SERVICIOS DE COMUNICACIÓN DEL ESTUDIANTE (NUMERALES 36 AL 44)</h5>
-        </div>
-        <div class="card-body p-4">
+            <div class="text-right mt-3">
+                <button type="submit" class="btn btn-success btn-lg text-white shadow">
+                    <i class="fas fa-save me-1"></i> Guardar Cambios del Literal D
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================================================== -->
+<!-- SECCIÓN E. SERVICIOS DE COMUNICACIÓN (NUMERALES 36 AL 44) -->
+<!-- ==================================================== -->
+<div class="card shadow-lg border-0 mt-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-wifi me-2"></i> E. SERVICIOS DE COMUNICACIÓN DEL ESTUDIANTE (NUMERALES 36 AL 44)</h5>
+    </div>
+    <div class="card-body p-4">
+        <form id="formLiteralE">
+            @csrf
+            @method('PUT')
+
             <div class="row">
                 <!-- 36. Acceso a Internet -->
                 <div class="form-group col-md-4 mb-3">
@@ -580,7 +547,8 @@
                     <select id="select_company_internet" name="codigo_tipo_conexion_internet_company" class="form-control" {{ trim($alumno->tipo_conexion_internet ?? '') != 'SI' ? 'disabled' : '' }}>
                         <option value="">-- Seleccione --</option>
                         @foreach($companiasInternet as $comp)
-                            <option value="{{ trim($comp->codigo) }}" {{ trim($alumno->codigo_tipo_conexion_internet_company ?? '') == trim($comp->codigo) ? 'selected' : '' }}>
+                            <option value="{{ trim($comp->codigo) }}" 
+                                {{ trim($alumno->codigo_tipo_conexion_internet_company ?? '') == trim($comp->codigo) ? 'selected' : '' }}>
                                 {{ trim($comp->descripcion) }}
                             </option>
                         @endforeach
@@ -634,7 +602,8 @@
                     <select name="codigo_clases_bajo_modalidad" class="form-control">
                         <option value="">-- Seleccione --</option>
                         @foreach($modalidadesClase as $mod)
-                            <option value="{{ trim($mod->codigo) }}" {{ trim($alumno->codigo_clases_bajo_modalidad ?? '') == trim($mod->codigo) ? 'selected' : '' }}>
+                            <option value="{{ trim($mod->codigo) }}" 
+                                {{ trim($alumno->codigo_clases_bajo_modalidad ?? '') == trim($mod->codigo) ? 'selected' : '' }}>
                                 {{ trim($mod->descripcion) }}
                             </option>
                         @endforeach
@@ -647,24 +616,36 @@
                     <select name="codigo_clases_canales_atencion" class="form-control">
                         <option value="">-- Seleccione --</option>
                         @foreach($canalesAtencion as $canal)
-                            <option value="{{ trim($canal->codigo) }}" {{ trim($alumno->codigo_clases_canales_atencion ?? '') == trim($canal->codigo) ? 'selected' : '' }}>
+                            <option value="{{ trim($canal->codigo) }}" 
+                                {{ trim($alumno->codigo_clases_canales_atencion ?? '') == trim($canal->codigo) ? 'selected' : '' }}>
                                 {{ trim($canal->descripcion) }}
                             </option>
                         @endforeach
                     </select>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- ================================================================= -->
-    <!-- F. SERVICIO SOCIAL -->
-    <!-- ================================================================= -->
-    <div class="card shadow-lg border-0 mb-4">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i> F. SERVICIO SOCIAL - SOLO EDUCACIÓN MEDIA (NUMERALES 45 AL 48)</h5>
-        </div>
-        <div class="card-body p-4">
+            <div class="text-right mt-3">
+                <button type="submit" class="btn btn-warning btn-lg text-dark shadow fw-bold">
+                    <i class="fas fa-save me-1"></i> Guardar Cambios del Literal E
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================================================== -->
+<!-- SECCIÓN F. SERVICIO SOCIAL (NUMERALES 45 AL 48)     -->
+<!-- ==================================================== -->
+<div class="card shadow-lg border-0 mt-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i> F. SERVICIO SOCIAL - SOLO EDUCACIÓN MEDIA (NUMERALES 45 AL 48)</h5>
+    </div>
+    <div class="card-body p-4">
+        <form id="formLiteralF">
+            @csrf
+            @method('PUT')
+
             <div class="row">
                 <!-- 45. Realización de Servicio Social -->
                 <div class="form-group col-md-4 mb-3">
@@ -703,16 +684,16 @@
                               {{ trim($alumno->servicio_social_realizado ?? '') != 'SI' ? 'disabled' : '' }}>{{ trim($alumno->servicio_social_descripcion ?? '') }}</textarea>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- BOTÓN INFERIOR DE GUARDADO -->
-    <div class="text-right mb-5">
-        <button type="submit" class="btn btn-success btn-lg px-5 shadow fw-bold">
-            <i class="fas fa-save me-2"></i> Guardar Toda la Ficha del Estudiante
-        </button>
+            <div class="text-right mt-3">
+                <button type="submit" class="btn btn-secondary btn-lg text-white shadow fw-bold">
+                    <i class="fas fa-save me-1"></i> Guardar Cambios del Literal F
+                </button>
+            </div>
+        </form>
     </div>
-</form>
+</div>
+
 
 <!-- ==================================================== -->
 <!-- SECCIÓN G. DATOS DEL RESPONSABLE (NUMERALES 49 AL 56) -->
@@ -942,10 +923,6 @@
 
 
 </div> <!-- CONTENEDOR PRINCIPAL -->
-
-
-
-
 @endsection
 
 @section('scripts')
@@ -1414,91 +1391,6 @@ $('#formNuevoResponsable').submit(function(e) {
     });
 });
 
-</script>
 
-<script>
-$(document).ready(function() {
-
-    // 1. DEFINICIÓN OBLIGATORIA DE LA FUNCIÓN
-    function verificarCorreoInstitucional() {
-        let correoInput = $('#direccion_email');
-        let nieInput = $('#codigo_nie');
-        
-        if (correoInput.length && nieInput.length) {
-            let nie = nieInput.val().trim();
-            if (correoInput.val().trim() === '' && nie !== '') {
-                correoInput.val(nie + '@clases.edu.sv');
-            }
-        }
-    }
-
-    // Evento al presionar el botón de la varita mágica
-    $('#btnGenerarCorreo').click(function() {
-        verificarCorreoInstitucional();
-    });
-
-    // 2. ENVÍO DEL FORMULARIO UNIFICADO
-    $('#formFichaCompleta').submit(function(e) {
-        e.preventDefault();
-
-        // Ejecutar la verificación antes de enviar los datos por AJAX
-        verificarCorreoInstitucional(); 
-        
-        let id_alumno = $('#id_alumno').val();
-        let urlGuardarTodo = "{{ route('ficha.guardar-todo', ':id') }}".replace(':id', id_alumno);
-
-        Swal.fire({
-            title: 'Guardando Ficha Completa...',
-            text: 'Por favor espere mientras se procesa la información de todas las secciones.',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        $.ajax({
-            url: urlGuardarTodo,
-            type: "POST",
-            data: $(this).serialize(),
-            dataType: "json",
-            success: function(response) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Guardado Correctamente!',
-                    text: response.message,
-                    confirmButtonColor: '#3085d6'
-                });
-            },
-            error: function(xhr) {
-                let mensajeError = 'Ocurrió un error inesperado al procesar la solicitud.';
-
-                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
-                    let listaErrores = '<ul style="text-align: left;">';
-                    $.each(xhr.responseJSON.errors, function(index, error) {
-                        listaErrores += '<li>' + error + '</li>';
-                    });
-                    listaErrores += '</ul>';
-
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Campos requeridos o con error:',
-                        html: listaErrores,
-                        confirmButtonColor: '#d33'
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al guardar (' + xhr.status + ')',
-                        text: xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : mensajeError,
-                        confirmButtonColor: '#d33'
-                    });
-                }
-            }
-        });
-    });
-
-    // ... Resto de eventos AJAX (Selects dependientes, Modal de Responsables, etc.) ...
-
-});
 </script>
 @endsection

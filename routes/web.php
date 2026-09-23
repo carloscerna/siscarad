@@ -74,6 +74,7 @@ use App\Http\Controllers\FichaEstudianteController;
     Route::post('/ficha-estudiante/{id}/crear-responsable', [FichaEstudianteController::class, 'crearResponsable'])->name('ficha.crear-responsable');
 // Ruta para la generación del reporte PDF de la Ficha del Estudiante
     Route::get('/ficha-estudiante/{id}/pdf', [FichaEstudianteController::class, 'generarPdf'])->name('ficha.pdf');
+    Route::put('/ficha/guardar-todo/{id}', [FichaEstudianteController::class, 'guardarTodo'])->name('ficha.guardar-todo');
 
     });
 

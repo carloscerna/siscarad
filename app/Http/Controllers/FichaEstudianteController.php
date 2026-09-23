@@ -191,7 +191,12 @@ $nacionalidades = DB::table('catalogo_nacionalidad')
     $etnias               = DB::table('catalogo_etnia')->orderBy('codigo')->get();
     $discapacidades       = DB::table('catalogo_tipo_de_discapacidad')->orderBy('codigo')->get();
     $diagnosticos         = DB::table('catalogo_diagnostico')->orderBy('codigo')->get();
-    $apoyosEducativos     = DB::table('catalogo_servicios_de_apoyo_educativo')->orderBy('codigo')->get();
+// Catálogo del Numeral 14
+$apoyosEducativos = DB::table('catalogo_servicios_de_apoyo_educativo')->orderBy('codigo')->get();
+
+// Catálogo del Numeral 15
+$catalogoRecibe = DB::table('catalogo_alumno_recibe')->orderBy('codigo', 'asc')->get();
+
     $actividadesEconomicas = DB::table('catalogo_actividad_economica')->orderBy('codigo')->get();
     $estadosCiviles       = DB::table('catalogo_estado_civil')->orderBy('codigo')->get();
     $estadosFamiliares    = DB::table('catalogo_estado_familiar')->orderBy('codigo')->get();
@@ -265,6 +270,7 @@ $nacionalidades = DB::table('catalogo_nacionalidad')
         'discapacidades',
         'diagnosticos',
         'apoyosEducativos',
+        'catalogoRecibe',
         'actividadesEconomicas',
         'estadosCiviles',
         'estadosFamiliares',
@@ -821,25 +827,63 @@ $nac = $normalizar($gentilicioBd);
         $etnia = $alumno->etnia ?? 'NO APLICA';
     }
 
-    $discapacidad = $catalogo(
-        'catalogo_tipo_de_discapacidad',
-        $alumno->codigo_discapacidad ?? null
-    );
+// 1. Obtener la cadena de discapacidades
+$codigosDiscapacidad = !empty($alumno->codigo_discapacidad) 
+    ? array_map('trim', explode(',', $alumno->codigo_discapacidad)) 
+    : [];
+
+$discapacidad = 'NO APLICA';
+
+if (!empty($codigosDiscapacidad)) {
+    // Buscar los nombres en el catálogo
+    $nombresDiscapacidades = DB::table('catalogo_tipo_de_discapacidad')
+        ->whereIn(DB::raw("TRIM(CAST(codigo AS TEXT))"), $codigosDiscapacidad)
+        ->pluck('nombre')
+        ->toArray();
+
+    if (!empty($nombresDiscapacidades)) {
+        $discapacidad = implode(' - ', array_map('trim', $nombresDiscapacidades));
+    }
+}
 
     if ($discapacidad === '') {
         $discapacidad = $alumno->discapacidad ?? 'NO APLICA';
     }
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     $diagnostico = $catalogo(
         'catalogo_diagnostico',
         $alumno->codigo_diagnostico ?? null
     );
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     $apoyoEducativo = $catalogo(
         'catalogo_servicios_de_apoyo_educativo',
         $alumno->codigo_apoyo_educativo ?? null
     );
 
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
+    // Numeral 15: Obtener los textos guardados en codigo_recibe
+        $codigosRecibe = !empty($alumno->codigo_recibe) 
+            ? array_map('trim', explode(',', $alumno->codigo_recibe)) 
+            : [];
+
+        $recibeTexto = 'NO APLICA';
+
+        if (!empty($codigosRecibe)) {
+            $nombresRecibe = DB::table('catalogo_alumno_recibe')
+                ->whereIn(DB::raw("TRIM(CAST(codigo AS TEXT))"), $codigosRecibe)
+                ->pluck('descripcion')
+                ->toArray();
+
+            if (!empty($nombresRecibe)) {
+                $recibeTexto = implode(' - ', array_map('trim', $nombresRecibe));
+            }
+        }
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     $actividadEconomica = $catalogo(
         'catalogo_actividad_economica',
         $alumno->codigo_actividad_economica ?? null
@@ -1055,13 +1099,13 @@ $nac = $normalizar($gentilicioBd);
 
     $esMujer = in_array(
         $genero,
-        ['F', 'FEMENINO', 'MUJER', '2'],
+        ['F', 'FEMENINO', 'MUJER', '02'],
         true
     );
 
     $esHombre = in_array(
         $genero,
-        ['M', 'MASCULINO', 'HOMBRE', '1'],
+        ['M', 'MASCULINO', 'HOMBRE', '01'],
         true
     );
 
@@ -2465,7 +2509,7 @@ $line($pdf, $y + 5.5);
     );
 
     // ================================================================
-    // 14. REFERENCIA
+    // 14. REFERENCIA ()
     // ================================================================
     $y += 8;
 
@@ -2523,7 +2567,7 @@ $line($pdf, $y + 5.5);
     );
 
     // ================================================================
-    // 15. SERVICIOS DE APOYO
+    // 15. EL ESTUDIANTE RECIBE
     // ================================================================
     $y += 8;
 
@@ -2549,9 +2593,8 @@ $line($pdf, $y + 5.5);
         'L'
     );
 
-    $apoyo = $normalizar(
-        $apoyoEducativo
-    );
+    // Normalizar para marcar las casillas en la plantilla del PDF
+        $apoyo = $normalizar($recibeTexto);
 
     $check(
         $pdf,
@@ -4824,6 +4867,134 @@ private function drawPreguntaLarga(
     $y += 5;
 }
 
+
+/**
+ * Guarda toda la información de la Ficha del Estudiante (Literales B, C, D, E, F)
+ * en una sola transacción.
+ */
+public function guardarTodo(Request $request, $id)
+{
+    // 1. Validación de campos principales del Literal B
+    $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+        'nombre_completo'  => 'required|string|max:150',
+        'apellido_paterno' => 'required|string|max:100',
+        'direccion_email'  => 'nullable|email|max:150',
+        'telefono_celular' => 'nullable|string|max:15',
+    ], [
+        'nombre_completo.required'  => 'El campo Nombres es obligatorio.',
+        'apellido_paterno.required' => 'El Primer Apellido es obligatorio.',
+        'direccion_email.email'     => 'El Correo Electrónico no tiene un formato válido.',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 'error',
+            'errors' => $validator->errors()->all()
+        ], 422);
+    }
+
+    // Procesamiento de arreglo de discapacidades
+        $discapacidadesInput = $request->input('codigo_discapacidad', []);
+        $discapacidadString = is_array($discapacidadesInput) 
+        ? implode(',', $discapacidadesInput) 
+        : $discapacidadesInput;
+
+    // Procesar los checkboxes seleccionados del numeral 15
+        $apoyosInput = $request->input('codigo_recibe', []);
+        $apoyosString = is_array($apoyosInput) 
+            ? implode(',', $apoyosInput) 
+            : $apoyosInput;
+
+    // Procesamiento del Numeral 15 (Checkboxes -> 'codigo_recibe')
+    $recibeInput = $request->input('codigo_recibe', []);
+    $recibeStrings = is_array($recibeInput) ? implode(',', $recibeInput) : $recibeInput;
+
+    try {
+        DB::transaction(function () use ($discapacidadString, $recibeStrings, $request, $id) {
+            // Autogeneración de correo institucional si viene vacío
+            $nie = trim($request->input('codigo_nie'));
+            $email = trim($request->input('direccion_email'));
+            if (empty($email) && !empty($nie)) {
+                $email = $nie . '@clases.edu.sv';
+            }
+
+            // Actualización consolidada en la tabla 'alumno'
+            DB::table('alumno')
+                ->where('id_alumno', $id)
+                ->update([
+                    // --- LITERAL B ---
+                    'nombre_completo'            => $request->input('nombre_completo'),
+                    'apellido_paterno'           => $request->input('apellido_paterno'),
+                    'apellido_materno'           => $request->input('apellido_materno'),
+                    'dui'                        => $request->input('dui'),
+                    'pasaporte'                  => $request->input('pasaporte'),
+                    'fecha_nacimiento'           => $request->input('fecha_nacimiento'),
+                    'codigo_nacionalidad'        => $request->input('codigo_nacionalidad'),
+                    'retornado'                  => $request->input('retornado'),
+                    'posee_pn'                   => $request->input('posee_pn'),
+                    'presenta_pn'                => $request->input('presenta_pn'),
+                    'codigo_genero'              => $request->input('codigo_genero'),
+                    'codigo_etnia'               => $request->input('codigo_etnia'),
+                    'codigo_discapacidad'        => $discapacidadString, // Se guarda como string "01,03,05"
+                    'codigo_diagnostico'         => $request->input('codigo_diagnostico'),
+                    'codigo_apoyo_educativo'     => $request->input('codigo_apoyo_educativo'), // Numeral 14
+                    'codigo_recibe'              => $recibeStrings, // Numeral 15
+                    'direccion_email'            => $email,
+                    'telefono_celular'           => $request->input('telefono_celular'),
+                    'whatsapp'                   => $request->input('whatsapp'),
+                    'codigo_actividad_economica' => $request->input('codigo_actividad_economica'),
+                    'codigo_estado_civil'        => $request->input('codigo_estado_civil'),
+                    'codigo_estado_familiar'     => $request->input('codigo_estado_familiar'),
+                    'embarazada'                 => $request->input('embarazada'),
+                    'tiene_hijos'                => $request->input('tiene_hijos'),
+                    'cantidad_hijos'             => $request->input('cantidad_hijos', 0),
+
+                    // --- LITERAL C (Residencia) ---
+                    'codigo_zona_residencia'     => $request->input('codigo_zona_residencia'),
+                    'codigo_tipo_vivienda'       => $request->input('codigo_tipo_vivienda'),
+                    'codigo_departamento'        => $request->input('codigo_departamento'),
+                    'codigo_municipio'           => $request->input('codigo_municipio'),
+                    'codigo_distrito'            => $request->input('codigo_distrito'),
+                    'codigo_canton'              => $request->input('codigo_canton'),
+                    'caserio'                    => $request->input('caserio'),
+                    'direccion_alumno'           => $request->input('direccion_alumno'),
+
+                    // --- LITERAL D (Servicios Básicos) ---
+                    'servicio_energia'          => $request->input('servicio_energia'),
+                    'recoleccion_basura'        => $request->input('recoleccion_basura'),
+                    'codigo_abastecimiento'     => $request->input('codigo_abastecimiento'),
+
+                    // --- LITERAL E (Servicios de Comunicación) ---
+                    'acceso_internet'                       => $request->input('acceso_internet'),
+                    'tipo_conexion_internet'                => $request->input('tipo_conexion_internet'),
+                    'codigo_tipo_conexion_internet_company' => $request->input('codigo_tipo_conexion_internet_company'),
+                    'posee_radio'                           => $request->input('posee_radio'),
+                    'posee_tv'                              => $request->input('posee_tv'),
+                    'sintoniza_canal_10'                    => $request->input('sintoniza_canal_10'),
+                    'posee_computadora'                     => $request->input('posee_computadora'),
+                    'codigo_clases_bajo_modalidad'          => $request->input('codigo_clases_bajo_modalidad'),
+                    'codigo_clases_canales_atencion'        => $request->input('codigo_clases_canales_atencion'),
+
+                    // --- LITERAL F (Servicio Social) ---
+                    'servicio_social_realizado'        => $request->input('servicio_social_realizado'),
+                    'servicio_social_fecha_finalizado' => $request->input('servicio_social_fecha_finalizado') ?: null,
+                    'servicio_social_horas'            => $request->input('servicio_social_horas') ?: null,
+                    'servicio_social_descripcion'      => $request->input('servicio_social_descripcion'),
+                ]);
+        });
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => '¡Toda la información de la ficha se ha guardado correctamente!'
+        ], 200);
+
+    } catch (Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'errors' => ['Error en la base de datos: ' . $e->getMessage()]
+        ], 500);
+    }
+}
 
 }
 
