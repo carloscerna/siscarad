@@ -334,16 +334,37 @@
                     </select>
                 </div>
 
-                <!-- 19. Actividad Económica -->
+                <!-- 19. Actividad Económica / Tipo de Trabajo (Checkboxes dinámicos) -->
                 <div class="form-group col-md-12 mb-3">
-                    <label class="label-numeral">19. Actividad Económica / Trabajo:</label>
-                    <select name="codigo_actividad_economica" class="form-control">
+                    <label class="label-numeral mb-2">19. ¿Tipo de trabajo / Actividad Económica? (Puede seleccionar más de una opción):</label>
+
+                    @php
+                        $actividadesGuardadas = !empty($alumno->codigo_actividad_economica) 
+                            ? array_map('trim', explode(',', $alumno->codigo_actividad_economica)) 
+                            : [];
+                    @endphp
+
+                    <div class="row bg-light p-3 rounded border">
                         @foreach($actividadesEconomicas as $act)
-                            <option value="{{ $act->codigo }}" {{ ($alumno->codigo_actividad_economica ?? '') == $act->codigo ? 'selected' : '' }}>
-                                {{ trim($act->nombre) }}
-                            </option>
+                            @php
+                                $codigoLimpio = trim($act->codigo);
+                                $isChecked = in_array($codigoLimpio, $actividadesGuardadas);
+                            @endphp
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input chk-actividad" 
+                                        type="checkbox" 
+                                        name="codigo_actividad_economica[]" 
+                                        value="{{ $codigoLimpio }}" 
+                                        id="act_{{ $codigoLimpio }}"
+                                        {{ $isChecked ? 'checked' : '' }}>
+                                    <label class="form-check-label text-dark" for="act_{{ $codigoLimpio }}">
+                                        <strong>[{{ $codigoLimpio }}]</strong> {{ trim($act->nombre) }}
+                                    </label>
+                                </div>
+                            </div>
                         @endforeach
-                    </select>
+                    </div>
                 </div>
 
                 <!-- 20. Estado Civil -->
@@ -642,17 +663,39 @@
                 </div>
 
                 <!-- 44. Canales de Atención -->
-                <div class="form-group col-md-6 mb-3">
-                    <label class="label-numeral">44. Canales de atención utilizados:</label>
-                    <select name="codigo_clases_canales_atencion" class="form-control">
-                        <option value="">-- Seleccione --</option>
-                        @foreach($canalesAtencion as $canal)
-                            <option value="{{ trim($canal->codigo) }}" {{ trim($alumno->codigo_clases_canales_atencion ?? '') == trim($canal->codigo) ? 'selected' : '' }}>
-                                {{ trim($canal->descripcion) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    <!-- 42. Canales de Atención (Checkboxes dinámicos) -->
+                    <div class="form-group col-md-12 mb-3">
+                        <label class="label-numeral mb-2">44. Canales de atención utilizados para recibir clases (Puede seleccionar más de una opción):</label>
+
+                        @php
+                            $canalesGuardados = !empty($alumno->codigo_clases_canales_atencion) 
+                                ? array_map('trim', explode(',', $alumno->codigo_clases_canales_atencion)) 
+                                : [];
+                        @endphp
+
+                        <div class="row bg-light p-3 rounded border">
+                            @foreach($canalesAtencion as $canal)
+                                @php
+                                    $codigoLimpio = trim($canal->codigo);
+                                    $isChecked = in_array($codigoLimpio, $canalesGuardados);
+                                @endphp
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input chk-canal" 
+                                            type="checkbox" 
+                                            name="codigo_clases_canales_atencion[]" 
+                                            value="{{ $codigoLimpio }}" 
+                                            id="canal_{{ $codigoLimpio }}"
+                                            {{ $isChecked ? 'checked' : '' }}>
+                                        <label class="form-check-label text-dark" for="canal_{{ $codigoLimpio }}">
+                                            <strong>[{{ $codigoLimpio }}]</strong> {{ trim($canal->descripcion) }}
+                                        </label>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
             </div>
         </div>
     </div>

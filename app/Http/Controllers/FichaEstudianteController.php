@@ -889,15 +889,27 @@ if (!empty($codigosDiscapacidad)) {
         $alumno->codigo_actividad_economica ?? null
     );
 
-    $estadoCivil = $catalogo(
-        'catalogo_estado_civil',
-        $alumno->codigo_estado_civil ?? null
-    );
+$estadoCivil = '';
+    if (!empty($alumno->codigo_estado_civil)) {
+        try {
+            $estadoCivil = DB::table('catalogo_estado_civil')
+                ->whereRaw('TRIM(CAST(codigo AS TEXT)) = ?', [trim((string) $alumno->codigo_estado_civil)])
+                ->value('nombre') ?? ''; // O 'descripcion' según tu columna
+        } catch (\Throwable $e) {
+            $estadoCivil = '';
+        }
+    }
 
-    $estadoFamiliar = $catalogo(
-        'catalogo_estado_familiar',
-        $alumno->codigo_estado_familiar ?? null
-    );
+$estadoFamiliar = '';
+    if (!empty($alumno->codigo_estado_familiar)) {
+        try {
+            $estadoFamiliar = DB::table('catalogo_estado_familiar')
+                ->whereRaw('TRIM(CAST(codigo AS TEXT)) = ?', [trim((string) $alumno->codigo_estado_familiar)])
+                ->value('nombre') ?? ''; // 'nombre' según la estructura de tu tabla
+        } catch (\Throwable $e) {
+            $estadoFamiliar = '';
+        }
+    }
 
     $parentesco = $catalogo(
         'catalogo_familiar',
@@ -1414,13 +1426,30 @@ $seccionTitulo = function ($pdf, $y, $texto) use ($txt) {
     $pdf->Cell(195, 4.5, $txt($texto), 'TB', 1, 'C', 1); 
 };
 
+
+// ================================================================
+    // 1. DATOS PRINCIPALES Y AÑO LECTIVO DINÁMICO
+    // ================================================================
+    
+    // Obtener el año de 4 dígitos según la hora de El Salvador (ej: "2026", "2027")
+    $annLectivoPdf = \Carbon\Carbon::now('America/El_Salvador')->format('Y');
+
+    // Si necesitas también los 2 últimos dígitos para consultas (ej: "26", "27")
+    $annLectivoActual = \Carbon\Carbon::now('America/El_Salvador')->format('y');
+
+    $alumno = DB::table('alumno')->where('id_alumno', $id)->first();
+
+    if (!$alumno) {
+        return redirect()->route('ficha.index')
+            ->with('error', 'El estudiante no existe.');
+    }
     // ================================================================
     // PÁGINA 1
     // ================================================================
     $pdf->AddPage();
 
     $logo = public_path(
-        'images/escudo_republica.png'
+        'img/escudo-sv.png'
     );
 
     if (is_file($logo)) {
@@ -1478,12 +1507,11 @@ $seccionTitulo = function ($pdf, $y, $texto) use ($txt) {
         'C'
     );
 
-    $pdf->Cell(
+$pdf->Cell(
         192,
         4,
         $txt(
-            'FICHA DEL ESTUDIANTE – MATRÍCULA ' .
-            $annLectivoPdf
+            'FICHA DEL ESTUDIANTE – MATRÍCULA ' . $annLectivoPdf
         ),
         0,
         1,
@@ -2795,9 +2823,8 @@ $line($pdf, $y + 5.5);
         $whatsapp === 'NO',
         'NO'
     );
-
-    // ================================================================
-    // 19. TIPO DE TRABAJO
+// ================================================================
+    // 19. TIPO DE TRABAJO (Soporte Múltiple)
     // ================================================================
     $y += 9;
 
@@ -2828,10 +2855,30 @@ $line($pdf, $y + 5.5);
         'L'
     );
 
-    $trabajo = $normalizar(
-        $actividadEconomica
-    );
+    // 1. Obtener y procesar los códigos de la columna 'codigo_actividad_economica'
+    $codigosTrabajo = !empty($alumno->codigo_actividad_economica) 
+        ? array_map('trim', explode(',', $alumno->codigo_actividad_economica)) 
+        : [];
 
+    $trabajoTexto = 'NO TRABAJA';
+
+    if (!empty($codigosTrabajo)) {
+        // Consultar los nombres correspondientes en la tabla catálogo
+        $nombresTrabajo = DB::table('catalogo_actividad_economica')
+            ->whereIn(DB::raw("TRIM(CAST(codigo AS TEXT))"), $codigosTrabajo)
+            ->pluck('nombre')
+            ->toArray();
+
+        if (!empty($nombresTrabajo)) {
+            // Concatenar todos los nombres encontrados
+            $trabajoTexto = implode(' - ', array_map('trim', $nombresTrabajo));
+        }
+    }
+
+    // 2. Normalizar la cadena unificada para evaluar en las 2 columnas
+    $trabajo = $normalizar($trabajoTexto);
+
+    // MANTENER TUS ARRAYS Y BUCLE INTACTOS
     $trabajosIzq = [
         ['NO TRABAJA', 'NO TRABAJA'],
         ['CANA DE AZUCAR', 'CAÑA DE AZÚCAR'],
@@ -2893,8 +2940,8 @@ $line($pdf, $y + 5.5);
 
     $y = 9;
 
-    // ================================================================
-    // 20. ESTADO CIVIL
+   // ================================================================
+    // 20. ESTADO CIVIL / ESTADO FAMILIAR
     // ================================================================
     $line(
         $pdf,
@@ -2927,51 +2974,57 @@ $line($pdf, $y + 5.5);
         $estadoCivil
     );
 
+    // SOLTERO / SOLTERA
     $radio(
         $pdf,
         52,
         $y,
-        $tiene($ec, 'SOLTER'),
+        $tiene($ec, 'SOLTERO') || $tiene($ec, 'SOLTERA') || $tiene($ec, 'SOLTER'),
         'SOLTERO'
     );
 
+    // ACOMPAÑADO / ACOMPAÑADA
     $radio(
         $pdf,
         76,
         $y,
-        $tiene($ec, 'ACOMPA'),
+        $tiene($ec, 'ACOMPANADO') || $tiene($ec, 'ACOMPANADA') || $tiene($ec, 'ACOMPA'),
         'ACOMPAÑADO'
     );
 
+    // CASADO / CASADA
     $radio(
         $pdf,
         106,
         $y,
-        $tiene($ec, 'CASAD'),
+        $tiene($ec, 'CASADO') || $tiene($ec, 'CASADA') || $tiene($ec, 'CASAD'),
         'CASADO'
     );
 
+    // DIVORCIADO / DIVORCIADA
     $radio(
         $pdf,
         132,
         $y,
-        $tiene($ec, 'DIVORCI'),
+        $tiene($ec, 'DIVORCIADO') || $tiene($ec, 'DIVORCIADA') || $tiene($ec, 'DIVORCI'),
         'DIVORCIADO'
     );
 
+    // VIUDO / VIUDA
     $radio(
         $pdf,
         163,
         $y,
-        $tiene($ec, 'VIUD'),
+        $tiene($ec, 'VIUDO') || $tiene($ec, 'VIUDA') || $tiene($ec, 'VIUD'),
         'VIUDO'
     );
 
+    // NO APLICA / SOLTERO(A) PARA MENORES
     $radio(
         $pdf,
         181,
         $y,
-        $tiene($ec, 'NO APLICA'),
+        $tiene($ec, 'NO APLICA') || $tiene($ec, 'N/A') || empty($ec),
         'NO APLICA'
     );
 
@@ -3005,35 +3058,54 @@ $line($pdf, $y + 5.5);
         'L'
     );
 
-    $conv = $normalizar(
-        $estadoFamiliar
-    );
+    // Normalizamos el texto traído de la BD y eliminamos espacios dobles
+    $conv = preg_replace('/\s+/', ' ', $normalizar($estadoFamiliar));
 
+    // Helper interno para coincidencia exacta tras normalizar
+    $esIgual = function ($textoOriginal, $patronBuscado) use ($normalizar) {
+        $t = preg_replace('/\s+/', ' ', $normalizar($textoOriginal));
+        $p = preg_replace('/\s+/', ' ', $normalizar($patronBuscado));
+        return $t === $p;
+    };
+
+    // Estructura: [ Etiqueta PDF, Coordenada X, Offset Y, Variantes de Coincidencia Exacta ]
     $convRows = [
-        ['VIVE SOLO CON LA MADRE', 52, 0],
-        ['VIVE SOLO CON EL PADRE', 94, 0],
-        ['VIVE CON MADRE Y PADRE', 139, 0],
+        ['VIVE SOLO CON LA MADRE', 52, 0, ['VIVE SOLO CON LA MADRE', 'VIVE SOLO CON MADRE', 'SOLO CON LA MADRE', 'SOLO CON MADRE']],
+        ['VIVE SOLO CON EL PADRE', 94, 0, ['VIVE SOLO CON EL PADRE', 'VIVE SOLO CON PADRE', 'SOLO CON EL PADRE', 'SOLO CON PADRE']],
+        ['VIVE CON MADRE Y PADRE', 139, 0, ['VIVE CON MADRE Y PADRE', 'VIVE CON PADRE Y MADRASTRA' => false, 'MADRE Y PADRE', 'AMBOS PADRES']],
 
-        ['VIVE CON FAMILIARES', 52, 4.4],
-        ['NO VIVE CON FAMILIARES', 94, 4.4],
-        ['VIVE CON MADRE Y PADRASTRO', 139, 4.4],
+        ['VIVE CON FAMILIARES', 52, 4.4, ['VIVE CON FAMILIARES', 'CON FAMILIARES']],
+        ['NO VIVE CON FAMILIARES', 94, 4.4, ['NO VIVE CON FAMILIARES', 'SIN FAMILIARES']],
+        ['VIVE CON MADRE Y PADRASTRO', 139, 4.4, ['VIVE CON MADRE Y PADRASTRO', 'MADRE Y PADRASTRO']],
 
-        ['VIVE CON PADRE Y MADRASTRA', 52, 8.8],
-        ['VIVE SOLO', 94, 8.8],
-        ['VIVE SOLO CON SU CÓNYUGE', 139, 8.8],
+        ['VIVE CON PADRE Y MADRASTRA', 52, 8.8, ['VIVE CON PADRE Y MADRASTRA', 'PADRE Y MADRASTRA']],
+        ['VIVE SOLO', 94, 8.8, ['VIVE SOLO', 'SOLO', 'SOLO/A', 'INDEPENDIENTE']],
+        ['VIVE SOLO CON SU CÓNYUGE', 139, 8.8, ['VIVE SOLO CON SU CONYUGE', 'VIVE CON SU CONYUGE', 'SOLO CON SU CONYUGE']],
 
-        ['VIVE CON SU CÓNYUGE E HIJOS', 52, 13.2],
-        ['VIVE SOLO CON SUS HIJOS', 94, 13.2],
+        ['VIVE CON SU CÓNYUGE E HIJOS', 52, 13.2, ['VIVE CON SU CONYUGE E HIJOS', 'CONYUGE E HIJOS']],
+        ['VIVE SOLO CON SUS HIJOS', 94, 13.2, ['VIVE SOLO CON SUS HIJOS', 'SOLO CON SUS HIJOS', 'SOLO CON HIJOS']],
     ];
 
     foreach ($convRows as $r) {
+        $etiqueta = $r[0];
+        $xPos = $r[1];
+        $yOffset = $r[2];
+        $patrones = $r[3];
+
+        $estaMarcado = false;
+        foreach ($patrones as $patron) {
+            if ($esIgual($conv, $patron)) {
+                $estaMarcado = true;
+                break;
+            }
+        }
 
         $radio(
             $pdf,
-            $r[1],
-            $y + $r[2],
-            $tiene($conv, $r[0]),
-            $r[0],
+            $xPos,
+            $y + $yOffset,
+            $estaMarcado,
+            $etiqueta,
             5.1
         );
     }
@@ -3104,9 +3176,11 @@ $line($pdf, $y + 5.5);
     );
 
     // ================================================================
-    // 23 Y 24
+    // 23. ¿EL ESTUDIANTE TIENE HIJOS O HIJAS? Y 24. CANTIDAD DE HIJOS
     // ================================================================
     $y += 8;
+
+    $pdf->SetFont('Arial', 'B', 5.7);
 
     $pdf->SetXY(
         8,
@@ -3124,15 +3198,23 @@ $line($pdf, $y + 5.5);
         'L'
     );
 
-    $hijos = $normalizar(
-        $alumno->tiene_hijos ?? ''
-    );
+    // Evaluación directa del campo boolean de PostgreSQL
+    // Maneja si viene como boolean nativo (true/false), entero (1/0) o string ('t'/'f', '1'/'0', 'SI'/'NO')
+    $valorHijos = $alumno->tiene_hijos ?? null;
+    
+    $tieneHijosBool = filter_var($valorHijos, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    
+    if ($tieneHijosBool === null) {
+        $vNormalizado = $normalizar((string) $valorHijos);
+        $tieneHijosBool = ($vNormalizado === 'SI' || $vNormalizado === 'S');
+    }
 
+    // Radio buttons con evaluación booleana
     $radio(
         $pdf,
         63,
         $y,
-        $hijos === 'SI',
+        $tieneHijosBool === true,
         'SÍ'
     );
 
@@ -3140,10 +3222,13 @@ $line($pdf, $y + 5.5);
         $pdf,
         77,
         $y,
-        $hijos === 'NO',
+        $tieneHijosBool === false,
         'NO'
     );
 
+    // ================================================================
+    // 24. CANTIDAD DE HIJOS
+    // ================================================================
     $pdf->SetXY(
         101,
         $y + 1
@@ -3160,13 +3245,16 @@ $line($pdf, $y + 5.5);
         'L'
     );
 
+    // Si tiene hijos se muestra el valor real; si es false o null se coloca '0'
+    $cantidadHijos = ($tieneHijosBool === true) ? ($alumno->cantidad_hijos ?? '0') : '0';
+
     $box(
         $pdf,
         169,
         $y,
         20,
         5.3,
-        $alumno->cantidad_hijos ?? '0',
+        (string) $cantidadHijos,
         '',
         '',
         'C'
@@ -3890,9 +3978,8 @@ $y = $pdf->GetY() - 5;
     );
 
 
-  
 // ================================================================
-// 42. CANALES DE ATENCIÓN
+// 42. CANALES DE ATENCIÓN (Soporte Múltiple)
 // ================================================================
 
 $y += 8;
@@ -3910,118 +3997,134 @@ $pdf->SetXY(
 
 $pdf->MultiCell(
     50,        // Ancho disponible
-    3.2,        // Interlineado
+    3.2,       // Interlineado
     $txt(
         '42. El estudiante ha recibido sus clases de acuerdo a los siguientes canales de atención'
     ),
-    0,          // Sin borde
-    'L'         // Alineación izquierda
+    0,         // Sin borde
+    'L'        // Alineación izquierda
 );
 
-// Actualizar $y para que lo que venga después
-// no se monte sobre el texto
+// Actualizar $y para que lo que venga después no se monte sobre el texto
 $y = $pdf->GetY() - 10;
 
-    $canalAtencion = $normalizar(
-        $catalogo(
-            'catalogo_clases_canales_atencion',
-            $alumno->codigo_clases_canales_atencion ?? null
-        )
-    );
+// 1. Obtener y procesar los códigos guardados en 'codigo_clases_canales_atencion'
+$codigosCanal = !empty($alumno->codigo_clases_canales_atencion) 
+    ? array_map('trim', explode(',', $alumno->codigo_clases_canales_atencion)) 
+    : [];
 
-    $canalesIzq = [
-        [
-            'IMPRESOS',
-            'IMPRESOS - GUÍAS DE APRENDIZAJE'
-        ],
-        [
-            'TELECLASES',
-            'TELECLASES DE LA FRANJA "APRENDAMOS EN CASA"; TELEVISIÓN DE EL SALVADOR'
-        ],
-        [
-            'RADIO',
-            'RADIO CLASES "APRENDAMOS EN CASA CON LA RADIO"'
-        ],
-        [
-            'REDES',
-            'REDES SOCIALES (WHATSAPP, FACEBOOK, YOUTUBE)'
-        ],
-    ];
+$canalTexto = 'IMPRESOS';
 
-    $canalesDer = [
-        [
-            'LIBRO',
-            'IMPRESOS-LIBRO DE TEXTO'
-        ],
-        [
-            'CORREO',
-            'CORREO ELECTRÓNICO'
-        ],
-        [
-            'GOOGLE',
-            'GOOGLE CLASSROOM'
-        ],
-        [
-            'OTRAS',
-            'OTRAS PLATAFORMAS'
-        ],
-        [
-            'LINEA',
-            'EDUCACIÓN EN LÍNEA - GOOGLE SITES.'
-        ],
-    ];
+if (!empty($codigosCanal)) {
+    // Consultar las descripciones correspondientes en la tabla catálogo
+    $nombresCanales = DB::table('catalogo_clases_canales_atencion')
+        ->whereIn(DB::raw("TRIM(CAST(codigo AS TEXT))"), $codigosCanal)
+        ->pluck('descripcion')
+        ->toArray();
 
-    $yy = $y;
-
-    foreach ($canalesIzq as $item) {
-
-        $check(
-            $pdf,
-            66,
-            $yy,
-            $tiene($canalAtencion, $item[0]),
-            $item[1],
-            4.7
-        );
-
-        $yy += 4.4;
+    if (!empty($nombresCanales)) {
+        // Unificar las descripciones en un solo texto
+        $canalTexto = implode(' - ', array_map('trim', $nombresCanales));
     }
+}
 
-    $yy = $y;
+// 2. Normalizar la cadena concatenada para evaluar sobre las 2 columnas del PDF
+$canalAtencion = $normalizar($canalTexto);
 
-    foreach ($canalesDer as $item) {
+// ESTRUCTURA VISUAL E ITINERARIO DE DIBUJO INTACTO
+$canalesIzq = [
+    [
+        'IMPRESOS',
+        'IMPRESOS - GUÍAS DE APRENDIZAJE'
+    ],
+    [
+        'TELECLASES',
+        'TELECLASES DE LA FRANJA "APRENDAMOS EN CASA"; TELEVISIÓN DE EL SALVADOR'
+    ],
+    [
+        'RADIO',
+        'RADIO CLASES "APRENDAMOS EN CASA CON LA RADIO"'
+    ],
+    [
+        'REDES',
+        'REDES SOCIALES (WHATSAPP, FACEBOOK, YOUTUBE)'
+    ],
+];
 
-        $check(
-            $pdf,
-            145,
-            $yy,
-            $tiene($canalAtencion, $item[0]),
-            $item[1],
-            4.7
-        );
+$canalesDer = [
+    [
+        'LIBRO',
+        'IMPRESOS-LIBRO DE TEXTO'
+    ],
+    [
+        'CORREO',
+        'CORREO ELECTRÓNICO'
+    ],
+    [
+        'GOOGLE',
+        'GOOGLE CLASSROOM'
+    ],
+    [
+        'OTRAS',
+        'OTRAS PLATAFORMAS'
+    ],
+    [
+        'LINEA',
+        'EDUCACIÓN EN LÍNEA - GOOGLE SITES.'
+    ],
+];
 
-        $yy += 4.4;
-    }
+$yy = $y;
 
-    $pdf->SetFont(
-        'Arial',
-        '',
-        5
-    );
+foreach ($canalesIzq as $item) {
 
-    $pdf->SetXY(
+    $check(
+        $pdf,
         66,
-        $y + 19
+        $yy,
+        $tiene($canalAtencion, $item[0]),
+        $item[1],
+        4.7
     );
 
-    $pdf->Cell(
-        134,
-        3,
-        $txt('(Puedes marcar más de una opción)'),
-        0,
-        0,
-        'L'
+    $yy += 4.4;
+}
+
+$yy = $y;
+
+foreach ($canalesDer as $item) {
+
+    $check(
+        $pdf,
+        145,
+        $yy,
+        $tiene($canalAtencion, $item[0]),
+        $item[1],
+        4.7
     );
+
+    $yy += 4.4;
+}
+
+$pdf->SetFont(
+    'Arial',
+    '',
+    5
+);
+
+$pdf->SetXY(
+    66,
+    $y + 19
+);
+
+$pdf->Cell(
+    134,
+    3,
+    $txt('(Puedes marcar más de una opción)'),
+    0,
+    0,
+    'L'
+);
 
     // ================================================================
     // F. SERVICIO SOCIAL
@@ -4299,126 +4402,46 @@ $y = $pdf->GetY() - 10;
     // ================================================================
     $y += 8;
 
-    $pdf->SetFont(
-        'Arial',
-        'B',
-        5.7
-    );
+    $pdf->SetFont('Arial', 'B', 5.7);
+    $pdf->SetXY(8, $y + 1);
+    $pdf->Cell(27, 4, $txt('48. Tipo parentesco'), 0, 0, 'L');
 
-    $pdf->SetXY(
-        8,
-        $y + 1
-    );
+    // Normalizamos la descripción del parentesco obtenida de la base de datos
+    $par = $normalizar($parentesco);
 
-    $pdf->Cell(
-        27,
-        4,
-        $txt('48. Tipo parentesco'),
-        0,
-        0,
-        'L'
-    );
-
-    $par = $normalizar(
-        $parentesco
-    );
-
-    $radio(
-        $pdf,
-        36,
-        $y,
-        $tiene($par, 'PADRE'),
-        'PADRE'
-    );
-
-    $radio(
-        $pdf,
-        56,
-        $y,
-        $tiene($par, 'MADRE'),
-        'MADRE'
-    );
-
-    $radio(
-        $pdf,
-        78,
-        $y,
-        $tiene($par, 'HERMANO'),
-        'HERMANO/A'
-    );
-
-    $radio(
-        $pdf,
-        104,
-        $y,
-        $tiene($par, 'TIO'),
-        'TÍO/A'
-    );
-
-    $radio(
-        $pdf,
-        126,
-        $y,
-        $tiene($par, 'ABUELO'),
-        'ABUELO/A'
-    );
-
-    $radio(
-        $pdf,
-        153,
-        $y,
-        $tiene($par, 'HIJO'),
-        'HIJO/A'
-    );
+    // FILA 1
+    $radio($pdf, 36, $y, $tiene($par, 'PADRE'), 'PADRE');
+    
+    $radio($pdf, 56, $y, $tiene($par, 'MADRE'), 'MADRE');
+    
+    // Evalúa "HERMANO", "HERMANA" o "HERMANO/A"
+    $radio($pdf, 78, $y, $tiene($par, 'HERMANO') || $tiene($par, 'HERMANA'), 'HERMANO/A');
+    
+    // Evalúa "TIO", "TIA", "TÍO" o "TÍA"
+    $radio($pdf, 104, $y, $tiene($par, 'TIO') || $tiene($par, 'TIA'), 'TÍO/A');
+    
+    // Evalúa "ABUELO" o "ABUELA"
+    $radio($pdf, 126, $y, $tiene($par, 'ABUELO') || $tiene($par, 'ABUELA'), 'ABUELO/A');
+    
+    // Evalúa "HIJO" o "HIJA"
+    $radio($pdf, 153, $y, $tiene($par, 'HIJO') || $tiene($par, 'HIJA'), 'HIJO/A');
 
     $y += 4.5;
 
-    $radio(
-        $pdf,
-        36,
-        $y,
-        $tiene($par, 'PRIMO'),
-        'PRIMO/A'
-    );
+    // FILA 2
+    // Evalúa "PRIMO" o "PRIMA"
+    $radio($pdf, 36, $y, $tiene($par, 'PRIMO') || $tiene($par, 'PRIMA'), 'PRIMO/A');
+    
+    // Evalúa "SOBRINO" o "SOBRINA"
+    $radio($pdf, 56, $y, $tiene($par, 'SOBRINO') || $tiene($par, 'SOBRINA'), 'SOBRINO/A');
+    
+    $radio($pdf, 84, $y, $tiene($par, 'CONYUGE') || $tiene($par, 'CÓNYUGE'), 'CÓNYUGE');
+    
+    $radio($pdf, 114, $y, $tiene($par, 'PADRASTRO'), 'PADRASTRO');
+    
+    $radio($pdf, 146, $y, $tiene($par, 'MADRASTRA'), 'MADRASTRA');
 
-    $radio(
-        $pdf,
-        56,
-        $y,
-        $tiene($par, 'SOBRINO'),
-        'SOBRINO/A'
-    );
-
-    $radio(
-        $pdf,
-        84,
-        $y,
-        $tiene($par, 'CONYUGE') ||
-        $tiene($par, 'CÓNYUGE'),
-        'CÓNYUGE'
-    );
-
-    $radio(
-        $pdf,
-        114,
-        $y,
-        $tiene($par, 'PADRASTRO'),
-        'PADRASTRO'
-    );
-
-    $radio(
-        $pdf,
-        146,
-        $y,
-        $tiene($par, 'MADRASTRA'),
-        'MADRASTRA'
-    );
-
-    $line(
-        $pdf,
-        $y + 5
-    );
-
+    $line($pdf, $y + 5);
     // ================================================================
     // 49. NOMBRES RESPONSABLE
     // ================================================================
@@ -4909,8 +4932,17 @@ public function guardarTodo(Request $request, $id)
     $recibeInput = $request->input('codigo_recibe', []);
     $recibeStrings = is_array($recibeInput) ? implode(',', $recibeInput) : $recibeInput;
 
+    // Procesamiento de Numeral 19 (Actividad Económica)
+    $actividadesInput = $request->input('codigo_actividad_economica', []);
+    $actividadesStrings = is_array($actividadesInput) ? implode(',', $actividadesInput) : $actividadesInput;
+
+    // Procesamiento de Numeral 42 (Canales de Atención)
+    $canalesInput = $request->input('codigo_clases_canales_atencion', []);
+    $canalesStrings = is_array($canalesInput) ? implode(',', $canalesInput) : $canalesInput;
+
+
     try {
-        DB::transaction(function () use ($discapacidadString, $recibeStrings, $request, $id) {
+        DB::transaction(function () use ($actividadesStrings, $canalesStrings, $discapacidadString, $recibeStrings, $request, $id) {
             // Autogeneración de correo institucional si viene vacío
             $nie = trim($request->input('codigo_nie'));
             $email = trim($request->input('direccion_email'));
@@ -4942,12 +4974,13 @@ public function guardarTodo(Request $request, $id)
                     'direccion_email'            => $email,
                     'telefono_celular'           => $request->input('telefono_celular'),
                     'whatsapp'                   => $request->input('whatsapp'),
-                    'codigo_actividad_economica' => $request->input('codigo_actividad_economica'),
+                    'codigo_actividad_economica' => $actividadesStrings, // Guarda ej: "01,08"
                     'codigo_estado_civil'        => $request->input('codigo_estado_civil'),
                     'codigo_estado_familiar'     => $request->input('codigo_estado_familiar'),
                     'embarazada'                 => $request->input('embarazada'),
                     'tiene_hijos'                => $request->input('tiene_hijos'),
                     'cantidad_hijos'             => $request->input('cantidad_hijos', 0),
+
 
                     // --- LITERAL C (Residencia) ---
                     'codigo_zona_residencia'     => $request->input('codigo_zona_residencia'),
@@ -4973,7 +5006,7 @@ public function guardarTodo(Request $request, $id)
                     'sintoniza_canal_10'                    => $request->input('sintoniza_canal_10'),
                     'posee_computadora'                     => $request->input('posee_computadora'),
                     'codigo_clases_bajo_modalidad'          => $request->input('codigo_clases_bajo_modalidad'),
-                    'codigo_clases_canales_atencion'        => $request->input('codigo_clases_canales_atencion'),
+                    'codigo_clases_canales_atencion'        => $canalesStrings,
 
                     // --- LITERAL F (Servicio Social) ---
                     'servicio_social_realizado'        => $request->input('servicio_social_realizado'),
