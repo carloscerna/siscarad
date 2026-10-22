@@ -519,6 +519,7 @@ class PdfRPGController extends Controller
 
     public function index($id) 
     {
+        
         // ... (Tu código de configuración, parseo de $id, cálculo de $stats, y consultas de BD
         //      $catalogo_area_asignatura, $AsignacionAsignatura, $EncargadoGrado, $EncargadoAsignatura
         //      ...no cambian. Pégalos aquí tal como los tenías) ...
@@ -528,23 +529,6 @@ class PdfRPGController extends Controller
             $this->fpdf->AddPage(); // Añadimos la página al inicio
             $this->fpdf->SetMargins(5, 5, 5);
             $this->fpdf->SetAutoPageBreak(true,5);
-        // --- INICIO: TÍTULO PRINCIPAL ---
-            // 1. Define la posición Y inicial para el título
-            $current_Y = 10; // 10mm desde arriba
-            $this->fpdf->SetXY(10, $current_Y); 
-            $this->fpdf->SetFont('Arial', 'B', 18);
-            
-            // 2. Dibuja el título centrado
-            // Ancho usable = 355.6mm (Legal) - 5mm (Izq) - 5mm (Der) = 345.6
-            $this->fpdf->Cell(345.6, 8, mb_convert_encoding('REGISTRO DE EVALUACIÓN DEL RENDIMIENTO ESCOLAR DE EDUCACIÓN', 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
-            
-            // 3. Actualiza $current_Y para que sea la posición
-            //    donde el siguiente bloque debe empezar (con un espacio de 2mm)
-            $current_Y = $this->fpdf->GetY() + 2; 
-            
-            // Restablece la fuente para el resto del documento
-            $this->fpdf->SetFont('Arial', 'B', 9); 
-        // --- FIN: TÍTULO PRINCIPAL ---
 
         // ... (pega aquí tu parseo de $id) ...
             $EstudianteMatricula = explode("-",$id);
@@ -555,6 +539,41 @@ class PdfRPGController extends Controller
                 $codigo_gradoseccionturnomodalidad = $EstudianteMatricula[0]; $codigo_modalidad = substr($codigo_gradoseccionturnomodalidad,6,2); $codigo_turno = substr($codigo_gradoseccionturnomodalidad,4,2); $codigo_seccion = substr($codigo_gradoseccionturnomodalidad,2,2); $codigo_grado = substr($codigo_gradoseccionturnomodalidad,0,2);
                 $codigo_annlectivo = $EstudianteMatricula[1]; $codigo_institucion = $EstudianteMatricula[2]; $codigo_asignatura = $EstudianteMatricula[3]; $codigo_area_asignatura = $EstudianteMatricula[4]; $codigo_personal = $EstudianteMatricula[5];
             }
+
+
+// =========================================================================
+        // NUEVO: OBTENER EL NOMBRE COMPLETO DE LA MODALIDAD / CICLO / BACHILLERATO
+        // =========================================================================
+        $modalidadInfo = DB::table('bachillerato_ciclo')
+            ->where('codigo', $codigo_modalidad)
+            ->select('nombre')
+            ->first();
+
+        $nombreModalidadCompleto = $modalidadInfo ? trim($modalidadInfo->nombre) : $codigo_modalidad;
+
+// --- INICIO: TÍTULO PRINCIPAL ---
+        $current_Y = 10; // 10mm desde arriba
+        $this->fpdf->SetXY(10, $current_Y); 
+        $this->fpdf->SetFont('Arial', 'B', 16); // Reducido ligeramente a 16 si el texto es muy largo
+        
+// Línea 1: Texto principal del registro
+        $this->fpdf->Cell(345.6, 6, mb_convert_encoding('REGISTRO DE EVALUACIÓN DEL RENDIMIENTO ESCOLAR', 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+        
+        // Línea 2: Complemento con el nombre completo de la modalidad obtenido de la BD
+        $textoModalidadLinea = 'DE ' . $nombreModalidadCompleto;
+        $this->fpdf->Cell(345.6, 6, mb_convert_encoding($textoModalidadLinea, 'ISO-8859-1', 'UTF-8'), 0, 1, 'C');
+
+        $current_Y = $this->fpdf->GetY() + 2; 
+        $this->fpdf->SetFont('Arial', 'B', 9); 
+        // --- FIN: TÍTULO PRINCIPAL ---
+            
+            // 3. Actualiza $current_Y para que sea la posición
+            //    donde el siguiente bloque debe empezar (con un espacio de 2mm)
+            $current_Y = $this->fpdf->GetY() + 2; 
+            
+            // Restablece la fuente para el resto del documento
+            $this->fpdf->SetFont('Arial', 'B', 9); 
+        // --- FIN: TÍTULO PRINCIPAL ---
 
         // ... (pega aquí tu cálculo de $stats) ...
             $stats = [ 'M' => ['inicial' => 0, 'retirados' => 0, 'final' => 0, 'promovidos' => 0, 'retenidos' => 0], 'F' => ['inicial' => 0, 'retirados' => 0, 'final' => 0, 'promovidos' => 0, 'retenidos' => 0], 'Total' => ['inicial' => 0, 'retirados' => 0, 'final' => 0, 'promovidos' => 0, 'retenidos' => 0], ];
@@ -997,10 +1016,48 @@ class PdfRPGController extends Controller
                     $nota_actividades_0 = array('', $response->recuperacion, $response->nota_recuperacion_2, $response->nota_final);
                     $periodos_a = array('PERIODO 1', 'PERIODO 2', 'PERIODO 3', 'PERIODO 4', 'PERIODO 5', 'PROMEDIO FINAL', 'R');
                     $actividad_periodo = array('NF');
-                    if($codigo_modalidad >= '03' && $codigo_modalidad <= '05'){ $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 162; }
-                    else if($codigo_modalidad >= '06' && $codigo_modalidad <= '09'){ $valor_periodo = 3; $valor_actividades = 16; $ancho_area_asignatura = 186; }
-                    else if($codigo_modalidad >= '10' && $codigo_modalidad <= '12'){ $valor_periodo = 4; $valor_actividades = 20; $ancho_area_asignatura = 210; }
-                    else{ $valor_periodo = 2; $valor_actividades = 12; $ancho_area_asignatura = 162; }
+// Actualización de periodos según la modalidad o tipo de turno
+                    // - Ciclos (Primer, Segundo, Tercer Ciclo): se divide entre 3
+                    // - Educación Media (General o Técnico): se divide entre 4
+                    // - Turno Nocturno: se divide entre 5
+                    // Determinación de periodos y valores según el código de modalidad usando un switch
+switch ($codigo_modalidad) {
+    // Primer, Segundo y Tercer Ciclo (se divide entre 3)
+    case '06':
+    case '07':
+    case '08':
+    case '09':
+        $valor_periodo = 3; 
+        $valor_actividades = 16; 
+        $ancho_area_asignatura = 186;
+        break;
+
+    // Educación Media - Bachillerato General o Técnico (se divide entre 4)
+    case '10':
+    case '11':
+    case '12':
+    case '21':
+    case '15':
+        $valor_periodo = 4; 
+        $valor_actividades = 20; 
+        $ancho_area_asignatura = 210;
+        break;
+
+    // Turno Nocturno u otras modalidades especiales (se divide entre 5)
+    // Nota: Reemplaza '13' por el código real que use tu base de datos para nocturna si aplica
+    case '13': 
+        $valor_periodo = 5; 
+        $valor_actividades = 24; 
+        $ancho_area_asignatura = 230;
+        break;
+
+    // Caso por defecto (Primer y Segundo Ciclo u otros valores)
+    default:
+        $valor_periodo = 4; 
+        $valor_actividades = 28; 
+        $ancho_area_asignatura = 186;
+        break;
+}
                     // --- INICIO: Cálculo y Acumulación de Nota (NUEVO) ---
                         
                         // 1. Calculamos la nota final (Numérica)
@@ -1093,7 +1150,7 @@ class PdfRPGController extends Controller
                     $posicion_Y_texto_rotado = $this->fpdf->GetY() + $alto_cell[1]; // Y actual + alto de la cabecera
                     $this->fpdf->SetFont('Arial', 'B', '7');
                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','LT',0,'L',false);            
-                   $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],'','T',0,'L',false); // Columna NIE (estática 12)          
+                   $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],''.$codigo_modalidad,'T',0,'L',false); // Columna NIE (estática 12)          
                    $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],'','T',0,'L',false);            
                    
                    // --- MODIFICADO ---
@@ -1268,17 +1325,44 @@ class PdfRPGController extends Controller
                     $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$nombre_estudiante,1,0,'L',true); 
                 }
                 
-                // 4. Dibuja la celda de nota (siempre usando 'true' para el fondo)
+// 4. Dibuja la celda de nota (con regla de color y cero en blanco)
                 if($codigo_area == '07'){
                     $result_concepto = resultado_concepto($codigo_modalidad, $nota_final); 
                     if($result_concepto == "R"){ $this->fpdf->SetTextColor(255,0,0); } 
                     $this->fpdf->Cell($ancho_col_asignatura_dinamico,$alto_cell[0],$result_concepto,1,0,'C', true);
                 } else { 
-                    $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final,$codigo_area); 
-                    if($result[0] == "R"){ $this->fpdf->SetTextColor(255,0,0); } 
-                    $this->fpdf->Cell($ancho_col_asignatura_dinamico,$alto_cell[0],round($result[1],0),1,0,'C', true); 
+                    $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final, $codigo_area); 
+                    $nota_numerica = round($result[1], 0);
+
+                    // --- REGLA DE CALIFICACIÓN MÍNIMA Y CERO EN BLANCO ---
+                    // Definir la nota mínima según el grado o modalidad especificada:
+                    // - Primer año y Segundo año de Bachillerato (ej. códigos o modalidades específicas) usan nota mínima 6.
+                    // - Segundo a noveno grado usan nota mínima 5.
+                    $nota_minima = 5; // Valor por defecto para segundo a noveno
+                    
+                    // Ajusta esta condición según los códigos exactos de tu base de datos para bachillerato
+                    if (in_array($codigo_modalidad, ['03', '04', '05', '10', '11', '12']) || in_array($codigo_grado, ['01', '02'])) { 
+                        // Nota: Ajusta los códigos de modalidad/grado de bachillerato según corresponda en tu catálogo
+                        $nota_minima = 6; 
+                    }
+
+                    if ($nota_numerica == 0 || $nota_numerica === '') {
+                        // Si es cero, dejamos la casilla completamente en blanco
+                        $texto_imprimir = '';
+                        $this->fpdf->SetTextColor(0, 0, 0);
+                    } else {
+                        $texto_imprimir = $nota_numerica;
+                        // Si es menor a la nota mínima, se pinta de ROJO
+                        if ($nota_numerica < $nota_minima) { 
+                            $this->fpdf->SetTextColor(255, 0, 0); 
+                        } else { 
+                            // Si es igual o mayor a la mínima, se pinta de NEGRO
+                            $this->fpdf->SetTextColor(0, 0, 0); 
+                        }
+                    }
+
+                    $this->fpdf->Cell($ancho_col_asignatura_dinamico, $alto_cell[0], $texto_imprimir, 1, 0, 'C', true); 
                 }
-                
                 $fila_asignatura++; $fila++; 
                 $this->fpdf->SetTextColor(0,0,0); // Resetea el color del texto para la siguiente celda
                 // --- FIN DEL BLOQUE CORREGIDO ---

@@ -74,6 +74,7 @@ use Illuminate\Support\Facades\Auth;
                                     <option value="2">Periodo 2</option>
                                     <option value="3">Periodo 3</option>
                                     <option value="4">Periodo 4</option>
+                                    <option value="5">Periodo 5</option>
                                 </select>
                             </div>
                         </div>

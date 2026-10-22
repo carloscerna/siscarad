@@ -1425,7 +1425,7 @@ private function actualizarNotaFinalGlobal($matricula, $asignatura, $divisor)
         ->first();
 
     if ($registro) {
-        
+    }
         // =====================================================================
         // PROTECCIÓN PARA MÓDULOS: EVITAR QUE SE SOBREESCRIBA LA NOTA FINAL
         // =====================================================================
@@ -1440,20 +1440,30 @@ private function actualizarNotaFinalGlobal($matricula, $asignatura, $divisor)
             return; // Nos salimos de la función inmediatamente sin alterar nada
         }
         // =====================================================================
+// =====================================================================
+        // CÁLCULO DINÁMICO BASADO EN EL CATÁLOGO DE PERIODOS DE LA MODALIDAD
+        // =====================================================================
+        $catalogoPeriodo = DB::table('catalogo_periodos')
+            ->where('codigo_modalidad', $registro->codigo_modalidad)
+            ->first();
+            
+        // Si existe el catálogo, usamos su cantidad de periodos; de lo contrario, mantenemos el divisor recibido
+        $cantidad_periodos = ($catalogoPeriodo && $catalogoPeriodo->cantidad_periodos > 0) 
+            ? $catalogoPeriodo->cantidad_periodos 
+            : $divisor;
 
-        // LÓGICA TRADICIONAL: Si no es modular, calcula el promedio normal por periodos
         $suma = ($registro->nota_p_p_1 ?? 0) + 
                 ($registro->nota_p_p_2 ?? 0) + 
                 ($registro->nota_p_p_3 ?? 0) + 
                 ($registro->nota_p_p_4 ?? 0) + 
                 ($registro->nota_p_p_5 ?? 0);
 
-        $nota_final = $suma / $divisor;
+        // Evitamos división entre cero
+        $nota_final = ($cantidad_periodos > 0) ? ($suma / $cantidad_periodos) : 0;
         
         DB::table('nota')
             ->where('id_notas', $registro->id_notas)
             ->update(['nota_final' => round($nota_final, 1)]);
-    }
 }
 
 }   // fin de la función.
