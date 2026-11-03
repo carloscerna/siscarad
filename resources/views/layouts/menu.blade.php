@@ -58,5 +58,11 @@
         </a>
     </li>
 
+<li class="side-items {{ Request::is('matricula*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('matricula.index') }}">
+        <i class="fas fa-user-graduate"></i><span>Matrícula</span>
+    </a>
+</li>
+
 </li>
 @endrole

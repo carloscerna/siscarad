@@ -126,7 +126,15 @@ class MatriculaController extends Controller
                     ); 
                     $fila_array++;
                 }
-            return $GradoSeccionTurno;
+
+            // 1. Consultar la información del año lectivo para extraer sus fechas de matrícula
+            $annLectivo = Annlectivo::where('codigo', $codigo_annlectivo)->first();
+
+            // 2. Retornar un objeto JSON estructurado con los grados y los datos del año lectivo
+            return response()->json([
+                'grados' => $GradoSeccionTurno,
+                'ann_lectivo' => $annLectivo
+            ]);
     }
     // NOMINA DE ESTUDIANTES.
     public function getGradoSeccionMatriculaTodos()
@@ -240,70 +248,95 @@ class MatriculaController extends Controller
            return $Presentes;
     }
 
-    public function getDatosResponsables()
+ public function getDatosResponsables()
     {
         $codigo_alumno = $_POST['id'];
         $codigo_modalidad = $_POST['codigo_modalidad'];
         $codigo_grado = $_POST['codigo_grado'];
         $codigo_annlectivo = $_POST['codigo_annlectivo'];
 
+        // 1. VERIFICAR SI EXISTE CARGA ACADÉMICA PARA EL GRADO Y AÑO DE DESTINO
+        $cargaAcademicaCount = DB::table('a_a_a_bach_o_ciclo')
+            ->where('codigo_bach_o_ciclo', '=', $codigo_modalidad)
+            ->where('codigo_grado', '=', $codigo_grado)
+            ->where('codigo_ann_lectivo', '=', $codigo_annlectivo)
+            ->count();
+
+        $tiene_carga_academica = ($cargaAcademicaCount > 0);
+
         $DatosResponsables = array();
 
-        // Eloquient Traer datos del Estudiante, Nombre y N-º de Telefono.
-        $EstudianteDatos = Estudiante::where('id_alumno', '=', $codigo_alumno)
-        ->get();
-        foreach($EstudianteDatos as $response){  //Llenar el arreglo con datos
+        // Traer datos del Estudiante
+        $EstudianteDatos = Estudiante::where('id_alumno', '=', $codigo_alumno)->get();
+        $nombre = ""; $apellido_materno = ""; $apellido_paterno = ""; $telefono_celular = ""; $posee_hermano = "";
+        
+        foreach($EstudianteDatos as $response){
             $nombre = trim($response->nombre_completo);
             $apellido_materno = trim($response->apellido_materno);
             $apellido_paterno = trim($response->apellido_paterno);
             $telefono_celular = trim($response->telefono_celular);
             $posee_hermano = trim($response->posee_hermano);
         }
-        // Eloquiente verificar si ya existe la matricula.
-            $estado_matricular = "no";
-            $EstudianteMatriculaCount = EstudianteMatricula::where('codigo_alumno', '=', $codigo_alumno)
+
+        // Verificar si ya existe la matrícula
+        $estado_matricular = "no";
+        $EstudianteMatriculaCount = EstudianteMatricula::where('codigo_alumno', '=', $codigo_alumno)
             ->where('codigo_bach_o_ciclo',"=",$codigo_modalidad)
             ->where('codigo_grado','=',$codigo_grado)
             ->where('codigo_ann_lectivo','=',$codigo_annlectivo)
             ->count();
-        // VALIDAR SI ES IGUAL A CERO.
-            if($EstudianteMatriculaCount != 0){
-                $estado_matricular = "si";
-            }
-        //
-            $DatosResponsablesEstudiantes = DB::table('alumno_encargado')
-                ->select('id_alumno_encargado', 'nombres','telefono', 'direccion', 'encargado','codigo_familiar', 'dui')
-                ->where('codigo_alumno', '=', $codigo_alumno)
-                ->orderBy('id_alumno_encargado','asc')
-                ->get();
-                
-                $fila_array = 0;
-                foreach($DatosResponsablesEstudiantes as $response){  //Llenar el arreglo con datos
-                    $id_encargado_ = $response->id_alumno_encargado; 
-                    $nombres = trim($response->nombres); 
-                    $telefono = trim($response->telefono); 
-                    $direccion = trim($response->direccion); 
-                    $encargado  = $response->encargado; 
-                    $codigo_familiar = $response->codigo_familiar; 
-                    $dui = $response->dui;
 
-                    $DatosResponsables[$fila_array] = array ( 
-                        "id_" => $id_encargado_,
-                        "nombres"=>$nombres,
-                        "telefono"=>$telefono,
-                        "direccion"=>$direccion,
-                        "encargado"=>$encargado,
-                        "codigo_familiar"=>$codigo_familiar,
-                        "dui"=>$dui,
-                        "fila"=>$fila_array,
-                        "estado_matricular"=> $estado_matricular,
-                        "nombreEstudiante"=> $nombre." ".$apellido_paterno." ".$apellido_materno,
-                        "numeroCelular"=>$telefono_celular,
-                        "poseeHermano"=>$posee_hermano
-                    ); 
-                    $fila_array++;
-                }
-            return $DatosResponsables;
+        if($EstudianteMatriculaCount != 0){
+            $estado_matricular = "si";
+        }
+
+        // Consultar la descripción o nombre real de la modalidad en bachillerato_ciclo
+        $bachilleratoInfo = DB::table('bachillerato_ciclo')
+            ->where('codigo', '=', $codigo_modalidad)
+            ->first();
+
+        $nombreModalidadReal = $bachilleratoInfo ? trim($bachilleratoInfo->nombre) : 'Modalidad General';
+
+
+        $DatosResponsablesEstudiantes = DB::table('alumno_encargado')
+            ->select('id_alumno_encargado', 'nombres','telefono', 'direccion', 'encargado','codigo_familiar', 'dui')
+            ->where('codigo_alumno', '=', $codigo_alumno)
+            ->orderBy('id_alumno_encargado','asc')
+            ->get();
+            
+        $fila_array = 0;
+        foreach($DatosResponsablesEstudiantes as $response){
+            $id_encargado_ = $response->id_alumno_encargado; 
+            $nombres = trim($response->nombres); 
+            $telefono = trim($response->telefono); 
+            $direccion = trim($response->direccion); 
+            $encargado  = $response->encargado; 
+            $codigo_familiar = $response->codigo_familiar; 
+            $dui = $response->dui;
+
+            $DatosResponsables[$fila_array] = array ( 
+                "id_" => $id_encargado_,
+                "nombres"=>$nombres,
+                "telefono"=>$telefono,
+                "direccion"=>$direccion,
+                "encargado"=>$encargado,
+                "codigo_familiar"=>$codigo_familiar,
+                "dui"=>$dui,
+                "fila"=>$fila_array,
+                "estado_matricular"=> $estado_matricular,
+                "nombreEstudiante"=> $nombre." ".$apellido_paterno." ".$apellido_materno,
+                "numeroCelular"=>$telefono_celular,
+                "poseeHermano"=>$posee_hermano
+            ); 
+            $fila_array++;
+        }
+
+        // Retornar respuesta estructurada con la validación de carga académica
+        return response()->json([
+            'responsables' => $DatosResponsables,
+            'tiene_carga_academica' => $tiene_carga_academica,
+            'nombre_modalidad' => $nombreModalidadReal
+        ]);
     }
 
     public function getDatosMatriculaGuardar()

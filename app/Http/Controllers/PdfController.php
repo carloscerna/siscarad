@@ -773,7 +773,7 @@ if (!$foto_encontrada) {
                                 }
 
                                 // Forzamos la división SIEMPRE entre el total de periodos de la modalidad (ej. 4)
-                                $nota_final_calculada = ($cantidad_periodos > 0) ? round(($suma_notas_parciales / $cantidad_periodos), 1) : 0.0;
+                                $nota_final_calculada = ($cantidad_periodos > 0) ? round(($suma_notas_parciales / $cantidad_periodos), 0) : 0.0;
 
                                 // REASIGNACIÓN CRÍTICA: Sobrescribimos la posición 28 del array con nuestro cálculo manual exacto
                                 $nota_actividades_0[28] = $nota_final_calculada;
@@ -785,14 +785,14 @@ if (!$foto_encontrada) {
                                         // =========================================================================
                                         // 1. NO entra al ciclo 'for', por lo que FPDF no dibuja las celdas parciales.
                                         // 2. Extraemos la nota_final directamente desde la base de datos sin promediar nada.
-                                        $nota_actividades_0[28] = (float)$response->nota_final;
+                                        $nota_actividades_0[28] = round((float)$response->nota_final, 0);
                                     }
 
                             
 
                                 
                             $this->fpdf->SetFont('Arial', 'B', '7');
-                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[28] == 0 ? '' : $nota_actividades_0[28]), 1, 0, 'C'); // PF
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[28] == 0 ? '' : round($nota_actividades_0[28], 0)), 1, 0, 'C'); // PF
                             $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[26] == 0 ? '' : $nota_actividades_0[26]), 1, 0, 'C'); // NR1
                             $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[27] == 0 ? '' : $nota_actividades_0[27]), 1, 0, 'C'); // NR2
 
@@ -804,7 +804,7 @@ if (!$foto_encontrada) {
                                 if($result[0] == "R") $this->fpdf->SetTextColor(255,0,0);
                                 
                                 // CAMBIO AQUÍ: Forzamos a que pinte el valor calculado matemáticamente ($nota_actividades_0[28]) en lugar de $result[1]
-                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($nota_actividades_0[28], 1), 1, 0, 'C');
+                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($nota_actividades_0[28], 0), 1, 0, 'C');
                                 $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $result[0], 1, 1, 'C');
                                 $this->fpdf->SetTextColor(0); 
                             } else {

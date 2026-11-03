@@ -575,49 +575,119 @@ class PdfRPGController extends Controller
             $this->fpdf->SetFont('Arial', 'B', 9); 
         // --- FIN: TÍTULO PRINCIPAL ---
 
-        // ... (pega aquí tu cálculo de $stats) ...
-            $stats = [ 'M' => ['inicial' => 0, 'retirados' => 0, 'final' => 0, 'promovidos' => 0, 'retenidos' => 0], 'F' => ['inicial' => 0, 'retirados' => 0, 'final' => 0, 'promovidos' => 0, 'retenidos' => 0], 'Total' => ['inicial' => 0, 'retirados' => 0, 'final' => 0, 'promovidos' => 0, 'retenidos' => 0], ];
-            $statsData = DB::table('alumno_matricula as am')->join('alumno as a', 'a.id_alumno', '=', 'am.codigo_alumno')->select( 'a.codigo_genero', DB::raw('COUNT(*) as total_inicial'), DB::raw("SUM(CASE WHEN am.retirado = true THEN 1 ELSE 0 END) as total_retirados"), DB::raw("SUM(CASE WHEN am.retirado = false THEN 1 ELSE 0 END) as total_final"))->where('am.codigo_bach_o_ciclo', $codigo_modalidad)->where('am.codigo_grado', $codigo_grado)->where('am.codigo_seccion', $codigo_seccion)->where('am.codigo_turno', $codigo_turno)->where('am.codigo_ann_lectivo', $codigo_annlectivo)->groupBy('a.codigo_genero')->get();
-            foreach ($statsData as $row) { $gender = (trim($row->codigo_genero) == '01') ? 'M' : 'F'; $stats[$gender]['inicial'] = $row->total_inicial; $stats[$gender]['retirados'] = $row->total_retirados; $stats[$gender]['final'] = $row->total_final; $stats['Total']['inicial'] += $row->total_inicial; $stats['Total']['retirados'] += $row->total_retirados; $stats['Total']['final'] += $row->total_final; }
-            $studentsForPromotion = DB::table('alumno_matricula as am')->join('alumno as a', 'a.id_alumno', '=', 'am.codigo_alumno')->join('nota as n', 'n.codigo_matricula', '=', 'am.id_alumno_matricula')->join('asignatura as asig', 'n.codigo_asignatura', '=', 'asig.codigo')->select('am.id_alumno_matricula', 'a.codigo_genero', 'n.recuperacion', 'n.nota_recuperacion_2', 'n.nota_final', 'asig.codigo_area')->where('am.codigo_bach_o_ciclo', $codigo_modalidad)->where('am.codigo_grado', $codigo_grado)->where('am.codigo_seccion', $codigo_seccion)->where('am.codigo_turno', $codigo_turno)->where('am.codigo_ann_lectivo', $codigo_annlectivo)->where('am.retirado', false)->get();
+        // 1. Inicializar estructura de estadísticas
+            $stats = [ 
+                'M' => ['inicial' => 0, 'retirados' => 0, 'final' => 0, 'promovidos' => 0, 'retenidos' => 0], 
+                'F' => ['inicial' => 0, 'retirados' => 0, 'final' => 0, 'promovidos' => 0, 'retenidos' => 0], 
+                'Total' => ['inicial' => 0, 'retirados' => 0, 'final' => 0, 'promovidos' => 0, 'retenidos' => 0] 
+            ];
+
+            // 2. Obtener matrículas iniciales, retirados y matrícula final general
+            $statsData = DB::table('alumno_matricula as am')
+                ->join('alumno as a', 'a.id_alumno', '=', 'am.codigo_alumno')
+                ->select( 
+                    'a.codigo_genero', 
+                    DB::raw('COUNT(*) as total_inicial'), 
+                    DB::raw("SUM(CASE WHEN am.retirado = true THEN 1 ELSE 0 END) as total_retirados"), 
+                    DB::raw("SUM(CASE WHEN am.retirado = false THEN 1 ELSE 0 END) as total_final")
+                )
+                ->where('am.codigo_bach_o_ciclo', $codigo_modalidad)
+                ->where('am.codigo_grado', $codigo_grado)
+                ->where('am.codigo_seccion', $codigo_seccion)
+                ->where('am.codigo_turno', $codigo_turno)
+                ->where('am.codigo_ann_lectivo', $codigo_annlectivo)
+                ->groupBy('a.codigo_genero')
+                ->get();
+
+            foreach ($statsData as $row) { 
+                $gender = (trim($row->codigo_genero) == '01') ? 'M' : 'F'; 
+                $stats[$gender]['inicial'] = $row->total_inicial; 
+                $stats[$gender]['retirados'] = $row->total_retirados; 
+                $stats[$gender]['final'] = $row->total_final; 
+                $stats['Total']['inicial'] += $row->total_inicial; 
+                $stats['Total']['retirados'] += $row->total_retirados; 
+                $stats['Total']['final'] += $row->total_final; 
+            }
+
+            // 3. Obtener notas de alumnos activos agrupando por matrícula de forma limpia
+            $studentsForPromotion = DB::table('alumno_matricula as am')
+                ->join('alumno as a', 'a.id_alumno', '=', 'am.codigo_alumno')
+                ->leftJoin('nota as n', 'n.codigo_matricula', '=', 'am.id_alumno_matricula')
+                ->leftJoin('asignatura as asig', 'n.codigo_asignatura', '=', 'asig.codigo')
+                ->select(
+                    'am.id_alumno_matricula', 
+                    'a.codigo_genero', 
+                    'n.recuperacion', 
+                    'n.nota_recuperacion_2', 
+                    'n.nota_final', 
+                    'asig.codigo_area'
+                )
+                ->where('am.codigo_bach_o_ciclo', $codigo_modalidad)
+                ->where('am.codigo_grado', $codigo_grado)
+                ->where('am.codigo_seccion', $codigo_seccion)
+                ->where('am.codigo_turno', $codigo_turno)
+                ->where('am.codigo_ann_lectivo', $codigo_annlectivo)
+                ->where('am.retirado', false)
+                ->get();
+
             $studentsGrades = [];
+            foreach ($studentsForPromotion as $grade) {
+                $genderKey = (trim($grade->codigo_genero) == '01') ? 'M' : 'F';
+                
+                // Agrupar de manera única por cada estudiante/matrícula
+                if (!isset($studentsGrades[$grade->id_alumno_matricula])) {
+                    $studentsGrades[$grade->id_alumno_matricula] = [
+                        'gender' => $genderKey,
+                        'grades' => []
+                    ];
+                }
+                
+                if (!is_null($grade->codigo_area)) {
+                    $studentsGrades[$grade->id_alumno_matricula]['grades'][] = [
+                        'rec_1' => $grade->recuperacion, 
+                        'rec_2' => $grade->nota_recuperacion_2, 
+                        'final' => $grade->nota_final, 
+                        'area' => $grade->codigo_area 
+                    ];
+                }
+            }
 
-        // --- INICIO: Definir grados de promoción masiva ---
-        // Estos códigos de grado se considerarán 100% promovidos (si están activos)
-        $grados_promocion_masiva = ['4P', '5P', '6P', '01'];
-        // --- FIN: Definir grados ---
-            foreach ($studentsForPromotion as $grade) { $studentsGrades[$grade->id_alumno_matricula]['gender'] = (trim($grade->codigo_genero) == '01') ? 'M' : 'F'; $studentsGrades[$grade->id_alumno_matricula]['grades'][] = [ 'rec_1' => $grade->recuperacion, 'rec_2' => $grade->nota_recuperacion_2, 'final' => $grade->nota_final, 'area' => $grade->codigo_area ]; }
+            // Grados de promoción masiva
+            $grados_promocion_masiva = ['4P', '5P', '6P', '01'];
 
+            // 4. Evaluar cada estudiante único exactamente una vez
             foreach ($studentsGrades as $matricula_id => $student) { 
                 $isRetenido = false; 
                 $gender = $student['gender']; 
-                if (in_array($codigo_grado, $grados_promocion_masiva)) {
                 
-                // ¡PROMOCIÓN MASIVA!
-                // Como la consulta $studentsForPromotion ya filtró por `retirado = false`,
-                // sabemos que este estudiante está activo y, por lo tanto, debe ser promovido.
-                $isRetenido = false;
+                if (in_array($codigo_grado, $grados_promocion_masiva)) {
+                    $isRetenido = false; // Promoción masiva directa
+                } else { 
+                    foreach ($student['grades'] as $grade) {
+                        $result = resultado_final($codigo_modalidad, $grade['rec_1'], $grade['rec_2'], $grade['final'], $grade['area']); 
+                        if ($result[0] == 'R') { 
+                            $isRetenido = true; 
+                            break; // Con una sola materia reprobada se marca como retenido
+                        }
+                    }
+                } 
+
+                // Incrementar contadores según corresponda y actualizar BD
+                if ($isRetenido) { 
+                    $stats[$gender]['retenidos']++; 
+                    $stats['Total']['retenidos']++; 
+                    $codigo_resultado_db = '4'; // No Promovido / Retenido
+                } else { 
+                    $stats[$gender]['promovidos']++; 
+                    $stats['Total']['promovidos']++;
+                    $codigo_resultado_db = '3'; // Promovido
                 }
-                else { foreach ($student['grades'] as $grade) {
-                        $result = resultado_final( $codigo_modalidad, $grade['rec_1'], $grade['rec_2'], $grade['final'], $grade['area'] ); 
-                        if ($result[0] == 'R') 
-                            { $isRetenido = true; break; }
-                         }
-                         } 
-                        if ($isRetenido) 
-                            { $stats[$gender]['retenidos']++; $stats['Total']['retenidos']++; } 
-                    else 
-                        { $stats[$gender]['promovidos']++; $stats['Total']['promovidos']++;
-                 }
-                    // Esta lógica final ahora funciona para ambos casos:
-                        /*if ($isRetenido) { 
-                            $stats[$gender]['retenidos']++; 
-                            $stats['Total']['retenidos']++; 
-                        } else { 
-                            $stats[$gender]['promovidos']++; 
-                            $stats['Total']['promovidos']++; 
-                        }*/
-                }   // for each del $studentsGrades
+
+                // Guardar / Actualizar el estatus en alumno_matricula
+                DB::table('alumno_matricula')
+                    ->where('id_alumno_matricula', $matricula_id)
+                    ->update(['codigo_resultado' => $codigo_resultado_db]);
+            }
 
         // ... (pega aquí tus consultas de $catalogo_area_asignatura, $AsignacionAsignatura, $EncargadoGrado, $EncargadoAsignatura) ...
             $catalogo_area_asignatura_codigo = array();	$catalogo_area_asignatura_area = array();
@@ -1331,38 +1401,50 @@ switch ($codigo_modalidad) {
                     if($result_concepto == "R"){ $this->fpdf->SetTextColor(255,0,0); } 
                     $this->fpdf->Cell($ancho_col_asignatura_dinamico,$alto_cell[0],$result_concepto,1,0,'C', true);
                 } else { 
-                    $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final, $codigo_area); 
-                    $nota_numerica = round($result[1], 0);
+                $result = resultado_final($codigo_modalidad, $nota_recuperacion_1, $nota_recuperacion_2, $nota_final, $codigo_area); 
+    
+    // 1. REDONDEAR la nota final para evitar diferencias de decimales (ej. 4.7 pasa a 5)
+    $nota_numerica = round($result[1]); 
 
-                    // --- REGLA DE CALIFICACIÓN MÍNIMA Y CERO EN BLANCO ---
-                    // Definir la nota mínima según el grado o modalidad especificada:
-                    // - Primer año y Segundo año de Bachillerato (ej. códigos o modalidades específicas) usan nota mínima 6.
-                    // - Segundo a noveno grado usan nota mínima 5.
-                    $nota_minima = 5; // Valor por defecto para segundo a noveno
-                    
-                    // Ajusta esta condición según los códigos exactos de tu base de datos para bachillerato
-                    if (in_array($codigo_modalidad, ['03', '04', '05', '10', '11', '12']) || in_array($codigo_grado, ['01', '02'])) { 
-                        // Nota: Ajusta los códigos de modalidad/grado de bachillerato según corresponda en tu catálogo
-                        $nota_minima = 6; 
-                    }
+    // 2. Determinar nota mínima según la modalidad/grado
+    // - Educación Media (Bachilleratos): nota mínima 6
+    // - Educación Básica (2° a 9°): nota mínima 5
+    $nota_minima = 5; 
+    if (in_array($codigo_modalidad, ['03', '04', '05', '06', '09', '10', '11', '12', '15']) || in_array($codigo_grado, ['10', '11', '12'])) { 
+        $nota_minima = 6; 
+    }
 
-                    if ($nota_numerica == 0 || $nota_numerica === '') {
-                        // Si es cero, dejamos la casilla completamente en blanco
-                        $texto_imprimir = '';
-                        $this->fpdf->SetTextColor(0, 0, 0);
-                    } else {
-                        $texto_imprimir = $nota_numerica;
-                        // Si es menor a la nota mínima, se pinta de ROJO
-                        if ($nota_numerica < $nota_minima) { 
-                            $this->fpdf->SetTextColor(255, 0, 0); 
-                        } else { 
-                            // Si es igual o mayor a la mínima, se pinta de NEGRO
-                            $this->fpdf->SetTextColor(0, 0, 0); 
-                        }
-                    }
+    // 3. Evaluar celda en blanco (si es 0 o vacía)
+    if ($nota_numerica == 0 || $result[1] === '') {
+        $texto_imprimir = '';
+        $this->fpdf->SetTextColor(0, 0, 0);
+        // Mantiene el fondo original alternado ($fill)
+        if ($fill) {
+            $this->fpdf->SetFillColor(255, 255, 255); 
+        } else {
+            $this->fpdf->SetFillColor(212, 230, 252); 
+        }
+    } else {
+        $texto_imprimir = $nota_numerica;
+        
+        // 4. Si la nota es menor que la mínima, aplicar FONDO ROSADO TIERNO y texto Rojo
+        if ($nota_numerica < $nota_minima) { 
+            $this->fpdf->SetTextColor(200, 0, 0);       // Rojo oscuro legíble para el número
+            $this->fpdf->SetFillColor(255, 215, 215);   // Rosado tierno para el fondo
+        } else { 
+            // Nota aprobada: Texto negro y fondo normal alternado
+            $this->fpdf->SetTextColor(0, 0, 0);
+            if ($fill) {
+                $this->fpdf->SetFillColor(255, 255, 255); 
+            } else {
+                $this->fpdf->SetFillColor(212, 230, 252); 
+            }
+        }
+    }
 
-                    $this->fpdf->Cell($ancho_col_asignatura_dinamico, $alto_cell[0], $texto_imprimir, 1, 0, 'C', true); 
-                }
+    // Imprimir la celda con el fondo asignado
+    $this->fpdf->Cell($ancho_col_asignatura_dinamico, $alto_cell[0], $texto_imprimir, 1, 0, 'C', true); 
+}
                 $fila_asignatura++; $fila++; 
                 $this->fpdf->SetTextColor(0,0,0); // Resetea el color del texto para la siguiente celda
                 // --- FIN DEL BLOQUE CORREGIDO ---

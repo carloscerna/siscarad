@@ -384,7 +384,7 @@ function buscarEstudiantes() {
             $('#periodo').prop('disabled', true);
 
             // Mutamos los encabezados de las columnas (th)
-            thHeaders.eq(3).text('Calificación Módulo (1.0 - 5.0)').css({'background-color': '#d1ecf1', 'color': '#0c5460'});
+            thHeaders.eq(3).text('Calificación Módulo (1 - 5)').css({'background-color': '#d1ecf1', 'color': '#0c5460'});
             thHeaders.eq(4).text('N/A').css({'background-color': '#f8f9fa', 'color': '#6c757d'});
             thHeaders.eq(5).text('N/A').css({'background-color': '#f8f9fa', 'color': '#6c757d'});
             thHeaders.eq(6).text('N/A').css({'background-color': '#f8f9fa', 'color': '#6c757d'});

@@ -520,7 +520,7 @@ Log::info("=================================");
                         DB::update("UPDATE nota SET nota_final = round((COALESCE(nota_p_p_1,0) + COALESCE(nota_p_p_2,0) + COALESCE(nota_p_p_3,0))/3.0, 0) WHERE id_notas = ?", [$id_notas_]);
                         break;
                     case '06': case '07': case '08': case '09': case '15': case '21':
-                        DB::update("UPDATE nota SET nota_final = round((COALESCE(nota_p_p_1,0) + COALESCE(nota_p_p_2,0) + COALESCE(nota_p_p_3,0) + COALESCE(nota_p_p_4,0))/4.0, 1) WHERE id_notas = ?", [$id_notas_]);
+                        DB::update("UPDATE nota SET nota_final = round((COALESCE(nota_p_p_1,0) + COALESCE(nota_p_p_2,0) + COALESCE(nota_p_p_3,0) + COALESCE(nota_p_p_4,0))/4.0, 0) WHERE id_notas = ?", [$id_notas_]);
                         break;
                     case '10': case '11':
                         DB::update("UPDATE nota SET nota_final = round((COALESCE(nota_p_p_1,0) + COALESCE(nota_p_p_2,0) + COALESCE(nota_p_p_3,0) + COALESCE(nota_p_p_4,0) + COALESCE(nota_p_p_5,0))/5.0, 0) WHERE id_notas = ?", [$id_notas_]);
@@ -1321,34 +1321,35 @@ public function guardarTodas(Request $request)
         foreach ($notas as $n) {
             
             if ($esModular) {
-                // =============================================================
-                // LÓGICA DE GUARDADO DIRECTO PARA MÓDULOS (RANGO 1 A 5)
-                // =============================================================
-                $nota_m = isset($n['nota_modular']) ? floatval($n['nota_modular']) : 0.0;
+                    // =============================================================
+                    // LÓGICA DE GUARDADO PARA MÓDULOS (ENTEROS: 0, 1, 2, 3, 4, 5)
+                    // =============================================================
+                    $nota_m = isset($n['nota_modular']) ? intval($n['nota_modular']) : 0;
 
-                // Validación de rango estricto para el Módulo
-                if ($nota_m < 1.0 || $nota_m > 5.0) {
-                    return response()->json([
-                        'status' => 'error', 
-                        'message' => 'Error: Las calificaciones modulares deben estar estrictamente entre 1.0 y 5.0.'
-                    ], 422);
-                }
+                    // Validación estricta: solo permite 0, 1, 2, 3, 4 o 5
+                    if (!in_array($nota_m, [0, 1, 2, 3, 4, 5], true)) {
+                        return response()->json([
+                            'status' => 'error', 
+                            'message' => 'Error: Las calificaciones modulares deben ser números enteros de 1 a 5, o 0.'
+                        ], 422);
+                    }
 
-                // Guardamos directamente en 'nota_final' y limpiamos promedios parciales
-                DB::table('nota')->updateOrInsert(
-                    [
-                        'codigo_matricula'  => $n['codigo_matricula'], 
-                        'codigo_asignatura' => $codigo_asignatura
-                    ],
-                    [
-                        'nota_final' => $nota_m,
-                        'nota_p_p_1' => 0,
-                        'nota_p_p_2' => 0,
-                        'nota_p_p_3' => 0,
-                        'nota_p_p_4' => 0,
-                        'updated_at' => now()
-                    ]
-                );
+                    // Guardamos directamente en 'nota_final' y limpiamos promedios parciales
+                    DB::table('nota')->updateOrInsert(
+                        [
+                            'codigo_matricula'  => $n['codigo_matricula'], 
+                            'codigo_asignatura' => $codigo_asignatura
+                        ],
+                        [
+                            'nota_final' => $nota_m,
+                            'nota_p_p_1' => 0,
+                            'nota_p_p_2' => 0,
+                            'nota_p_p_3' => 0,
+                            'nota_p_p_4' => 0,
+                            'updated_at' => now()
+                        ]
+                    );
+
 
             } else {
                 // =============================================================
@@ -1463,7 +1464,7 @@ private function actualizarNotaFinalGlobal($matricula, $asignatura, $divisor)
         
         DB::table('nota')
             ->where('id_notas', $registro->id_notas)
-            ->update(['nota_final' => round($nota_final, 1)]);
+            ->update(['nota_final' => round($nota_final, 0)]);
 }
 
 }   // fin de la función.

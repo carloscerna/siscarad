@@ -230,124 +230,184 @@ use Illuminate\Support\Facades;
 </section>
 
 <!-- Modal -->
-<div id="MyMatricula" class="modal fade" role="dialog" data-backdrop="static">
-    <div class="modal-dialog modal-lg">
-      <!-- Contenido del modal -->
-      <div class="modal-content">
-        <div class="modal-header bg-secondary">
-          <h4 class="modal-title">¡Matricular!</h4>
-          <label style="text-color: white"></label><span class="badge badge-primary" id="PromocionMatricula">#</span>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
+<!-- Modal Modernizado de Matrícula -->
+<div id="MyMatricula" class="modal fade" role="dialog" data-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content shadow-lg border-0 rounded-lg">
+        
+        <!-- Cabecera del Modal -->
+        <div class="modal-header bg-primary text-white align-items-center">
+          <div class="d-flex align-items-center">
+            <h5 class="modal-title mb-0 font-weight-bold"><i class="fas fa-user-graduate mr-2"></i> Proceso de Matrícula</h5>
+            <span class="badge badge-light text-primary ml-3 px-2 py-1 font-weight-bold" id="PromocionMatricula">#</span>
+          </div>
+          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
-        <div class="modal-body bg-light">
-            <form>
-                <!-- CODIGO Y NOMBRE -->
-                <div class="row">
-                  <div class="col col-lg-12">
-                    <label style="text-color: white"> Id: </label><span class="badge badge-light" id="IdMatricula">#</span>
-                    <label style="text-color: white"> <h4>Estudiante: </label><span class="badge badge-light" id="EstudianteMatricula">#</span></h4>
-                  </div>
-                </div>
 
-                    <!-- AÑO LECTIVO Y NIVEL-GRADO-SECCION-TURNO -->
-                    <div class="row">
-                        <div class="col">
-                            <label style="text-color: white"> Año lectivo: </label><span class="badge badge-light" id="AnnLectivoMatricula">#</span>
-
-                            <select class="form-control" name="lstModalidad" id="lstModalidad" style="display: none;">
-                                <option value="06">Bachillerato General</option>
-                                <option value="15">Bachillerato Técnico Vocacional Administrativo Contable.</option>
-                                <option value="11">Bachillerato General - Nocturna</option>
-                            </select>
-                            <label style="text-color: white"> Código Modalidad: </label><span class="badge badge-light" id="CodigoModalidadMatricula">#</span>
-                            <label style="text-color: white"> Código Grado: </label><span class="badge badge-light" id="CodigoGradoMatricula">#</span>
-                            <label style="text-color: white"> Código Sección: </label><span class="badge badge-light" id="CodigoSeccionMatricula">#</span>
-                            <label style="text-color: white"> Código Turno: </label><span class="badge badge-light" id="CodigoTurnoMatricula">#</span>
+        <!-- Cuerpo del Modal -->
+        <div class="modal-body bg-light p-4">
+            <form id="formMatriculaModal">
+                
+                <!-- Tarjeta de Información General del Estudiante -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body bg-white rounded">
+                        <div class="row align-items-center">
+                            <div class="col-md-12">
+                                <span class="text-muted small font-weight-bold">ID Estudiante: <span id="IdMatricula" class="text-dark">#</span></span>
+                                <h4 class="text-primary font-weight-bold mt-1 mb-0" id="EstudianteMatricula">Nombre del Estudiante</h4>
+                            </div>
                         </div>
                     </div>
-                    <!-- INFORMACIÓN DEL RESPONSABLE -->
-                    <h4>Datos del Responsables.</h4>        
-                    <table class="table table-hover" id="DatosResponsableTabla">
-                        <thead>
-                        <tr class="bg-secondary">
-                            <th>Parentesco</th>
-                            <th>Nombre y Dirección</th>
-                            <th>N.º de Telefóno o Célular</th>
-                        </tr>
-                        </thead>
-                        <tbody id="ContenidoResponsable">
-                            <form action="" method="post" id="cusCreate" autocomplete="off">
-                                <tr>
-                                    <td>
-                                        <!-- Default checked radio -->
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="Encargado" id="EncargadoPadre" value="Padre"/>
-                                            <label class="form-check-label" for="Encargado"> Encargado</label>
-                                        </div>
-                                        {!! Form::select('codigo_familiar_0', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_00', 'class' => 'form-control']) !!}</td>
-                                    <td><input type="hidden" name="id_1" id="id_1" value="">
-                                        <label for="">Nombre del Padre: </label><input type="text" class="form-control text-bold text-black" id="nombrep" name="nombrep" readonly>
-                                    <td><input type="text" class="form-control" id="telefono1" name="telefono1" maxlength="9" autocomplete="off"></td>
-                                </tr>
-                                <tr class="bg-secondary">
-                                    <td>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="Encargado" id="EncargadoMadre" value="Madre"/>
-                                            <label class="form-check-label" for="Encargado"> Encargado</label>
-                                        </div>
-                                        {!! Form::select('codigo_familiar_1', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_01', 'class' => 'form-control']) !!}</td>
-                                    <td><input type="hidden" name="id_2" id="id_2" value="">
-                                        <label for="">Nombre de la Madre: </label><input type="text" class="form-control text-bold text-black" id="nombrem" name="nombrem" readonly>
-                                    <td><input type="text" class="form-control" id="telefono2" name="telefono2" maxlength="9" autocomplete="off"></td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="Encargado" id="EncargadoOtro" value="Otro"/>
-                                            <label class="form-check-label" for="Encargado"> Encargado</label>
-                                        </div>
-                                        {!! Form::select('codigo_familiar_2', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_02', 'class' => 'form-control']) !!}</td>
-                                    <td><input type="hidden" name="id_3" id="id_3" value="">
-                                        <label for="" >Nombre Otro: </label><input type="text" class="form-control text-bold text-black" id="nombreotro" name="nnombreotroombrep" autocomplete="off">
-                                    <td><input type="text" class="form-control" id="telefono3" name="telefono3" maxlength="9" autocomplete="off"></td>
-                                </tr>
-                                <tr>
-                                    <td></td>
-                                    <td>
-                                        <label for="" >Nombre Estudiante: </label><input type="text" class="form-control text-bold text-black" id="nombreEstudiante" name="nombreEstudiante" readonly></td>
-                                        <td><input type="text" class="form-control" id="telefono4" name="telefono4" maxlength="9" autocomplete="off">
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td></td>
-                                    <td>
-                                        <label for="DireccionUno">Dirección:</label>
-                                        <textarea class="form-control" name="direccion1" id="direccion1" rows="4" cols="40"></textarea></td>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td></td>
-                                    <td>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" value="Si" id="TieneHermanos">
-                                            <label class="form-check-label" for="defaultCheck2">
-                                                Tiene hermano(s) en otro grado(s).
-                                            </label>
+                </div>
+
+                <!-- Tarjeta de Detalles Académicos (Año y Códigos) -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body bg-white rounded">
+                        <h6 class="text-secondary font-weight-bold mb-3"><i class="fas fa-calendar-alt mr-1"></i> Datos Académicos de Destino</h6>
+                        <div class="row text-center">
+                            <div class="col">
+                                <span class="d-block text-muted small">Año Lectivo</span>
+                                <span class="badge badge-secondary px-3 py-2 font-weight-bold" id="AnnLectivoMatricula" style="font-size: 0.9rem;">#</span>
+                            </div>
+                            <div class="col">
+                                <span class="d-block text-muted small">Modalidad</span>
+                                <span class="badge badge-info px-3 py-2 font-weight-bold" id="CodigoModalidadMatricula" style="font-size: 0.9rem;">#</span>
+                            </div>
+                            <div class="col">
+                                <span class="d-block text-muted small">Grado</span>
+                                <span class="badge badge-success px-3 py-2 font-weight-bold" id="CodigoGradoMatricula" style="font-size: 0.9rem;">#</span>
+                            </div>
+                            <div class="col">
+                                <span class="d-block text-muted small">Sección</span>
+                                <span class="badge badge-warning px-3 py-2 font-weight-bold" id="CodigoSeccionMatricula" style="font-size: 0.9rem;">#</span>
+                            </div>
+                            <div class="col">
+                                <span class="d-block text-muted small">Turno</span>
+                                <span class="badge badge-dark px-3 py-2 font-weight-bold" id="CodigoTurnoMatricula" style="font-size: 0.9rem;">#</span>
+                            </div>
+                        </div>
+                        <!-- Select oculto si se requiere mantener la compatibilidad lógica -->
+                        <select class="form-control d-none" name="lstModalidad" id="lstModalidad">
+                            <option value="06">Bachillerato General</option>
+                            <option value="15">Bachillerato Técnico Vocacional Administrativo Contable.</option>
+                            <option value="11">Bachillerato General - Nocturna</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tabla de Datos de los Responsables -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body bg-white rounded">
+                        <h6 class="text-secondary font-weight-bold mb-3"><i class="fas fa-users mr-1"></i> Datos de los Responsables y Contacto</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle mb-0" id="DatosResponsableTabla">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th style="width: 25%;">Parentesco / Selección</th>
+                                        <th style="width: 50%;">Nombre y Dirección</th>
+                                        <th style="width: 25%;">N.º de Teléfono</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ContenidoResponsable">
+                                    <tr>
+                                        <td>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="radio" name="Encargado" id="EncargadoPadre" value="Padre"/>
+                                                <label class="form-check-label font-weight-bold text-primary" for="EncargadoPadre">Encargado</label>
                                             </div>
-                                    </td>
-                                </tr>
-                            </form>
-                        </tbody>
-                    </table>
+                                            {!! Form::select('codigo_familiar_0', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_00', 'class' => 'form-control form-control-sm']) !!}
+                                        </td>
+                                        <td>
+                                            <input type="hidden" name="id_1" id="id_1" value="">
+                                            <label class="small text-muted mb-1">Nombre del Padre:</label>
+                                            <input type="text" class="form-control form-control-sm font-weight-bold text-dark bg-light" id="nombrep" name="nombrep" readonly>
+                                        </td>
+                                        <td>
+                                            <label class="small text-muted mb-1">Teléfono:</label>
+                                            <input type="text" class="form-control form-control-sm" id="telefono1" name="telefono1" maxlength="9" autocomplete="off">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="radio" name="Encargado" id="EncargadoMadre" value="Madre"/>
+                                                <label class="form-check-label font-weight-bold text-primary" for="EncargadoMadre">Encargado</label>
+                                            </div>
+                                            {!! Form::select('codigo_familiar_1', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_01', 'class' => 'form-control form-control-sm']) !!}
+                                        </td>
+                                        <td>
+                                            <input type="hidden" name="id_2" id="id_2" value="">
+                                            <label class="small text-muted mb-1">Nombre de la Madre:</label>
+                                            <input type="text" class="form-control form-control-sm font-weight-bold text-dark bg-light" id="nombrem" name="nombrem" readonly>
+                                        </td>
+                                        <td>
+                                            <label class="small text-muted mb-1">Teléfono:</label>
+                                            <input type="text" class="form-control form-control-sm" id="telefono2" name="telefono2" maxlength="9" autocomplete="off">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="radio" name="Encargado" id="EncargadoOtro" value="Otro"/>
+                                                <label class="form-check-label font-weight-bold text-primary" for="EncargadoOtro">Encargado</label>
+                                            </div>
+                                            {!! Form::select('codigo_familiar_2', ['00'=>'Selecciona...'] + $codigo_familiar_0, null, ['id' => 'codigo_familiar_02', 'class' => 'form-control form-control-sm']) !!}
+                                        </td>
+                                        <td>
+                                            <input type="hidden" name="id_3" id="id_3" value="">
+                                            <label class="small text-muted mb-1">Nombre Otro:</label>
+                                            <input type="text" class="form-control form-control-sm font-weight-bold text-dark" id="nombreotro" name="nombreotro" autocomplete="off">
+                                        </td>
+                                        <td>
+                                            <label class="small text-muted mb-1">Teléfono:</label>
+                                            <input type="text" class="form-control form-control-sm" id="telefono3" name="telefono3" maxlength="9" autocomplete="off">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td>
+                                            <label class="small text-muted mb-1">Nombre Estudiante:</label>
+                                            <input type="text" class="form-control form-control-sm font-weight-bold text-dark bg-light" id="nombreEstudiante" name="nombreEstudiante" readonly>
+                                        </td>
+                                        <td>
+                                            <label class="small text-muted mb-1">Celular Estudiante:</label>
+                                            <input type="text" class="form-control form-control-sm" id="telefono4" name="telefono4" maxlength="9" autocomplete="off">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td colspan="2">
+                                            <label class="small text-muted mb-1">Dirección:</label>
+                                            <textarea class="form-control form-control-sm" name="direccion1" id="direccion1" rows="2"></textarea>
+                                            
+                                            <div class="form-check mt-3">
+                                                <input class="form-check-input" type="checkbox" value="Si" id="TieneHermanos">
+                                                <label class="form-check-label text-dark small font-weight-bold" for="TieneHermanos">
+                                                    Tiene hermano(s) en otro grado(s).
+                                                </label>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </form>
         </div>
-        <div class="modal-footer bg-light">
-          <button type="button" class="btn btn-success" data-dismiss="modal" onclick="CerrarMatricula()">Cerrar</button>
-          <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="GuardarMatricula()" id="GuardarMatricular">Guardar</button>
+
+        <!-- Pie del Modal -->
+        <div class="modal-footer bg-white border-top-0 px-4 pb-4">
+          <button type="button" class="btn btn-secondary px-4 font-weight-bold" data-dismiss="modal" onclick="CerrarMatricula()"><i class="fas fa-times mr-1"></i> Cerrar</button>
+          <button type="button" class="btn btn-primary px-4 font-weight-bold shadow-sm" data-dismiss="modal" onclick="GuardarMatricula()" id="GuardarMatricular"><i class="fas fa-save mr-1"></i> Guardar</button>
         </div>
+
       </div>
     </div>
-  </div>
+</div>
 @endrole
 
 @role('Administrador')
@@ -419,37 +479,81 @@ use Illuminate\Support\Facades;
                 //@this.set('seleccionado', text);
             })
   
-       // funcion onchange
-        function BuscarPorAnnLectivo(AnnLectivo) {
-            url_ajax = '{{url("getGradoSeccionMatricula")}}' 
-            csrf_token = '{{csrf_token()}}' 
+    function BuscarPorAnnLectivo(AnnLectivo) {
+    // Si selecciona la opción por defecto, limpiamos y bloqueamos el select
+    if(AnnLectivo == '00') {
+        $('#codigo_grado_seccion_turno').prop('disabled', true);
+        $('#codigo_grado_seccion_turno').empty().append('<option value="00">Selecciona...</option>');
+        $("#NominaEstudiantes").css("display", "none");
+        return;
+    }
 
-            codigo_personal = $('#codigo_personal').val();
-            codigo_annlectivo = $('#codigo_annlectivo').val();
+    url_ajax = '{{url("getGradoSeccionMatricula")}}' 
+    codigo_personal = $('#codigo_personal').val();
+    codigo_annlectivo = AnnLectivo;
 
-            $.ajax({
-                type: "post",
-                url: url_ajax,
-                data: {
-                    "_token": "{{ csrf_token() }}",
-                    "id": codigo_personal, 
-                    codigo_annlectivo: codigo_annlectivo
-                },
-                dataType: 'json',
-                success:function(data) {
-                    // limpiar empty NominaEstudiantes
-                        $('#contenido').empty();
-                     var miselect=$("#codigo_grado_seccion_turno");
-                             miselect.empty();
-                             miselect.append('<option value="">Seleccionar...</option>');
-                                 $.each( data, function( key, value ) {
-                                        //console.log(value.codigo_gradoseccionturno);
-                                        //console.log(value.nombre_gradoseccionturno);
-                                            miselect.append('<option value="' + value.codigo_gradoseccionturno + '">' + value.nombre_gradoseccionturno + '</option>'); 
-                                });
-                } 
-            });
-        }
+    $.ajax({
+        type: "post",
+        url: url_ajax,
+        data: {
+            "_token": "{{ csrf_token() }}",
+            "id": codigo_personal, 
+            codigo_annlectivo: codigo_annlectivo
+        },
+        dataType: 'json',
+        success: function(data) {
+            var matriculaHabilitadaPorFecha = true;
+
+            // 1. Validar fechas de matrícula del año lectivo seleccionado
+            if (data.ann_lectivo) {
+                var fechaInicioMatricula = data.ann_lectivo.fecha_inicio_matricula;
+                var fechaFinMatricula = data.ann_lectivo.fecha_fin_matricula;
+                var fechaActual = new Date();
+
+                // Normalizar la fecha actual a medianoche para evitar desfases de horario locales
+                fechaActual.setHours(0, 0, 0, 0);
+
+                if (!fechaInicioMatricula || !fechaFinMatricula) {
+                    toastr.warning("Este año lectivo aún no tiene configuradas las fechas de matrícula.", "Aviso del Sistema");
+                    matriculaHabilitadaPorFecha = false;
+                } else {
+                    var inicio = new Date(fechaInicioMatricula + 'T00:00:00');
+                    var fin = new Date(fechaFinMatricula + 'T23:59:59');
+
+                    if (fechaActual < inicio || fechaActual > fin) {
+                        matriculaHabilitadaPorFecha = false;
+                        toastr.error("El período de matrícula para el año seleccionado está cerrado.", "Atención");
+                    } else {
+                        toastr.success("Período de matrícula abierto.", "Sistema");
+                    }
+                }
+            } else {
+                matriculaHabilitadaPorFecha = false;
+            }
+
+            var miselect = $("#codigo_grado_seccion_turno");
+            miselect.empty();
+            $('#contenido').empty();
+            $("#NominaEstudiantes").css("display", "none");
+
+            // 2. Controlar disponibilidad del selector según la validación de fechas
+            if (!matriculaHabilitadaPorFecha) {
+                // Deshabilitar el select si no está en fecha
+                miselect.prop('disabled', true);
+                miselect.append('<option value="00">Período de matrícula no disponible...</option>');
+            } else {
+                // Habilitar el select y cargar los grados si cumple con las fechas
+                miselect.prop('disabled', false);
+                miselect.append('<option value="00">Selecciona...</option>');
+                
+                var listaGrados = data.grados || data; 
+                $.each(listaGrados, function(key, value) {
+                    miselect.append('<option value="' + value.codigo_gradoseccionturno + '">' + value.nombre_gradoseccionturno + '</option>'); 
+                });
+            }
+        } 
+    });
+}
         //
         // FUNCION PARA PRESENTES O RETIRADOS.
         //
@@ -489,6 +593,23 @@ use Illuminate\Support\Facades;
                     var linea = 0; var html= ""; var presentes_ = 0; var retirados_ = 0; var sobreedad_ = 0; var promovidos_ = 0; var no_promovidos_ = 0; var sinsobreedad_ = 0;
                     var matricula_ = 0;  var cantidad_escala_0 = 0; var cantidad_escala_1 = 0; var cantidad_escala_2 = 0; var cantidad_escala_3 = 0; var matricula = true;
                         $('#contenido').empty();
+
+// --- NUEVA VALIDACIÓN DE FECHA DE APERTURA ---
+                // Suponiendo que el backend nos devuelve las fechas en el objeto o las leemos de una variable global
+                // (Asegúrate de pasar fecha_inicio_matricula y fecha_fin_matricula desde tu controlador en la respuesta JSON)
+                var fechaActual = new Date();
+                var fechaInicio = data.fecha_inicio_matricula ? new Date(data.fecha_inicio_matricula) : null;
+                var fechaFin = data.fecha_fin_matricula ? new Date(data.fecha_fin_matricula) : null;
+                
+                var matriculaHabilitadaPorFecha = true;
+                if (fechaInicio && fechaFin) {
+                    if (fechaActual < fechaInicio || fechaActual > fechaFin) {
+                        matriculaHabilitadaPorFecha = false;
+                        toastr.warning("El período de matrícula se encuentra cerrado.", "Atención");
+                    }
+                }
+                // ---------------------------------------------
+
                         $('#contenido').append(data);
                     // recorrer la matriz que viene del Controlador.
                     $.each( data, function( key, value ) {
@@ -593,6 +714,16 @@ use Illuminate\Support\Facades;
                             $("#CantidadUno").text(cantidad_escala_1);
                             $("#CantidadDos").text(cantidad_escala_2);
                             $("#CantidadTres").text(cantidad_escala_3);
+
+// VALIDAR BOTÓN DE MATRICULA CONDICIONADO POR FECHA Y ESTADO
+                    var boton_matricula = '';
+                    if (matriculaHabilitadaPorFecha && matricula == true) {
+                        boton_matricula = '<td><a class="fixedbutton btn btn-primary" href="#">Matricular</a></td>';
+                    } else if (!matriculaHabilitadaPorFecha) {
+                        boton_matricula = '<td><span class="badge badge-secondary">Fuera de período</span></td>';
+                    } else {
+                        boton_matricula = '<td><a class="btn btn-primary disabled" href="#">Matricular</a></td>';
+                    }
 
                         // armar el thml de la tabla.
                         html += fila_color +
@@ -716,113 +847,151 @@ use Illuminate\Support\Facades;
         var codigo_annlectivo = $('#codigo_annlectivo').val();
         codigo_annlectivo = codigo_annlectivo.trim();
 
+        // 1. Obtener el valor completo concatenado del select de Grado-Sección-Turno
+        var codigo_gradoseccionturno = $('#codigo_grado_seccion_turno').val();
+
+        // 2. Extraer los fragmentos según la estructura de tu sistema SISCARAD:
+        var codigo_grado    = codigo_gradoseccionturno.substring(0, 2);
+        var codigo_seccion  = codigo_gradoseccionturno.substring(2, 4);
+        var codigo_turno    = codigo_gradoseccionturno.substring(4, 6);
+
+        // 3. Extraer la modalidad y ahora sí aplicar .trim() de forma segura
+        var codigo_modalidad = codigo_gradoseccionturno.substring(6, 8).trim();
+
+
         //alert("Nombre: " + nombre + " Código: " + codigo_alumno + " Nie: " + nie);           
         $("#IdMatricula").text(codigo_alumno);
         $("#EstudianteMatricula").text(nombre);
 
         $("#PromocionMatricula").text(promocion);
         // Validar si es promovido o no promovido.
-        if(promocion.trim() == "Promovido"){
-            //promocion_verificar(codigo_gradoseccionturno)
+
+        // Mapeo basado en los nombres y códigos de la tabla bachillerato_ciclo
+            var nombresBachilleratoCiclo = {
+                '04': 'Segundo Ciclo de Educación Básica',
+                '05': 'Tercer Ciclo de Educación Básica',
+                '06': 'Bachillerato General',
+                '09': 'Bachillerato Técnico Vocacional',
+                '10': 'Modalidades Flexibles',
+                '14': 'Primer Ciclo de Educación Básica',
+                '15': 'Bachillerato Técnico Vocacional Administrativo Contable',
+                '16': 'Educación Básica Focalizada'
+            };
+
+            // Al procesar la selección del estudiante para la matrícula:
+            var codigoModalidadTrim = codigo_modalidad.trim();
+            var textoModalidadReal = nombresBachilleratoCiclo[codigoModalidadTrim] || 'Modalidad No Especificada';
+
+            var textoAnnLectivoReal = "Año Lectivo " + codigo_annlectivo;
+
+            // Pintar los nombres limpios en los elementos del modal
+            $("#AnnLectivoMatricula").text(textoAnnLectivoReal);
+            $("#CodigoModalidadMatricula").text(textoModalidadReal);
+
+    // 1. DICCIONARIOS DE REFERENCIA (Nombres reales basados en tus tablas de PostgreSQL)
+        var nombresGrados = {
+            '4P': 'Parvularia 4 años',
+            '5P': 'Parvularia 5 años',
+            '6P': 'Parvularia 6 años',
+            '01': 'Primer Grado',
+            '02': 'Segundo Grado',
+            '03': 'Tercer Grado',
+            '04': 'Cuarto Grado',
+            '05': 'Quinto Grado',
+            '06': 'Sexto Grado',
+            '07': 'Séptimo Grado',
+            '08': 'Octavo Grado',
+            '09': 'Noveno Grado',
+            '10': 'Primer Año de Bachillerato',
+            '11': 'Segundo Año de Bachillerato',
+            '12': 'Tercer Año de Bachillerato',
+            '17': 'Segundo Grado Focalizado',
+            '18': 'Tercer Grado Focalizado'
+        };
+
+        var nombresModalidades = {
+            '04': 'Segundo Ciclo',
+            '05': 'Tercer Ciclo',
+            '06': 'Bachillerato General',
+            '09': 'Bachillerato Técnico Vocacional',
+            '10': 'Modalidades Flexibles',
+            '14': 'Primer Ciclo',
+            '15': 'Bach. Técnico Administrativo Contable',
+            '16': 'Educación Básica Focalizada'
+        };
+
+        var nombresTurnos = {
+            '01': 'Matutino',
+            '02': 'Vespertino',
+            '03': 'Nocturno',
+            '04': 'Jornada Completa'
+        };
+
+        var nombresSecciones = {
+            '01': 'Sección A',
+            '02': 'Sección B',
+            '03': 'Sección C',
+            '04': 'Sección D'
+        };
+
+        // 2. TU BLOQUE SWITCH ACTUALIZADO PARA ASIGNAR CÓDIGOS Y NOMBRES
+        if(promocion.trim() == "Promovido" || promocion.trim() == "No Promovido"){
             codigo_grado = codigo_gradoseccionturno.substring(0,2);
             codigo_seccion = codigo_gradoseccionturno.substring(2,4);
             codigo_turno = codigo_gradoseccionturno.substring(4,6);
             codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
-            // cambios los codigos de grado, modalidad, annlectivo.
-                codigo_annlectivo = parseInt(codigo_annlectivo) +  1;
-            // cambiar el grado
-            switch (codigo_grado) {
-                case '4P':
-                    codigo_grado = '5P';
-                    break;
-                case '5P':
-                    codigo_grado = '6P';
-                    break;
-                case '6P': // cambia la modalidad a Primer ciclo y primer grado
-                    codigo_grado = '01';
-                    codigo_modalidad = '14';
-                    codigo_turno = '01';
-                    if(codigo_seccion == '02'){codigo_seccion = '03';codigo_turno = '02';}
-                    break;
-                case '01':  // va cambiar la modalidad a focalizada. segundo grado codigo 18
-                    codigo_grado = '17';
-                    codigo_modalidad = '16';
-                    break;
-                case '02':
-                    codigo_grado = '03';
-                    break;
-                case '03':  // cambia la Modalidad a Segundo ciclo y Cuarto Grado.
-                    codigo_grado = '04';
-                    codigo_modalidad = '04';
-                    break;
-                case '04':
-                    codigo_grado = '05';
-                    break;
-                case '05':
-                    codigo_grado = '06';
-                    break;
-                case '06':  // Cambila de Modalidad a Tercer Ciclo y Septimo Grado
-                    codigo_grado = '07';                    
-                    codigo_modalidad = '05';
-                    break;
-                case '07':
-                    if(codigo_modalidad == "10")   // condición para III ciclo modalidasdes felxibles septimo grado.
-                    {
-                        
-                    }
-                        codigo_grado = '08';
-                    break;
-                case '08':
-                    codigo_grado = '09';
-                    break;
-                case '09':  // cambiar modalidad. puede ser la 10 o la once.
-                    codigo_seccion = '01';
-                    codigo_grado = '10';
-                    codigo_modalidad = '06';
-                    codigo_turno = '04';    // jornada completa.
+
+            if(promocion.trim() == "Promovido") {
+                codigo_annlectivo = parseInt(codigo_annlectivo) + 1;
+                
+                // Switch de reglas de promoción de grado
+                switch (codigo_grado) {
+                    case '4P': codigo_grado = '5P'; break;
+                    case '5P': codigo_grado = '6P'; break;
+                    case '6P': 
+                        codigo_grado = '01';
+                        codigo_modalidad = '14';
+                        codigo_turno = '01';
+                        if(codigo_seccion == '02'){ codigo_seccion = '03'; codigo_turno = '02'; }
+                        break;
+                    case '01': codigo_grado = '17'; codigo_modalidad = '16'; break;
+                    case '02': codigo_grado = '03'; break;
+                    case '03': codigo_grado = '04'; codigo_modalidad = '04'; break;
+                    case '04': codigo_grado = '05'; break;
+                    case '05': codigo_grado = '06'; break;
+                    case '06': codigo_grado = '07'; codigo_modalidad = '05'; break;
+                    case '07': codigo_grado = '08'; break;
+                    case '08': codigo_grado = '09'; break;
+                    case '09': 
+                        codigo_seccion = '01';
+                        codigo_grado = '10';
+                        codigo_modalidad = '06';
+                        codigo_turno = '04';
                         $("#lstModalidad").show();
-                    break;
-                case '10':  // segundos años sin cambiar modalidad
-                    codigo_grado = '11';
-                    codigo_seccion = '01';
-                    break;
-                case '11':  // tercer año solo para técnico.
-                    codigo_grado = '12';
-                    codigo_modalidad = '09'
-                    break;
-                case '17':  // segundo grado focalizado.
-                    codigo_grado = '18';
-                    codigo_modalidad = '16';
-                    break;
-                case '18':  // tercer grado focalizado.
-                    codigo_grado = '04';
-                    codigo_modalidad = '04';
-                    break;
-                default:
-                    break;
+                        break;
+                    case '10': codigo_grado = '11'; codigo_seccion = '01'; break;
+                    case '11': codigo_grado = '12'; codigo_modalidad = '09'; break;
+                    case '17': codigo_grado = '18'; codigo_modalidad = '16'; break;
+                    case '18': codigo_grado = '04'; codigo_modalidad = '04'; break;
+                    default: break;
+                }
+            } else {
+                // Si es No Promovido, el año aumenta en 1 pero repite el mismo grado
+                codigo_annlectivo = parseInt(codigo_annlectivo) + 1;
             }
-            $("#AnnLectivoMatricula").text(codigo_annlectivo);
-            $("#CodigoModalidadMatricula").text(codigo_modalidad);    
-            $("#CodigoGradoMatricula").text(codigo_grado);    
-            $("#CodigoSeccionMatricula").text(codigo_seccion);    
-            $("#CodigoTurnoMatricula").text(codigo_turno);    
-            
-        }
 
-        if(promocion.trim() == "No Promovido"){
-            //promocion_verificar(codigo_gradoseccionturno)
-            codigo_grado = codigo_gradoseccionturno.substring(0,2);
-            codigo_seccion = codigo_gradoseccionturno.substring(2,4);
-            codigo_turno = codigo_gradoseccionturno.substring(4,6);
-            codigo_modalidad = codigo_gradoseccionturno.substring(6,8);
-            // cambios los codigos de grado, modalidad, annlectivo.
-            codigo_annlectivo = parseInt(codigo_annlectivo) + 1;
+            // 3. OBTENEMOS LOS NOMBRES DESCRIPTIVOS USANDO LOS DICCIONARIOS
+            var textoGrado = nombresGrados[codigo_grado] || codigo_grado;
+            var textoModalidad = nombresModalidades[codigo_modalidad] || codigo_modalidad;
+            var textoTurno = nombresTurnos[codigo_turno] || codigo_turno;
+            var textoSeccion = nombresSecciones[codigo_seccion] || codigo_seccion;
 
+            // 4. PLASMAMOS LOS NOMBRES EN LOS BADGES DEL MODAL
             $("#AnnLectivoMatricula").text(codigo_annlectivo);
-            $("#CodigoModalidadMatricula").text(codigo_modalidad);    
-            $("#CodigoGradoMatricula").text(codigo_grado);    
-            $("#CodigoSeccionMatricula").text(codigo_seccion);    
-            $("#CodigoTurnoMatricula").text(codigo_turno);   
+            $("#CodigoModalidadMatricula").text(textoModalidad);    
+            $("#CodigoGradoMatricula").text(textoGrado);    
+            $("#CodigoSeccionMatricula").text(textoSeccion);    
+            $("#CodigoTurnoMatricula").text(textoTurno);   
         }
         //
         // traer datos del responsable.
@@ -842,7 +1011,20 @@ use Illuminate\Support\Facades;
                     codigo_annlectivo: codigo_annlectivo
                 },
                 dataType: 'json',
-                success:function(data) {
+                success:function(response) {
+
+                    // 1. Validar si existe carga académica para este año/grado de destino
+                            var tieneCarga = response.tiene_carga_academica;
+                            var data = response.responsables;
+
+                            if (!tieneCarga) {
+                                toastr.error("Acción detenida: No existe carga académica creada para este grado en el año lectivo " + codigo_annlectivo, "Sistema");
+                                $("#GuardarMatricular").attr('disabled', true);
+                                $("#PromocionMatricula").text("SIN CARGA ACADÉMICA");
+                            } else {
+                                $("#GuardarMatricular").prop('disabled', false);
+                            }
+                            
                     $.each( data, function( key, value ) {
                         // VALIDAR SI LA MATRICULA YA FUE REALIZADA.
                             if(value.estado_matricular == 'si'){
