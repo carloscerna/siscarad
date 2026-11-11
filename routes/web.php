@@ -191,6 +191,8 @@ Route::get('/boleta/pdf/{id}/{accion}', [App\Http\Controllers\PdfController::cla
     Route::get('pdfRPG/{id}', [PdfRPGController::class, 'index']);
     // REPORTES para Licencias y Permisos
     Route::get('pdfRLyP/{id}', [PdfRLyPController::class,'index']);
+
+    Route::get('/get-periodos-habilitados', [CalificacionesPorAsignaturaController::class, 'getPeriodosHabilitados']);
     // REPORTES INFORMACIÓN DEL ESTUDIANTE Y ENCARGADO.
     //Route::get('pdfRPGEstudiante/{id}', ['\App\Http\Controllers\PdfRPGEstudianteController::class', 'index']);
     // helpers

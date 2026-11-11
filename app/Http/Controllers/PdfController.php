@@ -739,11 +739,13 @@ if (!$foto_encontrada) {
                             $this->fpdf->Cell($ancho_cell[$NumeroAnchoColumna], $alto_cell[0], substr(mb_convert_encoding($nombre_asignatura_db, "ISO-8859-1", "UTF-8"), 0, $NombreStringAncho), 1, 0, 'L');
 
                             // --- BUCLE DINÁMICO DE NOTAS ---
-                            // Aquí es donde aplicamos $valor_actividades que calculaste en la cabecera
                             if(!($codigo_area == "03" && $codigo_modalidad == "15" && $codigo_cc == "04")){
                                 for ($na=1; $na <= $valor_actividades; $na++) { 
+                                    
+                                    $isPromedioPeriodo = ($na % 5 == 0);
+
                                     // Resaltar promedios de periodo (PP)
-                                    if($na % 5 == 0){
+                                    if($isPromedioPeriodo){
                                         $this->fpdf->SetFillColor(218,215,215);
                                         $this->fpdf->SetFont('Arial', 'B', '7');
                                     } else {
@@ -753,14 +755,33 @@ if (!$foto_encontrada) {
 
                                     $valor_nota = ($nota_actividades_0[$na] == 0) ? '' : $nota_actividades_0[$na];
                                     
+                                    // =========================================================================
+                                    // EVALUAR SI ES MENOR A LA NOTA MÍNIMA PARA COLOREAR DE ROJO
+                                    // =========================================================================
+                                    if ($isPromedioPeriodo && $valor_nota !== '') {
+                                        // Definir la nota mínima según modalidad (ej: 5.0 para Básica/Planes específicos, 6.0 para Media)
+                                        $notaMinimaPeriodo = (($codigo_modalidad >= '03' && $codigo_modalidad <= '05') || ($codigo_modalidad >= '17' && $codigo_modalidad <= '19')) ? 5.0 : 6.0;
+
+                                        if ((float)$valor_nota < $notaMinimaPeriodo) {
+                                            $this->fpdf->SetTextColor(255, 0, 0); // Texto Rojo
+                                        } else {
+                                            $this->fpdf->SetTextColor(0, 0, 0);   // Texto Negro Normal
+                                        }
+                                    }
+
                                     // Caso especial: Competencias Ciudadanas (Conceptos en vez de números)
-                                    if($codigo_area == '07' && $na % 5 == 0 && $valor_nota != ''){
+                                    if($codigo_area == '07' && $isPromedioPeriodo && $valor_nota != ''){
                                         $result_concepto = resultado_concepto($codigo_modalidad, $valor_nota);
                                         $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $result_concepto, 1, 0, 'C', true);
                                     } else {
                                         $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $valor_nota, 1, 0, 'C', true);
                                     }
-                                } // for
+
+                                    // Restaurar color de texto a negro para las siguientes celdas de actividades normales
+                                    if ($isPromedioPeriodo) {
+                                        $this->fpdf->SetTextColor(0, 0, 0);
+                                    }
+                                } // for 
                                 // =========================================================================
                                 // ¡CÁLCULO DINÁMICO FIJO SEGÚN EL TOTAL DE PERIODOS DE LA MODALIDAD!
                                 // =========================================================================
@@ -790,7 +811,7 @@ if (!$foto_encontrada) {
 
                             
 
-                                
+                                /*
                             $this->fpdf->SetFont('Arial', 'B', '7');
                             $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[28] == 0 ? '' : round($nota_actividades_0[28], 0)), 1, 0, 'C'); // PF
                             $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[26] == 0 ? '' : $nota_actividades_0[26]), 1, 0, 'C'); // NR1
@@ -798,20 +819,64 @@ if (!$foto_encontrada) {
 
                             
                             if($nota_actividades_0[28] > 0){
-                                // Pasamos el $nota_final_calculada ($nota_actividades_0[28]) directamente para evaluar el resultado
+                                // Obtenemos el resultado y la nota final ajustada con las recuperaciones (NR1 y NR2)
                                 $result = resultado_final($codigo_modalidad, $nota_actividades_0[26], $nota_actividades_0[27], $nota_actividades_0[28], $codigo_area);
                                 
-                                if($result[0] == "R") $this->fpdf->SetTextColor(255,0,0);
+                                if($result[0] == "R") {
+                                    $this->fpdf->SetTextColor(255, 0, 0);
+                                }
                                 
-                                // CAMBIO AQUÍ: Forzamos a que pinte el valor calculado matemáticamente ($nota_actividades_0[28]) en lugar de $result[1]
-                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($nota_actividades_0[28], 0), 1, 0, 'C');
-                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $result[0], 1, 1, 'C');
+                                // CAMBIO: Imprimimos $result[1] en la columna NF (Nota Final con recuperación aplicada)
+                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($result[1], 0), 1, 0, 'C'); 
+                                
+                                // Columna Resultado (A o R)
+                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $result[0], 1, 1, 'C'); 
+                                
                                 $this->fpdf->SetTextColor(0); 
                             } else {
                                 $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 0, 'C');
                                 $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 1, 'C');
                             }
+*/
+// =========================================================================
+                            // IMPRESIÓN DE COLUMNAS FINALES (PF / PP3 VISUAL, NR1, NR2, NF, RESULTADO)
+                            // =========================================================================
+                            $this->fpdf->SetFont('Arial', 'B', '7');
+                            
+                            // Evaluar Nota Final (PF / celda de cierre) para color rojo si reprueba
+                            $notaFinalValor = $nota_actividades_0[28];
+                            $notaMinimaGeneral = (($codigo_modalidad >= '03' && $codigo_modalidad <= '05') || ($codigo_modalidad >= '17' && $codigo_modalidad <= '19')) ? 5.0 : 6.0;
 
+                            if ($notaFinalValor > 0 && (float)$notaFinalValor < $notaMinimaGeneral) {
+                                $this->fpdf->SetTextColor(255, 0, 0); // Rojo para PF si es menor al mínimo
+                            } else {
+                                $this->fpdf->SetTextColor(0, 0, 0);
+                            }
+
+                            // Imprimir PF (Promedio Final)
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($notaFinalValor == 0 ? '' : round($notaFinalValor, 0)), 1, 0, 'C'); 
+                            
+                            // Restaurar texto a negro para las notas de recuperación
+                            $this->fpdf->SetTextColor(0, 0, 0);
+
+                            // NR1 y NR2
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[26] == 0 ? '' : $nota_actividades_0[26]), 1, 0, 'C'); 
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[27] == 0 ? '' : $nota_actjsdelivr_0[27] ?? $nota_actividades_0[27]), 1, 0, 'C'); 
+
+                            if($notaFinalValor > 0){
+                                $result = resultado_final($codigo_modalidad, $nota_actividades_0[26], $nota_actividades_0[27], $notaFinalValor, $codigo_area);
+                                
+                                if($result[0] == "R") {
+                                    $this->fpdf->SetTextColor(255, 0, 0);
+                                }
+                                
+                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], number_format($result[1], 0), 1, 0, 'C'); // NF
+                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], $result[0], 1, 1, 'C'); // Resultado (A/R)
+                                $this->fpdf->SetTextColor(0); 
+                            } else {
+                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 0, 'C');
+                                $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], '', 1, 1, 'C');
+                            }
 
                         } // Fin bucle materias
 

@@ -642,14 +642,15 @@ class PdfRPGController extends Controller
                     ];
                 }
                 
-                if (!is_null($grade->codigo_area)) {
-                    $studentsGrades[$grade->id_alumno_matricula]['grades'][] = [
-                        'rec_1' => $grade->recuperacion, 
-                        'rec_2' => $grade->nota_recuperacion_2, 
-                        'final' => $grade->nota_final, 
-                        'area' => $grade->codigo_area 
-                    ];
-                }
+        if (!is_null($grade->codigo_area)) {
+            $studentsGrades[$grade->id_alumno_matricula]['grades'][] = [
+                'rec_1' => $grade->recuperacion, 
+                'rec_2' => $grade->nota_recuperacion_2, 
+                // Aplicamos round() aquí para redondear la nota final de inmediato
+                'final' => !is_null($grade->nota_final) ? round($grade->nota_final) : null, 
+                'area' => $grade->codigo_area 
+            ];
+        }
             }
 
             // Grados de promoción masiva

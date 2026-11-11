@@ -208,6 +208,24 @@ class MatriculaController extends Controller
                     $sobreedad = trim($response->sobreedad);
                     $retirado = trim($response->retirado);
                     $codigo_resultado = trim($response->codigo_resultado);
+
+
+// AQUÍ ES DONDE DEBES COLOCAR LA CONDICIÓN:
+    // Permitir matrícula activa si es Parvularia, Primer Grado o si está Promovido (resultado == "3")
+    if ($codigo_grado == '4P' || 
+        $codigo_grado == '5P' || 
+        $codigo_grado == '6P' || 
+        $codigo_grado == '01')
+        {
+        $codigo_resultado = "3";
+                $matricula = true;
+        
+
+    } else {
+        $matricula = false;
+    }
+
+
                         // FOTO DEL ESTUDIANTE.
                         if (file_exists('c:/wamp64/www/registro_academico/img/fotos/'.$codigo_institucion.'/'.$nombre_foto))
                         {

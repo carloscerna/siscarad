@@ -258,6 +258,16 @@ class PdfRPAController extends Controller
             $total_estudiantes = count($EstudianteBoleta);
             // --- FIN: CÓDIGO AÑADIDO ---
 
+            // Consultar la calificación mínima específica para esta modalidad desde catalogo_periodos
+            $configPeriodoRPA = DB::table('catalogo_periodos')
+                ->where('codigo_modalidad', $codigo_modalidad)
+                ->first();
+
+            $notaMinimaModalidad = ($configPeriodoRPA && $configPeriodoRPA->calificacion_minima > 0) 
+                ? (float)$configPeriodoRPA->calificacion_minima 
+                : 5.0; // Valor por defecto por seguridad
+
+
             // variales de entorno para mostrar la información.
             $fila = 1;             
             $this->fpdf->SetX(30); 
@@ -423,9 +433,10 @@ class PdfRPAController extends Controller
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
                     ///////////////////////////////////////////////////////////////////////////////////////////////////	
                     // VALOR DE LA CALIFIACION SEGUN PERIODO 
+                 // VALOR DE LA CALIFIACION SEGUN PERIODO 
                         $this->fpdf->SetFont('Arial', '', '7');
-                    // INFORMACION DE LA ARRAY EXTRAER DE LA MATRIZ
-                    // n.º, NIE. NOMBRE DEL ESTUDIANTE
+                        // INFORMACION DE LA ARRAY EXTRAER DE LA MATRIZ
+                        // n.º, NIE. NOMBRE DEL ESTUDIANTE
                         $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$fila,1,0,'L',false);            
                         $this->fpdf->Cell($ancho_cell[4],$alto_cell[0],$codigo_nie,1,0,'L',false);            
                         $this->fpdf->Cell($ancho_cell[0],$alto_cell[0],$nombre_estudiante,1,0,'L',false);            
@@ -434,54 +445,81 @@ class PdfRPAController extends Controller
                             if($na == 5 || $na == 10 || $na == 15 || $na == 20 || $na == 25){
                                 $this->fpdf->SetFillColor(218,215,215);
                                 $this->fpdf->SetFont('Arial', 'B', '7');
-                                // Cerificar si la calicación es igual a 0
+                                
+                                // Evaluar si la calificación es menor a la nota mínima de la BD para pintar de rojo
+                                if($nota_actividades_0[$na] > 0 && (float)$nota_actividades_0[$na] < $notaMinimaModalidad){
+                                    $this->fpdf->SetTextColor(255, 0, 0);
+                                }
+
                                 if($nota_actividades_0[$na] == 0){
                                     $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
                                 }else{
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                    if($codigo_area == '07'){
+                                        $result_concepto = resultado_concepto($codigo_modalidad, $nota_actividades_0[$na]);
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$result_concepto,1,'TB','R',true);
+                                    }else{
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
+                                    }
                                 }
-                                    
+                                
+                                $this->fpdf->SetTextColor(0); // Restaurar color
                                 $this->fpdf->SetFont('Arial', '', '7');
                                 $this->fpdf->SetFillColor(255,255,255);
                             }else{
-                                //
                                 $this->fpdf->SetFont('Arial', '', '7');
                                 $this->fpdf->SetFillColor(255,255,255);
-                                // Cerificar si la calicación es igual a 0
+                                
+                                if($nota_actividades_0[$na] > 0 && (float)$nota_actividades_0[$na] < $notaMinimaModalidad){
+                                    $this->fpdf->SetTextColor(255, 0, 0);
+                                }
+
                                 if($nota_actividades_0[$na] == 0){
-                                    $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
+                                    if($codigo_area == '07'){
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'','TB',0,'C',true);
+                                    }else{
+                                        $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C',true);
+                                    }
                                 }else{
                                     $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[$na],1,0,'C',true);
                                 }
+                                $this->fpdf->SetTextColor(0); // Restaurar color
                             }
                         }
-                        // NOTA PROMEDIO FINAL.
+                        // NOTA PROMEDIO FINAL (PF).
                         $this->fpdf->SetFont('Arial', 'B', '7');
-                            // NOTA PROMEDIO FINAL
-                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[28],1,0,'C');
-                            // NOTA RECUPERACION  1
+                            
+                            $notaFinalValor = (float)$nota_actividades_0[28];
+                            if($notaFinalValor > 0 && $notaFinalValor < $notaMinimaModalidad){
+                                $this->fpdf->SetTextColor(255, 0, 0);
+                            }
+
+                            $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],($notaFinalValor == 0 ? '' : round($notaFinalValor, 0)),1,0,'C');
+                            $this->fpdf->SetTextColor(0);
+
+                            // NOTA RECUPERACION 1
                                 if($nota_actividades_0[26] == 0){
                                     $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
                                 }
                                 else{
                                     $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[26],1,0,'C');
                                 }
-                            // NOTA RECUPERACION  2
+                            // NOTA RECUPERACION 2
                                 if($nota_actividades_0[27] == 0){
                                     $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
                                 }
                                 else{
                                     $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],$nota_actividades_0[27],1,0,'C');
                                 }
-                            // NOTA PROMEDIO FINAL.
-                            if($nota_actividades_0[28] == 0){
+                            // NOTA FINAL (NF) Y RESULTADO (A / R).
+                            if($notaFinalValor == 0){
                                 $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,0,'C');
+                                $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],'',1,1,'C');
                             }
                             else{
                                 // CALCULAR SI ES APROBADO O REPROBRADO
-                                $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$nota_actividades_0[28],$codigo_area);
+                                $result = resultado_final($codigo_modalidad, $nota_actividades_0[26],$nota_actividades_0[27],$notaFinalValor,$codigo_area);
                                 
-                                    if($result[0] == "R"){
+                                    if($result[0] == "R" || (float)$result[1] < $notaMinimaModalidad){
                                         $this->fpdf->SetTextColor(255,0,0);
                                     } 
                                         $this->fpdf->Cell($ancho_cell[1],$alto_cell[0],round($result[1],0),1,0,'C');

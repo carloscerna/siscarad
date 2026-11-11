@@ -1133,6 +1133,7 @@ public function getAsignaturas(Request $request)
 
 //
 
+/*
  public function buscarEstudiantes(Request $request)
 {
     $periodo = $request->periodo;
@@ -1289,6 +1290,172 @@ $estudiantes = DB::table('alumno as al')
         'estudiantes' => $estudiantes
     ]);
 }
+    */
+
+public function buscarEstudiantes(Request $request)
+{
+    $periodo = $request->periodo;
+    $codigo_ann = $request->codigo_ann_lectivo;
+
+    $codigo_combinado = trim($request->codigo_asignatura);
+    $conteo = strlen($codigo_combinado);
+    $codigo_asignatura = "";
+    $codigo_area = "";
+
+    if ($conteo == 4) {
+        $codigo_asignatura = substr($codigo_combinado, 0, 2);
+        $codigo_area = substr($codigo_combinado, 2, 2);
+    } elseif ($conteo == 6 or $conteo == 8) {
+        $codigo_asignatura = substr($codigo_combinado, 0, 4);
+        $codigo_area = substr($codigo_combinado, 4, 2);
+    } else {
+        $codigo_asignatura = substr($codigo_combinado, 0, 3);
+        $codigo_area = substr($codigo_combinado, 3, 2);
+    }
+    
+    $grado     = $request->codigo_grado;
+    $seccion   = $request->codigo_seccion;
+    $turno     = $request->codigo_turno;
+    $modalidad = $request->codigo_modalidad;
+
+    // =========================================================================
+    // 1. OBTENER CALIFICACIÓN MÍNIMA DESDE LA TABLA catalogo_periodos
+    // =========================================================================
+    $configPeriodo = DB::table('catalogo_periodos')
+        ->where('codigo_modalidad', $modalidad)
+        ->first();
+        
+    $calificacionMinima = ($configPeriodo && $configPeriodo->calificacion_minima > 0) 
+        ? $configPeriodo->calificacion_minima 
+        : 5; // Valor por defecto si no lo encuentra
+
+    // =========================================================================
+    // 2. DETECTAR SI ES PERIODO DE RECUPERACIÓN (6 o 7)
+    // =========================================================================
+    $esRecuperacion = in_array($periodo, ['6', '7']);
+
+    // Detectar si es modular
+    $asignaturaInfo = DB::table('asignatura')
+        ->where(DB::raw('RTRIM(codigo)'), $codigo_asignatura)
+        ->select(DB::raw('RTRIM(codigo_cc) as codigo_cc'))
+        ->first();
+
+    $esModular = ($asignaturaInfo && $asignaturaInfo->codigo_cc == '04' && $modalidad == '15');
+    
+    if ($esModular) {
+        $selectColumnas = [
+            'al.id_alumno as codigo_alumno',
+            DB::raw("
+                TRIM(
+                    REGEXP_REPLACE(
+                        CONCAT(
+                            COALESCE(NULLIF(TRIM(al.apellido_paterno), ''), ''), 
+                            ' ', 
+                            COALESCE(NULLIF(TRIM(al.apellido_materno), ''), ''), 
+                            ', ', 
+                            COALESCE(NULLIF(TRIM(al.nombre_completo), ''), '')
+                        ),
+                        '\s+', ' ', 'g'
+                    )
+                ) as nombre_completo
+            "),
+            'al.codigo_nie',
+            'am.id_alumno_matricula as codigo_matricula',
+            'n.nota_final as nota_p' // Valor único anual para módulos
+        ];
+    }else if ($esRecuperacion) {
+        // Mapeo para recuperación
+        $colRecup = ($periodo == '6') ? 'n.recuperacion' : 'n.nota_recuperacion_2';
+        
+        $selectColumnas = [
+            'al.id_alumno as codigo_alumno',
+            DB::raw("
+                TRIM(
+                    REGEXP_REPLACE(
+                        CONCAT(
+                            COALESCE(NULLIF(TRIM(al.apellido_paterno), ''), ''), 
+                            ' ', 
+                            COALESCE(NULLIF(TRIM(al.apellido_materno), ''), ''), 
+                            ', ', 
+                            COALESCE(NULLIF(TRIM(al.nombre_completo), ''), '')
+                        ),
+                        '\s+', ' ', 'g'
+                    )
+                ) as nombre_completo
+            "),
+            'al.codigo_nie',
+            'am.id_alumno_matricula as codigo_matricula',
+            'n.nota_final',
+            "{$colRecup} as nota_recuperacion"
+        ];
+    } else {
+        // Lógica tradicional de periodos 1 al 5 (se mantiene igual)
+        $col1 = "nota_a1_{$periodo}";
+        $col2 = "nota_a2_{$periodo}";
+        $col3 = "nota_a3_{$periodo}";
+        $colR = "nota_r_{$periodo}";
+        $colP = "nota_p_p_{$periodo}";
+
+        $selectColumnas = [
+            'al.id_alumno as codigo_alumno',
+            DB::raw("
+                TRIM(
+                    REGEXP_REPLACE(
+                        CONCAT(
+                            COALESCE(NULLIF(TRIM(al.apellido_paterno), ''), ''), 
+                            ' ', 
+                            COALESCE(NULLIF(TRIM(al.apellido_materno), ''), ''), 
+                            ', ', 
+                            COALESCE(NULLIF(TRIM(al.nombre_completo), ''), '')
+                        ),
+                        '\s+', ' ', 'g'
+                    )
+                ) as nombre_completo
+            "),
+            'al.codigo_nie',
+            'am.id_alumno_matricula as codigo_matricula',
+            "n.{$col1} as nota_a1",
+            "n.{$col2} as nota_a2",
+            "n.{$col3} as nota_a3",
+            "n.{$colR} as nota_r",
+            "n.{$colP} as nota_p",
+            'n.nota_final'
+        ];
+    }
+
+    $query = DB::table('alumno as al')
+        ->join('alumno_matricula as am', 'al.id_alumno', '=', 'am.codigo_alumno')
+        ->join('nota as n', function($join) use ($codigo_asignatura) {
+            $join->on('am.id_alumno_matricula', '=', 'n.codigo_matricula')
+                 ->where('n.codigo_asignatura', '=', $codigo_asignatura);
+        })
+        ->where('am.codigo_ann_lectivo', $codigo_ann)
+        ->where('am.codigo_bach_o_ciclo', $modalidad)
+        ->where('am.codigo_grado', $grado)
+        ->where('am.codigo_seccion', $seccion)
+        ->where('am.codigo_turno', $turno)
+        ->where('am.retirado', false);
+
+    // =========================================================================
+    // 3. FILTRAR SOLO LOS QUE TIENEN NOTA FINAL MENOR A LA MÍNIMA (SI ES RECUPERACIÓN)
+    // =========================================================================
+    if ($esRecuperacion) {
+        $query->where('n.nota_final', '<', $calificacionMinima);
+    }
+
+    $estudiantes = $query->select($selectColumnas)
+        ->orderByRaw("LOWER(TRIM(COALESCE(al.apellido_paterno, al.apellido_materno, ''))) ASC")
+        ->get();
+
+    return response()->json([
+        'status' => 'success',
+        'es_modular' => $esModular,
+        'es_recuperacion' => $esRecuperacion,
+        'periodo' => $periodo,
+        'calificacion_minima' => $calificacionMinima,
+        'estudiantes' => $estudiantes
+    ]);
+}
 public function guardarTodas(Request $request)
 {
     try {
@@ -1318,94 +1485,110 @@ public function guardarTodas(Request $request)
         $esModular = ($asignaturaInfo && $asignaturaInfo->codigo_cc == '04' && $codigo_modalidad == '15');
 
         // 3. Procesar fila por fila
-        foreach ($notas as $n) {
-            
-            if ($esModular) {
-                    // =============================================================
-                    // LÓGICA DE GUARDADO PARA MÓDULOS (ENTEROS: 0, 1, 2, 3, 4, 5)
-                    // =============================================================
-                    $nota_m = isset($n['nota_modular']) ? intval($n['nota_modular']) : 0;
+   foreach ($notas as $n) {
+    
+    // =============================================================
+    // 1. LÓGICA DE GUARDADO PARA RECUPERACIÓN 1 (6) O 2 (7)
+    // =============================================================
+    if (in_array($periodo, ['6', '7'])) {
+        $columnaRecup = ($periodo == '6') ? 'recuperacion' : 'nota_recuperacion_2';
+        $valorRecup = floatval($n['nota_recuperacion'] ?? 0);
 
-                    // Validación estricta: solo permite 0, 1, 2, 3, 4 o 5
-                    if (!in_array($nota_m, [0, 1, 2, 3, 4, 5], true)) {
-                        return response()->json([
-                            'status' => 'error', 
-                            'message' => 'Error: Las calificaciones modulares deben ser números enteros de 1 a 5, o 0.'
-                        ], 422);
-                    }
+        // Validación opcional de rango (0 a 10)
+        if ($valorRecup < 0 || $valorRecup > 10) {
+            return response()->json([
+                'status' => 'error', 
+                'message' => 'Error: La nota de recuperación debe estar entre 0.0 y 10.0'
+            ], 422);
+        }
 
-                    // Guardamos directamente en 'nota_final' y limpiamos promedios parciales
-                    DB::table('nota')->updateOrInsert(
-                        [
-                            'codigo_matricula'  => $n['codigo_matricula'], 
-                            'codigo_asignatura' => $codigo_asignatura
-                        ],
-                        [
-                            'nota_final' => $nota_m,
-                            'nota_p_p_1' => 0,
-                            'nota_p_p_2' => 0,
-                            'nota_p_p_3' => 0,
-                            'nota_p_p_4' => 0,
-                            'updated_at' => now()
-                        ]
-                    );
+        DB::table('nota')->updateOrInsert(
+            [
+                'codigo_matricula'  => $n['codigo_matricula'], 
+                'codigo_asignatura' => $codigo_asignatura
+            ],
+            [
+                $columnaRecup => $valorRecup,
+                'updated_at'  => now()
+            ]
+        );
 
+    } 
+    // =============================================================
+    // 2. LÓGICA DE GUARDADO PARA MÓDULOS (CONCEPTO '04' EN MODALIDAD '15')
+    // =============================================================
+    else if ($esModular) {
+        $nota_m = isset($n['nota_modular']) ? intval($n['nota_modular']) : 0;
 
+        if (!in_array($nota_m, [0, 1, 2, 3, 4, 5], true)) {
+            return response()->json([
+                'status' => 'error', 
+                'message' => 'Error: Las calificaciones modulares deben ser números enteros de 1 a 5, o 0.'
+            ], 422);
+        }
+
+        DB::table('nota')->updateOrInsert(
+            [
+                'codigo_matricula'  => $n['codigo_matricula'], 
+                'codigo_asignatura' => $codigo_asignatura
+            ],
+            [
+                'nota_final' => $nota_m,
+                'nota_p_p_1' => 0,
+                'nota_p_p_2' => 0,
+                'nota_p_p_3' => 0,
+                'nota_p_p_4' => 0,
+                'updated_at' => now()
+            ]
+        );
+    } 
+    // =============================================================
+    // 3. LÓGICA TRADICIONAL (PERIODOS DEL 1 AL 5)
+    // =============================================================
+    else {
+        $nota_a1 = floatval($n['nota_a1']);
+        $nota_a2 = floatval($n['nota_a2']);
+        $nota_a3 = floatval($n['nota_a3']);
+        $nota_r  = floatval($n['nota_r']);
+
+        $a1_calculo = $nota_a1;
+        $a2_calculo = $nota_a2;
+
+        if ($nota_r > 0) {
+            if ($nota_a1 <= $nota_a2) {
+                if ($nota_r > $nota_a1) { $a1_calculo = $nota_r; }
             } else {
-                // =============================================================
-                // LÓGICA TRADICIONAL CORREGIDA (ACTIVIDADES Y RECUPERACIÓN)
-                // =============================================================
-                $nota_a1 = floatval($n['nota_a1']);
-                $nota_a2 = floatval($n['nota_a2']);
-                $nota_a3 = floatval($n['nota_a3']);
-                $nota_r  = floatval($n['nota_r']);
-
-                // Variables temporales para el cálculo del promedio
-                $a1_calculo = $nota_a1;
-                $a2_calculo = $nota_a2;
-
-                // Aplicar la regla: La recuperación (R) sustituye únicamente a la menor nota entre A1 y A2
-                if ($nota_r > 0) {
-                    if ($nota_a1 <= $nota_a2) {
-                        if ($nota_r > $nota_a1) {
-                            $a1_calculo = $nota_r;
-                        }
-                    } else {
-                        if ($nota_r > $nota_a2) {
-                            $a2_calculo = $nota_r;
-                        }
-                    }
-                }
-
-                // Recalcular el promedio con las ponderaciones oficiales (35%, 35%, 30%)
-                $promedio_calculado = ($a1_calculo * 0.35) + ($a2_calculo * 0.35) + ($nota_a3 * 0.30);
-
-                // Determinar si aplica redondeo a entero (Básica) o con 1 decimal (Media)
-                $esBasica = in_array($codigo_modalidad, ['03', '04', '05', '10', '12', '17', '18', '19']);
-                $promedio_p = $esBasica ? round($promedio_calculado, 1) : round($promedio_calculado, 1);
-
-                $columnas = [
-                    "nota_a1_{$periodo}"  => $nota_a1,
-                    "nota_a2_{$periodo}"  => $nota_a2,
-                    "nota_a3_{$periodo}"  => $nota_a3,
-                    "nota_r_{$periodo}"   => $nota_r,
-                    "nota_p_p_{$periodo}" => $promedio_p,
-                    'updated_at'          => now()
-                ];
-
-                DB::table('nota')->updateOrInsert(
-                    [
-                        'codigo_matricula'  => $n['codigo_matricula'], 
-                        'codigo_asignatura' => $codigo_asignatura
-                    ],
-                    $columnas
-                );
-
-                // Recalcular la nota final global de la asignatura
-                $divisor = ($codigo_modalidad >= '11' && $codigo_modalidad <= '14') ? 4 : 3; 
-                $this->actualizarNotaFinalGlobal($n['codigo_matricula'], $codigo_asignatura, $divisor);
+                if ($nota_r > $nota_a2) { $a2_calculo = $nota_r; }
             }
         }
+
+        // Corrección de la fórmula matemática (asegurando los operadores de multiplicación)
+        $promedio_calculado = ($a1_calculo * 0.35) + ($a2_calculo * 0.35) + ($nota_a3 * 0.30);
+
+        $esBasica = in_array($codigo_modalidad, ['03', '04', '05', '10', '12', '17', '18', '19']);
+        $promedio_p = $esBasica ? round($promedio_calculado, 1) : round($promedio_calculado, 1);
+
+        $columnas = [
+            "nota_a1_{$periodo}"  => $nota_a1,
+            "nota_a2_{$periodo}"  => $nota_a2,
+            "nota_a3_{$periodo}"  => $nota_a3,
+            "nota_r_{$periodo}"   => $nota_r,
+            "nota_p_p_{$periodo}" => $promedio_p,
+            'updated_at'          => now()
+        ];
+
+        DB::table('nota')->updateOrInsert(
+            [
+                'codigo_matricula'  => $n['codigo_matricula'], 
+                'codigo_asignatura' => $codigo_asignatura
+            ],
+            $columnas
+        );
+
+        $divisor = ($codigo_modalidad >= '11' && $codigo_modalidad <= '14') ? 4 : 3; 
+        $this->actualizarNotaFinalGlobal($n['codigo_matricula'], $codigo_asignatura, $divisor);
+    }
+}
 
         return response()->json(['status' => 'success', 'message' => 'Calificaciones registradas exitosamente.']);
 
@@ -1466,5 +1649,38 @@ private function actualizarNotaFinalGlobal($matricula, $asignatura, $divisor)
             ->where('id_notas', $registro->id_notas)
             ->update(['nota_final' => round($nota_final, 0)]);
 }
+
+/**
+ * Obtiene los períodos habilitados para la modalidad y año lectivo seleccionados
+ * según el rango de fechas en periodo_calendario.
+ */
+public function getPeriodosHabilitados(Request $request)
+{
+    $codigo_ann = $request->codigo_ann;           // Ej: '26'
+    $fullCodigoSeccion = $request->codigo_seccion; // Ej: '0701011726'
+    $codigo_modalidad = substr($fullCodigoSeccion, 6, 2); // Extrae '17'
+
+    $hoy = \Carbon\Carbon::now()->format('Y-m-d');
+
+    // Consultar períodos habilitados igualando ambos códigos mediante CAST a INTEGER
+    $periodos = DB::table('periodo_calendario as pc')
+        ->join('catalogo_periodo as cp', function($join) {
+            $join->on(DB::raw('CAST(cp.codigo AS INTEGER)'), '=', DB::raw('CAST(pc.codigo_periodo AS INTEGER)'));
+        })
+        ->select('cp.codigo', 'cp.descripcion', 'pc.fecha_desde', 'pc.fecha_registro_academico')
+        ->where('pc.codigo_annlectivo', $codigo_ann)
+        ->where('pc.codigo_modalidad', $codigo_modalidad)
+        ->whereDate('pc.fecha_desde', '<=', $hoy)
+        ->whereDate('pc.fecha_registro_academico', '>=', $hoy)
+        ->orderBy('cp.codigo', 'asc')
+        ->get();
+
+    return response()->json([
+        'status' => 'success',
+        'hoy' => $hoy,
+        'periodos' => $periodos
+    ]);
+}   
+
 
 }   // fin de la función.

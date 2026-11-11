@@ -68,16 +68,13 @@ use Illuminate\Support\Facades\Auth;
                         {{-- Filtro: Periodo --}}
                         <div class="col-md-3" id="contenedor-filtro-periodo">
                             <div class="form-group">
-                                <label for="periodo">Periodo</label>
-                                <select id="periodo" name="periodo" class="form-control" required>
-                                    <option value="1">Periodo 1</option>
-                                    <option value="2">Periodo 2</option>
-                                    <option value="3">Periodo 3</option>
-                                    <option value="4">Periodo 4</option>
-                                    <option value="5">Periodo 5</option>
+                                <label for="periodo">Periodo Habilitado</label>
+                                <select id="periodo" name="periodo" class="form-control" required disabled>
+                                    <option value="">Seleccione sección / asignatura primero...</option>
                                 </select>
                             </div>
                         </div>
+
 
                         <div class="col-md-12 text-right">
                             <button type="button" class="btn btn-primary" onclick="buscarEstudiantes()">
@@ -267,10 +264,46 @@ function actualizarContador() {
     // 3. Opcional: Puedes poner un mensaje sutil si lo prefieres
     // $('#cuerpoTablaEstudiantes').html('<tr><td colspan="7" class="text-center text-muted">Realice una nueva búsqueda</td></tr>');
 });
-        
+
+
+
 //
 // CAMBIOS EN LOS DIFERENTES CONTROLES.
 //
+
+function cargarPeriodosHabilitados() {
+    let ann = $('#codigo_ann_lectivo').val();
+    let sec = $('#codigo_seccion').val();
+    let selectPeriodo = $('#periodo');
+
+    if (!ann || !sec) {
+        selectPeriodo.html('<option value="">Seleccione sección primero...</option>').prop('disabled', true);
+        return;
+    }
+
+    selectPeriodo.html('<option value="">Cargando períodos...</option>').prop('disabled', true);
+
+    $.get("{{ url('get-periodos-habilitados') }}", { codigo_ann: ann, codigo_seccion: sec }, function(res) {
+        let opciones = '';
+
+        if (res.periodos && res.periodos.length > 0) {
+            $.each(res.periodos, function(i, p) {
+                // p.codigo (01, 02... 06, 07) y p.descripcion (Periodo 1, Recuperación 1, etc.)
+                // Limpiamos ceros a la izquierda si tu vista espera 1, 2, 3 en lugar de "01", "02"
+                let valCodigo = parseInt(p.codigo, 10); 
+                opciones += `<option value="${valCodigo}">${p.descripcion.trim()}</option>`;
+            });
+            selectPeriodo.html(opciones).prop('disabled', false);
+        } else {
+            selectPeriodo.html('<option value="">No hay períodos habilitados hoy</option>').prop('disabled', true);
+            toastr.warning(`No hay ningún período abierto para registro en la fecha de hoy (${res.hoy}).`, 'Atención');
+        }
+    }).fail(function() {
+        selectPeriodo.html('<option value="">Error al cargar períodos</option>').prop('disabled', true);
+    });
+}
+
+
 // Función reutilizable para evaluar si es Modular
     function evaluarSiEsModular() {
         let codigoAsignaturaCompleto = $('#codigo_asignatura').val() || '';
@@ -299,7 +332,10 @@ function actualizarContador() {
 
     // Escuchamos el cambio en ambos selectores para reaccionar de inmediato
     $('#codigo_asignatura, #codigo_seccion').on('change', function() {
-        evaluarSiEsModular();
+        // Si la asignatura no es modular, cargamos sus períodos activos por fecha
+    if (!evaluarSiEsModular()) {
+        cargarPeriodosHabilitados();
+    }
     });
 
 
@@ -378,8 +414,16 @@ function buscarEstudiantes() {
         // NUEVO: CONTROL VISUAL DE ENCABEZADOS SEGÚN EL TIPO DE ASIGNATURA
         // =========================================================================
         let thHeaders = $('#tabla_estudiantes thead th'); // Capturamos las cabeceras de tu tabla
-        
-        if (res.es_modular) {
+
+if (res.es_recuperacion) {
+            $('#periodo').prop('disabled', false);
+            thHeaders.eq(3).text('Nota Final Actual').css({'background-color': '#f8d7da', 'color': '#721c24'});
+            thHeaders.eq(4).text('N/A').css({'background-color': '#f8f9fa', 'color': '#6c757d'});
+            thHeaders.eq(5).text('N/A').css({'background-color': '#f8f9fa', 'color': '#6c757d'});
+            // Aquí ya funcionará res.periodo gracias al cambio anterior en PHP
+            thHeaders.eq(6).text(res.periodo == '6' ? 'Recuperación 1' : 'Recuperación 2').css({'background-color': '#d1ecf1', 'color': '#0c5460'});
+            thHeaders.eq(7).text('Estado / Promedio');
+}else if (res.es_modular) {
             // Deshabilitamos el periodo porque es único anual
             $('#periodo').prop('disabled', true);
 
@@ -417,38 +461,78 @@ function buscarEstudiantes() {
             // =========================================================================
             // NUEVO: RENDERIZADO CONDICIONAL DE FILAS (MODULAR VS NORMAL)
             // =========================================================================
-            if (res.es_modular) {
-                // Modo Modular: Un único campo activo (Mapeado con el valor de nota_final que viene en e.nota_p)
-                let notaModular = e.nota_p ? parseFloat(e.nota_p).toFixed(1) : '';
+if (res.es_recuperacion) {
+    let notaRecupVal = (e.nota_recuperacion !== null && e.nota_recuperacion !== undefined) ? parseFloat(e.nota_recuperacion) : 0;
+    let notaFinalAnual = parseFloat(e.nota_final) || 0;
 
-                filas += `
-                    <tr class="fila-estudiante" data-alumno="${e.codigo_alumno}" data-matricula="${e.codigo_matricula}">
-                        <td class="text-center align-middle">
-                            <input type="checkbox" class="check-estudiante" value="${e.codigo_matricula}">
-                        </td>
-                        <td class="text-center align-middle">${e.codigo_nie}</td>
-                        <td class="align-middle">${e.nombre_completo}</td>
-                        
+    // CONDICIÓN: Si la recuperación es 0 o es menor a la nota final, el promedio visual es igual a la nota final.
+    // De lo contrario, aplica la fórmula de recuperación.
+    let promedioRecup = notaFinalAnual;
+    if (notaRecupVal > 0 && notaRecupVal >= notaFinalAnual) {
+        promedioRecup = Math.round((notaFinalAnual + notaRecupVal) / 2);
+    }
 
-                        <td>
-                            <input type="number" step="0.1" min="1.0" max="5.0" 
-                                class="form-control text-center nota-input input-modular" 
-                                style="font-weight: bold; border: 2px solid #17a2b8; background-color: #f7feff;"
-                                value="${notaModular}"
-                                onkeypress="return sliderSoloNumeros(event)"
-                                oninput="validarRangoTeclado(this)"   
-                                onblur="validarVacioAlSalir(this)">  
-                        </td>
-                        
-                        <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
-                        <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
-                        <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
-                        
-                        <td class="text-center align-middle font-weight-bold bg-light">
-                            <span class="label-promedio">${notaModular || '0.0'}</span>
-                        </td>
-                    </tr>`;
-            } else {
+    let notaRecupDisplay = (notaRecupVal > 0) ? notaRecupVal.toFixed(1) : '';
+    let minima = res.calificacion_minima || 5.0;
+    let claseRoja = (promedioRecup < minima) ? 'nota-reprobada' : '';
+
+    filas += `
+        <tr class="fila-estudiante" data-alumno="${e.codigo_alumno}" data-matricula="${e.codigo_matricula}">
+            <td class="text-center align-middle">
+                <input type="checkbox" class="check-estudiante" value="${e.codigo_matricula}">
+            </td>
+            <td class="text-center align-middle">${e.codigo_nie}</td>
+            <td class="align-middle">${e.nombre_completo}</td>
+            
+            <!-- Nota Final Actual (etiquetada con td-nota-final para referencia) -->
+            <td class="text-center align-middle font-weight-bold text-danger bg-light td-nota-final">${notaFinalAnual.toFixed(1)}</td>
+            <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
+            <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
+            
+            <td>
+                <input type="number" step="0.1" min="0" max="10" 
+                    class="form-control text-center nota-input input-recuperacion" 
+                    style="font-weight: bold; border: 2px solid #17a2b8;"
+                    value="${notaRecupDisplay}">
+            </td>
+            
+            <td class="text-center align-middle font-weight-bold bg-light">
+                <span class="label-promedio ${claseRoja}">${promedioRecup.toFixed(0)}</span>
+            </td>
+        </tr>`;
+        } else if (res.es_modular) {
+            let notaVal = e.nota_p ? parseInt(e.nota_p, 10) : 0;
+            let notaModular = (notaVal > 0) ? notaVal : '';
+            
+            let claseRojaModular = (notaVal >= 1 && notaVal <= 3) ? 'nota-reprobada' : '';
+
+            filas += `
+                <tr class="fila-estudiante" data-alumno="${e.codigo_alumno}" data-matricula="${e.codigo_matricula}">
+                    <td class="text-center align-middle">
+                        <input type="checkbox" class="check-estudiante" value="${e.codigo_matricula}">
+                    </td>
+                    <td class="text-center align-middle">${e.codigo_nie}</td>
+                    <td class="align-middle">${e.nombre_completo}</td>
+                    
+                    <td>
+                        <input type="number" step="1" min="1" max="5" 
+                            class="form-control text-center nota-input input-modular" 
+                            style="font-weight: bold; border: 2px solid #17a2b8; background-color: #f7feff;"
+                            value="${notaModular}"
+                            onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                            oninput="validarEnteroModular(this)"   
+                            onblur="validarVacioModular(this)">  
+                    </td>
+                    
+                    <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
+                    <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
+                    <td class="text-center align-middle text-muted bg-light"><i class="fas fa-ban"></i></td>
+                    
+                    <td class="text-center align-middle font-weight-bold bg-light">
+                        <span class="label-promedio ${claseRojaModular}">${notaModular !== '' ? notaModular : '0'}</span>
+                    </td>
+                </tr>`;
+        }else {
                 // Modo Tradicional (Básicas y Técnicas normales que ya tenías)
                 filas += `
                     <tr class="fila-estudiante" data-alumno="${e.codigo_alumno}" data-matricula="${e.codigo_matricula}">
@@ -481,40 +565,32 @@ function buscarEstudiantes() {
 
 // GUARDAR TODAS LAS NOTAS.
 
-   function guardarTodasLasNotas() {
+ function guardarTodasLasNotas() {
     let notasData = [];
     let fullCodigo = $('#codigo_seccion').val();
     
-    // 1. EFECTO DEL BOTÓN (Se mantiene intacto tu efecto actual)
     $('#btnGuardarNotas').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
-
-    // 2. NUEVO: ATENUAR LA PANTALLA COMPLETA
-    // Usamos flex porque el HTML de arriba usa flexbox para centrar el cuadro blanco
     $('#pantalla-bloqueo').css('display', 'flex').hide().fadeIn(200);
 
     $('.fila-estudiante').each(function() {
         let fila = $(this);
-        
-        // =========================================================================
-        // CAPTURA INTELIGENTE SEGÚN EL MODO (MODULAR O NORMAL)
-        // =========================================================================
         let inputMod = fila.find('.input-modular');
+        let inputRecup = fila.find('.input-recuperacion'); // <-- Capturamos recuperación
         
         if (inputMod.length > 0) {
-            let valorNota = inputMod.val();
-                
-                // Si la casilla está vacía (length == 0), le asignamos 1.0 de forma automática
-                if (!valorNota || valorNota.trim() === '') {
-                    valorNota = "1.0";
-                    inputMod.val("1.0"); // Lo pintamos en la tabla para que el docente lo vea
-                }
-
-                notasData.push({
-                    codigo_matricula: fila.data('matricula'),
-                    nota_modular: valorNota  // Ahora viaja seguro como 1.0 mínimo
-                });
+            let valorNota = inputMod.val() || "1.0";
+            notasData.push({
+                codigo_matricula: fila.data('matricula'),
+                nota_modular: valorNota
+            });
+        } else if (inputRecup.length > 0) {
+            // <-- NUEVO: Si estamos en modo Recuperación 1 o 2
+            notasData.push({
+                codigo_matricula: fila.data('matricula'),
+                nota_recuperacion: inputRecup.val() || 0
+            });
         } else {
-            // Modo tradicional: Se envían las actividades normales
+            // Modo tradicional (Periodos 1 al 5)
             notasData.push({
                 codigo_matricula: fila.data('matricula'),
                 nota_a1: fila.find('.input-a1').val() || 0,
@@ -523,7 +599,6 @@ function buscarEstudiantes() {
                 nota_r:  fila.find('.input-r').val() || 0
             });
         }
-        // =========================================================================
     });
 
     let payload = {
@@ -541,18 +616,14 @@ function buscarEstudiantes() {
         dataType: 'json',
         success: function(res) {
             Swal.fire('¡Éxito!', res.message, 'success');
-            // Opcional: Recargar el listado para reflejar los promedios en la etiqueta gris
             buscarEstudiantes();
         },
-        error: function(jqXHR, textStatus, errorThrown) {
+        error: function(jqXHR) {
             console.error("Error del servidor:", jqXHR.responseText);
-            Swal.fire('Error', 'No se pudieron guardar las notas. Revisa la consola (F12) para más detalles.', 'error');
+            Swal.fire('Error', 'No se pudieron guardar las notas.', 'error');
         },
         complete: function() {
-           // 3. NUEVO: QUITAR EL ATENUADOR DE PANTALLA SUAVEMENTE
             $('#pantalla-bloqueo').fadeOut(200);
-
-            // RESTAURAR EL BOTÓN (Se mantiene tu flujo original en el complete)
             $('#btnGuardarNotas').prop('disabled', false).html('<i class="fas fa-save"></i> Guardar Todo el Periodo');
         }
     });
@@ -787,6 +858,106 @@ function validarVacioAlSalir(input) {
         alertarBordeRojo(input);
     }
 }
+
+$(document).on('input', '.input-recuperacion', function() {
+    let fila = $(this).closest('tr');
+    let notaFinalActual = parseFloat(fila.find('.td-nota-final').text()) || 0;
+    let recuperacion = parseFloat($(this).val());
+
+    // Si el campo está vacío o es NaN, lo tratamos temporalmente como 0 para el cálculo visual
+    if (isNaN(recuperacion)) {
+        recuperacion = 0;
+    }
+
+    // APLICAR CONDICIONES DE NEGOCIO:
+    // 1. Si la recuperación es 0 -> No hay cambio visual (se queda con la nota final actual)
+    // 2. Si la recuperación es menor a la nota final -> No hay cambio visual
+    let nuevoPromedio = notaFinalActual;
+    
+    if (recuperacion > 0 && recuperacion >= notaFinalActual) {
+        nuevoPromedio = Math.round((notaFinalActual + recuperacion) / 2);
+    }
+    
+    let spanPromedio = fila.find('.label-promedio');
+    spanPromedio.text(nuevoPromedio.toFixed(0));
+
+    let fullCodigo = $('#codigo_seccion').val();
+    let modalidad = fullCodigo ? fullCodigo.substring(6, 8) : '03';
+    let notaMinima = (modalidad >= '17' && modalidad <= '19') ? 5.0 : 6.0;
+
+    if (nuevoPromedio < notaMinima) {
+        spanPromedio.addClass('nota-reprobada');
+    } else {
+        spanPromedio.removeClass('nota-reprobada');
+    }
+});
+
+$(document).on('input', '.input-modular', function() {
+    let fila = $(this).closest('tr');
+    let val = parseFloat($(this).val()) || 0;
+    let spanPromedio = fila.find('.label-promedio');
+    
+    spanPromedio.text(val > 0 ? val.toFixed(1) : '0.0');
+
+    // Regla estética solicitada para módulos: 1 a 3 rojo, 4 y 5 negro
+    if (val >= 1 && val <= 3) {
+        spanPromedio.addClass('nota-reprobada');
+    } else {
+        spanPromedio.removeClass('nota-reprobada');
+    }
+});
+
+
+function validarEnteroModular(input) {
+    if (input.value === '') return;
+
+    let valor = parseInt(input.value, 10);
+
+    if (isNaN(valor) || valor < 1) {
+        input.value = "1";
+        valor = 1;
+    } else if (valor > 5) {
+        input.value = "5";
+        valor = 5;
+    } else {
+        input.value = valor;
+    }
+
+    // Actualizar la etiqueta visual y el color en tiempo real
+    let fila = $(input).closest('tr');
+    let spanPromedio = fila.find('.label-promedio');
+    
+    spanPromedio.text(valor);
+
+    // Regla estética: 1 a 3 rojo, 4 y 5 negro
+    if (valor >= 1 && valor <= 3) {
+        spanPromedio.addClass('nota-reprobada'); // Aplica color rojo intenso
+    } else {
+        spanPromedio.removeClass('nota-reprobada'); // Remueve el rojo y vuelve al negro por defecto
+    }
+}
+
+function validarVacioModular(input) {
+    if (input.value === '' || parseInt(input.value, 10) < 1) {
+        input.value = "1";
+        validarEnteroModular(input);
+    }
+}
+
+// Evento en tiempo real para cambiar el color del promedio modular (1 a 3 rojo, 4 y 5 negro)
+$(document).on('input', '.input-modular', function() {
+    let fila = $(this).closest('tr');
+    let val = parseInt($(this).val(), 10) || 0;
+    let spanPromedio = fila.find('.label-promedio');
+    
+    spanPromedio.text(val > 0 ? val : '0');
+
+    if (val >= 1 && val <= 3) {
+        spanPromedio.addClass('nota-reprobada');
+    } else {
+        spanPromedio.removeClass('nota-reprobada');
+    }
+});
 
 
 </script>

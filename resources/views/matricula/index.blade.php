@@ -281,7 +281,7 @@ use Illuminate\Support\Facades;
                             </div>
                             <div class="col">
                                 <span class="d-block text-muted small">Sección</span>
-                                <span class="badge badge-warning px-3 py-2 font-weight-bold" id="CodigoSeccionMatricula" style="font-size: 0.9rem;">#</span>
+                                <span class="badge badge-info px-3 py-2 font-weight-bold" id="CodigoSeccionMatricula" style="font-size: 0.9rem;">#</span>
                             </div>
                             <div class="col">
                                 <span class="d-block text-muted small">Turno</span>
@@ -954,7 +954,10 @@ use Illuminate\Support\Facades;
                         codigo_turno = '01';
                         if(codigo_seccion == '02'){ codigo_seccion = '03'; codigo_turno = '02'; }
                         break;
-                    case '01': codigo_grado = '17'; codigo_modalidad = '16'; break;
+                    case '01': 
+                        codigo_grado = '01'; 
+                        codigo_modalidad = '19';
+                         break;
                     case '02': codigo_grado = '03'; break;
                     case '03': codigo_grado = '04'; codigo_modalidad = '04'; break;
                     case '04': codigo_grado = '05'; break;
