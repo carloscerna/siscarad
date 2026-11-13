@@ -112,44 +112,38 @@ class PdfController extends Controller
         $this->fpdf->AliasNbPages();
     }
 
-
 public function generarBoleta($parametros)
     {
         // Separamos los datos del estudiante y la acción final
-        // Suponiendo que los datos vienen separados por un guion "-"
         $partes = explode('-', $parametros);
         
-        // El último elemento del array será nuestra acción (NO, SI, CORREO)
+        // El último elemento del array será nuestra acción (NO, SI, CORREO, descargar, etc.)
         $accion = end($partes); 
         
-        // Aquí extraes tus variables (NIE, id_alumno, etc.) usando los índices del array $partes
         $nie = $partes[0];
         $id_alumno = $partes[1];
 
-        // 1. Lógica común: Buscar datos del alumno en la base de datos y generar el PDF en memoria
+        // 1. Generar el PDF en memoria con la vista
         $pdf = PDF::loadView('pdf.boleta', compact('nie', 'id_alumno'));
 
-        // 2. Evaluamos qué hacer según el botón presionado
+        // 2. Evaluamos qué hacer según la acción recibida
         if ($accion == 'CORREO') {
-            // Buscamos el correo del estudiante o encargado (ejemplo ficticio)
             $correoDestino = "estudiante@correo.com"; 
 
-            // Enviamos el correo adjuntando el PDF generado en memoria
             Mail::to($correoDestino)->send(new BoletaNotasMail($pdf->output(), $nie));
 
-            // Retornamos una respuesta al usuario en lugar de abrir el PDF
             return back()->with('status', '¡La boleta ha sido enviada con éxito por correo!');
         }
 
-        if ($accion == 'SI') {
-            // Descarga el PDF
+        // Unificamos las opciones para que 'SI' o 'descargar' ejecuten la descarga directa
+        if ($accion == 'SI' || strtolower($accion) == 'descargar') {
+            // Fuerza la descarga del PDF en el navegador del usuario
             return $pdf->download('boleta_'.$nie.'.pdf');
         }
 
-        // Por defecto (Acción "NO"): Muestra el PDF en el navegador
+        // Por defecto (Acción "NO" o "ver"): Muestra el PDF en el navegador
         return $pdf->stream('boleta_'.$nie.'.pdf');
     }
-
 
 public function index($id, $accion = "ver", $codigo_matricula = null) 
 {
@@ -859,9 +853,11 @@ if (!$foto_encontrada) {
                             // Restaurar texto a negro para las notas de recuperación
                             $this->fpdf->SetTextColor(0, 0, 0);
 
-                            // NR1 y NR2
+// NR1 y NR2
                             $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[26] == 0 ? '' : $nota_actividades_0[26]), 1, 0, 'C'); 
-                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[27] == 0 ? '' : $nota_actjsdelivr_0[27] ?? $nota_actividades_0[27]), 1, 0, 'C'); 
+                            
+                            // Corrección: Reemplazado $nota_actjsdelivr_0 por $nota_actividades_0
+                            $this->fpdf->Cell($ancho_cell[1], $alto_cell[0], ($nota_actividades_0[27] == 0 ? '' : $nota_actividades_0[27]), 1, 0, 'C'); 
 
                             if($notaFinalValor > 0){
                                 $result = resultado_final($codigo_modalidad, $nota_actividades_0[26], $nota_actividades_0[27], $notaFinalValor, $codigo_area);
@@ -962,6 +958,3 @@ if (!$foto_encontrada) {
 
 
 }
-
-
-

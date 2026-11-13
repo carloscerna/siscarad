@@ -416,7 +416,7 @@ use Illuminate\Support\Facades;
                             let fila_color = (linea % 2 === 0) ? '<tr style="background:#A5FFA5; color:black;">' : '<tr style="background:#FFFFFF; color:black;">';
                             
                             // Mapeo utilizando 'id_alumno' explícitamente conforme al esquema de la base de datos
-                            let datos_estudiantes = value.codigo_nie.trim() + "-" + value.id_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() + "-" + codigo_institucion.trim() + "-" + codigo_personal;
+                            let datos_estudiantes = value.codigo_nie.trim() + "-" + value.codigo_alumno + "-" + value.codigo_matricula + "-" + codigo_gradoseccionturno + "-" + codigo_annlectivo.trim() + "-" + codigo_institucion.trim() + "-" + codigo_personal;
 
                             let url = '{{ url("/pdf", "id") }}'.replace('id', datos_estudiantes);
 
