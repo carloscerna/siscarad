@@ -960,11 +960,23 @@ use Illuminate\Support\Facades;
                          break;
                     case '02': codigo_grado = '03'; codigo_modalidad = '19';break;
                     case '03': codigo_grado = '04'; codigo_modalidad = '18'; break;
-                    case '04': codigo_grado = '05'; codigo_modalidad = '18';break;
+                    case '04': 
+                        if(codigo_seccion == '03'){
+                            codigo_seccion = '01 ';
+                        }
+                        codigo_grado = '05'; 
+                        codigo_modalidad = '18';
+                    break;
                     case '05': codigo_grado = '06'; codigo_modalidad = '18'; break;
                     case '06': codigo_grado = '07'; codigo_modalidad = '17'; break;
                     case '07': codigo_grado = '08'; codigo_modalidad = '17';break;
-                    case '08': codigo_grado = '09'; codigo_modalidad = '17'; break;
+                    case '08': 
+                        if(codigo_seccion == '03' || codigo_seccion == '04'){
+                            codigo_seccion = '03 ';
+                        }
+                        codigo_grado = '09'; 
+                        codigo_modalidad = '17'; 
+                        break;
                     case '09': 
                         codigo_seccion = '01';
                         codigo_grado = '10';
