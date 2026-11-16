@@ -289,8 +289,8 @@ use Illuminate\Support\Facades;
                             </div>
                         </div>
                         <!-- Select oculto si se requiere mantener la compatibilidad lógica -->
-                        <select class="form-control d-none" name="lstModalidad" id="lstModalidad">
-                            <option value="06">Bachillerato General</option>
+                        <select class="form-control" name="lstModalidad" id="lstModalidad" style="display: none;">
+                            <option value="21">Bachillerato General</option>
                             <option value="15">Bachillerato Técnico Vocacional Administrativo Contable.</option>
                             <option value="11">Bachillerato General - Nocturna</option>
                         </select>
@@ -950,32 +950,40 @@ use Illuminate\Support\Facades;
                     case '5P': codigo_grado = '6P'; break;
                     case '6P': 
                         codigo_grado = '01';
-                        codigo_modalidad = '14';
+                        codigo_modalidad = '20';
                         codigo_turno = '01';
                         if(codigo_seccion == '02'){ codigo_seccion = '03'; codigo_turno = '02'; }
                         break;
                     case '01': 
-                        codigo_grado = '01'; 
+                        codigo_grado = '02'; 
                         codigo_modalidad = '19';
                          break;
-                    case '02': codigo_grado = '03'; break;
-                    case '03': codigo_grado = '04'; codigo_modalidad = '04'; break;
-                    case '04': codigo_grado = '05'; break;
-                    case '05': codigo_grado = '06'; break;
-                    case '06': codigo_grado = '07'; codigo_modalidad = '05'; break;
-                    case '07': codigo_grado = '08'; break;
-                    case '08': codigo_grado = '09'; break;
+                    case '02': codigo_grado = '03'; codigo_modalidad = '19';break;
+                    case '03': codigo_grado = '04'; codigo_modalidad = '18'; break;
+                    case '04': codigo_grado = '05'; codigo_modalidad = '18';break;
+                    case '05': codigo_grado = '06'; codigo_modalidad = '18'; break;
+                    case '06': codigo_grado = '07'; codigo_modalidad = '17'; break;
+                    case '07': codigo_grado = '08'; codigo_modalidad = '17';break;
+                    case '08': codigo_grado = '09'; codigo_modalidad = '17'; break;
                     case '09': 
                         codigo_seccion = '01';
                         codigo_grado = '10';
-                        codigo_modalidad = '06';
+                        codigo_modalidad = '21';
                         codigo_turno = '04';
-                        $("#lstModalidad").show();
+                        $("#lstModalidad").css("display", "block");
+                        //$("#lstModalidad").show();
                         break;
                     case '10': codigo_grado = '11'; codigo_seccion = '01'; break;
-                    case '11': codigo_grado = '12'; codigo_modalidad = '09'; break;
-                    case '17': codigo_grado = '18'; codigo_modalidad = '16'; break;
-                    case '18': codigo_grado = '04'; codigo_modalidad = '04'; break;
+                    case '11': 
+                        if(codigo_modalidad == '21' && codigo_grado == '11'){
+                            codigo_grado = '12'; 
+                            codigo_modalidad = '21';
+                        }
+                        if(codigo_modalidad == '15' && codigo_grado == '11'){
+                            codigo_grado = '12'; 
+                            codigo_modalidad = '15';
+                        }
+                        break;
                     default: break;
                 }
             } else {
