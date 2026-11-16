@@ -992,17 +992,23 @@ use Illuminate\Support\Facades;
             }
 
             // 3. OBTENEMOS LOS NOMBRES DESCRIPTIVOS USANDO LOS DICCIONARIOS
-            var textoGrado = nombresGrados[codigo_grado] || codigo_grado;
+          /*  var textoGrado = nombresGrados[codigo_grado] || codigo_grado;
             var textoModalidad = nombresModalidades[codigo_modalidad] || codigo_modalidad;
             var textoTurno = nombresTurnos[codigo_turno] || codigo_turno;
-            var textoSeccion = nombresSecciones[codigo_seccion] || codigo_seccion;
+            var textoSeccion = nombresSecciones[codigo_seccion] || codigo_seccion;*/
 
             // 4. PLASMAMOS LOS NOMBRES EN LOS BADGES DEL MODAL
-            $("#AnnLectivoMatricula").text(codigo_annlectivo);
+            /*$("#AnnLectivoMatricula").text(codigo_annlectivo);
             $("#CodigoModalidadMatricula").text(textoModalidad);    
             $("#CodigoGradoMatricula").text(textoGrado);    
             $("#CodigoSeccionMatricula").text(textoSeccion);    
-            $("#CodigoTurnoMatricula").text(textoTurno);   
+            $("#CodigoTurnoMatricula").text(textoTurno);   */
+
+            $("#AnnLectivoMatricula").text(codigo_annlectivo);
+            $("#CodigoModalidadMatricula").text(codigo_modalidad);    
+            $("#CodigoGradoMatricula").text(codigo_grado);    
+            $("#CodigoSeccionMatricula").text(codigo_seccion);    
+            $("#CodigoTurnoMatricula").text(codigo_turno);   
         }
         //
         // traer datos del responsable.
